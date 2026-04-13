@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nanu — чат-бот, обучающийся на текстах из интернета</title>
+    <title>Nanu — умный чат-бот с поиском в интернете</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
 
         body {
             background: linear-gradient(135deg, #0a0f1a, #0c1222);
-            font-family: 'Segoe UI', system-ui, monospace;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
         }
@@ -38,7 +38,6 @@
 
         .sub {
             color: #8a9bbb;
-            font-size: 0.85rem;
         }
 
         .control-panel {
@@ -64,7 +63,6 @@
             border-radius: 60px;
             color: white;
             font-size: 0.95rem;
-            font-family: monospace;
         }
 
         input {
@@ -89,7 +87,6 @@
 
         button.primary {
             background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            box-shadow: 0 0 12px #3b82f6aa;
         }
 
         button.success {
@@ -151,18 +148,22 @@
         }
 
         .knowledge-list {
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
-            font-size: 0.7rem;
-            color: #aac8ff;
+            font-size: 0.75rem;
         }
 
         .knowledge-item {
             background: #0f1a2e;
-            margin: 5px 0;
-            padding: 8px;
+            margin: 8px 0;
+            padding: 10px;
             border-radius: 12px;
             border-left: 3px solid #3b82f6;
+        }
+
+        .knowledge-topic {
+            font-weight: bold;
+            color: #6ee7ff;
         }
 
         .chat-panel {
@@ -176,7 +177,7 @@
 
         .messages {
             flex: 1;
-            height: 350px;
+            height: 400px;
             overflow-y: auto;
             margin-bottom: 15px;
             display: flex;
@@ -189,6 +190,7 @@
             padding: 10px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
+            word-wrap: break-word;
         }
 
         .user-message {
@@ -243,41 +245,36 @@
 <div class="container">
     <div class="header">
         <h1>🧠 NANU</h1>
-        <div class="sub">чат-бот, который учится на реальных текстах из интернета</div>
+        <div class="sub">чат-бот, который ищет ответы в интернете и учится на них</div>
     </div>
 
     <div class="control-panel">
         <div class="flex-row">
-            <input type="text" id="searchTopic" placeholder="Тема для обучения (например: программирование, психология, космос)" value="искусственный интеллект">
-            <select id="searchSource">
-                <option value="ddg">🌐 DuckDuckGo (новости/статьи)</option>
-                <option value="wiki">📚 Википедия (энциклопедические знания)</option>
-            </select>
-            <button id="learnBtn" class="primary">📖 ОБУЧИТЬ ИЗ ИНТЕРНЕТА</button>
+            <input type="text" id="searchTopic" placeholder="Тема для изучения (например: космос, программирование, история)" value="Яндекс игры">
+            <button id="learnBtn" class="primary">📖 НАУЧИТЬ ПО ТЕМЕ</button>
             <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
         </div>
         <div class="stats">
-            <div class="stat-card"><div>📚 ФРАЗ В ПАМЯТИ</div><div class="stat-number" id="memoryCount">0</div></div>
-            <div class="stat-card"><div>🎓 ИСТОЧНИКОВ</div><div class="stat-number" id="sourcesCount">0</div></div>
-            <div class="stat-card"><div>🧠 ВЕСОВ НЕЙРОСЕТИ</div><div class="stat-number" id="weightsSize">0</div></div>
+            <div class="stat-card"><div>📚 ВЫУЧЕНО ТЕМ</div><div class="stat-number" id="topicsCount">0</div></div>
+            <div class="stat-card"><div>📄 ФРАГМЕНТОВ</div><div class="stat-number" id="fragmentsCount">0</div></div>
         </div>
         <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
     <div class="chat-area">
         <div class="knowledge-panel">
-            <div class="knowledge-title">📚 ЗНАНИЯ NANU (выучено из интернета)</div>
+            <div class="knowledge-title">📚 ЗНАНИЯ NANU (выученные темы)</div>
             <div class="knowledge-list" id="knowledgeList">
-                <div class="knowledge-item">Пока пусто. Нажмите "ОБУЧИТЬ ИЗ ИНТЕРНЕТА"</div>
+                <div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>
             </div>
         </div>
 
         <div class="chat-panel">
             <div class="messages" id="messages">
-                <div class="message bot-message">👋 Привет! Я Nanu. Обучи меня по какой-нибудь теме из интернета, и я смогу отвечать на вопросы.</div>
+                <div class="message bot-message">👋 Привет! Я Nanu. Выбери тему (например, "космос", "Яндекс игры", "нейросети") и нажми "НАУЧИТЬ ПО ТЕМЕ". Я найду информацию в интернете и смогу отвечать на вопросы.</div>
             </div>
             <div class="chat-input">
-                <input type="text" id="userQuestion" placeholder="Спроси меня о том, чему я научился..." onkeypress="if(event.key==='Enter') askQuestion()">
+                <input type="text" id="userQuestion" placeholder="Спроси меня о выученной теме..." onkeypress="if(event.key==='Enter') askQuestion()">
                 <button id="askBtn" class="success">💬 СПРОСИТЬ</button>
             </div>
         </div>
@@ -288,398 +285,275 @@
 
 <script>
     (function(){
-        // ============================================
-        // NANU - нейросеть, обучающаяся на текстах из интернета
-        // Архитектура: bag-of-words + простая нейронная сеть
-        // ============================================
-        
-        class NanuBot {
+        class NanuSmartBot {
             constructor() {
-                this.knowledge = [];        // массив {text, embedding}
-                this.vocabulary = new Map();  // слово -> индекс
-                this.vocabSize = 0;
-                this.maxVocab = 2000;
+                this.knowledge = [];      // {topic, fragments: [{text, source}]}
+                this.currentTopic = null;
                 
-                // Веса нейросети: вход (размер словаря) -> скрытый слой (128) -> выход (размер словаря)
-                this.W1 = null;   // vocabSize x hidden
-                this.b1 = null;
-                this.W2 = null;   // hidden x vocabSize
-                this.b2 = null;
-                this.hiddenSize = 128;
-                
-                this.isTraining = false;
-                
-                // DOM элементы
-                this.memoryCountSpan = document.getElementById('memoryCount');
-                this.sourcesCountSpan = document.getElementById('sourcesCount');
-                this.weightsSizeSpan = document.getElementById('weightsSize');
+                this.topicsCountSpan = document.getElementById('topicsCount');
+                this.fragmentsCountSpan = document.getElementById('fragmentsCount');
                 this.progressFill = document.getElementById('progressFill');
                 this.knowledgeDiv = document.getElementById('knowledgeList');
                 this.messagesDiv = document.getElementById('messages');
                 this.logDiv = document.getElementById('logPanel');
                 
-                this.addLog("🧠 NANU готова. Нажмите «ОБУЧИТЬ ИЗ ИНТЕРНЕТА», чтобы я выучил новую тему.");
+                this.addLog("🧠 NANU готова. Введите тему и нажмите «НАУЧИТЬ ПО ТЕМЕ»");
             }
             
-            // Токенизация и нормализация
-            tokenize(text) {
-                return text.toLowerCase()
-                    .replace(/[^а-яёa-z0-9\s]/gi, ' ')
-                    .split(/\s+/)
-                    .filter(w => w.length > 2 && !['это', 'или', 'для', 'без', 'между', 'через'].includes(w));
-            }
-            
-            // Добавление слова в словарь
-            addToVocabulary(word) {
-                if(!this.vocabulary.has(word) && this.vocabSize < this.maxVocab) {
-                    this.vocabulary.set(word, this.vocabSize++);
-                    return true;
-                }
-                return false;
-            }
-            
-            // Преобразование текста в вектор (bag-of-words)
-            textToVector(text) {
-                const tokens = this.tokenize(text);
-                const vec = new Array(this.vocabSize).fill(0);
-                for(const token of tokens) {
-                    const idx = this.vocabulary.get(token);
-                    if(idx !== undefined) vec[idx] = (vec[idx] || 0) + 1;
-                }
-                // Нормализация
-                const sum = vec.reduce((a,b) => a+b, 0);
-                if(sum > 0) return vec.map(v => v / sum);
-                return vec;
-            }
-            
-            // Инициализация весов нейросети
-            initWeights() {
-                if(this.vocabSize === 0) return;
-                this.W1 = new Array(this.vocabSize);
-                for(let i=0; i<this.vocabSize; i++) {
-                    this.W1[i] = new Array(this.hiddenSize);
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        this.W1[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.vocabSize);
-                    }
-                }
-                this.b1 = new Array(this.hiddenSize).fill(0);
+            // Поиск в интернете через DuckDuckGo API
+            async searchInternet(query) {
+                this.addLog(`🔍 Ищу: "${query}" в интернете...`);
                 
-                this.W2 = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    this.W2[i] = new Array(this.vocabSize);
-                    for(let j=0; j<this.vocabSize; j++) {
-                        this.W2[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.hiddenSize);
-                    }
-                }
-                this.b2 = new Array(this.vocabSize).fill(0);
-                
-                this.weightsSizeSpan.innerText = (this.vocabSize * this.hiddenSize + this.hiddenSize * this.vocabSize).toLocaleString();
-            }
-            
-            relu(x) { return Math.max(0, x); }
-            reluDeriv(x) { return x > 0 ? 1 : 0; }
-            softmax(arr) {
-                const max = Math.max(...arr);
-                const exps = arr.map(v => Math.exp(v - max));
-                const sum = exps.reduce((a,b) => a+b, 0);
-                return exps.map(v => v / sum);
-            }
-            
-            // Прямой проход
-            forward(inputVec) {
-                // Скрытый слой
-                let hidden = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    let sum = this.b1[i];
-                    for(let j=0; j<this.vocabSize; j++) {
-                        sum += inputVec[j] * this.W1[j][i];
-                    }
-                    hidden[i] = this.relu(sum);
-                }
-                // Выходной слой
-                let output = new Array(this.vocabSize);
-                for(let i=0; i<this.vocabSize; i++) {
-                    let sum = this.b2[i];
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        sum += hidden[j] * this.W2[j][i];
-                    }
-                    output[i] = sum;
-                }
-                return { hidden, logits: output, probs: this.softmax(output) };
-            }
-            
-            // Обучение на одном примере (градиентный спуск)
-            trainStep(inputVec, targetVec, lr = 0.05) {
-                const { hidden, logits, probs } = this.forward(inputVec);
-                
-                // Градиент выходного слоя (softmax cross-entropy)
-                const dLogits = new Array(this.vocabSize);
-                for(let i=0; i<this.vocabSize; i++) {
-                    dLogits[i] = probs[i] - targetVec[i];
-                }
-                
-                // Градиент для W2 и b2
-                const dW2 = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    dW2[i] = new Array(this.vocabSize);
-                    for(let j=0; j<this.vocabSize; j++) {
-                        dW2[i][j] = dLogits[j] * hidden[i];
-                    }
-                }
-                const db2 = dLogits.slice();
-                
-                // Градиент скрытого слоя
-                const dHidden = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    let sum = 0;
-                    for(let j=0; j<this.vocabSize; j++) {
-                        sum += dLogits[j] * this.W2[i][j];
-                    }
-                    dHidden[i] = sum * this.reluDeriv(hidden[i]);
-                }
-                
-                // Градиент для W1 и b1
-                const dW1 = new Array(this.vocabSize);
-                for(let i=0; i<this.vocabSize; i++) {
-                    dW1[i] = new Array(this.hiddenSize);
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        dW1[i][j] = dHidden[j] * inputVec[i];
-                    }
-                }
-                const db1 = dHidden.slice();
-                
-                // Обновление весов
-                for(let i=0; i<this.hiddenSize; i++) {
-                    for(let j=0; j<this.vocabSize; j++) {
-                        this.W2[i][j] -= lr * dW2[i][j];
-                    }
-                }
-                for(let j=0; j<this.vocabSize; j++) this.b2[j] -= lr * db2[j];
-                
-                for(let i=0; i<this.vocabSize; i++) {
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        this.W1[i][j] -= lr * dW1[i][j];
-                    }
-                }
-                for(let j=0; j<this.hiddenSize; j++) this.b1[j] -= lr * db1[j];
-                
-                // Вычисляем loss
-                let loss = 0;
-                for(let i=0; i<this.vocabSize; i++) {
-                    loss -= targetVec[i] * Math.log(probs[i] + 1e-8);
-                }
-                return loss;
-            }
-            
-            // Добавление текста в память и обучение
-            async learnText(text, source) {
-                const tokens = this.tokenize(text);
-                if(tokens.length < 5) return false;
-                
-                // Добавляем новые слова в словарь
-                let newWords = 0;
-                for(const token of tokens) {
-                    if(this.addToVocabulary(token)) newWords++;
-                }
-                
-                // Если появились новые слова — переинициализируем веса
-                if(newWords > 0) {
-                    this.initWeights();
-                    this.addLog(`📚 Словарь пополнен: ${this.vocabSize} слов`, "#ffaa66");
-                }
-                
-                // Преобразуем текст в вектор
-                const inputVec = this.textToVector(text);
-                
-                // Целевой вектор — предсказание следующего слова (упрощённо: тот же вектор)
-                // Для реального обучения нужны пары, но для демо используем autoencoding
-                const targetVec = inputVec.slice();
-                
-                // Обучаем нейросеть
-                let totalLoss = 0;
-                for(let epoch = 0; epoch < 15; epoch++) {
-                    const loss = this.trainStep(inputVec, targetVec, 0.03);
-                    totalLoss += loss;
-                }
-                
-                // Сохраняем в память
-                this.knowledge.push({
-                    text: text.slice(0, 200),
-                    source: source,
-                    embedding: inputVec
-                });
-                
-                this.memoryCountSpan.innerText = this.knowledge.length;
-                this.updateKnowledgeList();
-                
-                this.addLog(`✅ Выучено: "${text.slice(0, 80)}..." (loss: ${(totalLoss/15).toFixed(4)})`, "#a0ffc0");
-                return true;
-            }
-            
-            // Генерация ответа на вопрос
-            answer(question) {
-                if(this.vocabSize === 0 || this.knowledge.length === 0) {
-                    return "Я ещё ничего не выучил. Нажми «ОБУЧИТЬ ИЗ ИНТЕРНЕТА», чтобы я научился новой теме!";
-                }
-                
-                const questionVec = this.textToVector(question);
-                const { probs } = this.forward(questionVec);
-                
-                // Находим наиболее вероятные слова
-                const topIndices = [];
-                for(let i=0; i<Math.min(10, this.vocabSize); i++) {
-                    let maxIdx = 0;
-                    for(let j=1; j<this.vocabSize; j++) {
-                        if(probs[j] > probs[maxIdx] && !topIndices.includes(j)) maxIdx = j;
-                    }
-                    topIndices.push(maxIdx);
-                }
-                
-                const topWords = topIndices.map(idx => {
-                    for(let [word, wordIdx] of this.vocabulary) {
-                        if(wordIdx === idx) return word;
-                    }
-                    return '';
-                }).filter(w => w);
-                
-                // Ищем самый релевантный фрагмент знаний
-                let bestMatch = null;
-                let bestScore = 0;
-                for(const item of this.knowledge) {
-                    let score = 0;
-                    for(const word of topWords.slice(0,5)) {
-                        if(item.text.toLowerCase().includes(word)) score++;
-                    }
-                    if(score > bestScore) {
-                        bestScore = score;
-                        bestMatch = item;
-                    }
-                }
-                
-                if(bestMatch && bestScore > 0) {
-                    return `📖 По моим знаниям: ${bestMatch.text}\n\n(источник: ${bestMatch.source})`;
-                } else if(topWords.length > 0) {
-                    return `🧠 Ассоциирую ваш вопрос с: ${topWords.slice(0,5).join(', ')}...\n\nНо для точного ответа мне нужно больше текстов по этой теме.`;
-                } else {
-                    return "Я не совсем понял вопрос. Попробуйте обучить меня на большем количестве текстов по этой теме!";
-                }
-            }
-            
-            updateKnowledgeList() {
-                this.knowledgeDiv.innerHTML = "";
-                if(this.knowledge.length === 0) {
-                    this.knowledgeDiv.innerHTML = '<div class="knowledge-item">Пока пусто. Нажмите "ОБУЧИТЬ ИЗ ИНТЕРНЕТА"</div>';
-                    return;
-                }
-                for(const item of this.knowledge.slice(-12).reverse()) {
-                    const div = document.createElement('div');
-                    div.className = 'knowledge-item';
-                    div.innerHTML = `<strong>📘 ${item.source}</strong><br>${item.text.slice(0, 100)}...`;
-                    this.knowledgeDiv.appendChild(div);
-                }
-            }
-            
-            // === ПОИСК ТЕКСТОВ ИЗ ИНТЕРНЕТА ===
-            async searchAndLearn(topic, source) {
-                this.addLog(`🔍 Поиск текстов по теме "${topic}" в ${source === 'wiki' ? 'Википедии' : 'DuckDuckGo'}...`);
-                this.isTraining = true;
-                
-                let texts = [];
-                this.progressFill.style.width = "10%";
-                
-                if(source === 'wiki') {
-                    texts = await this.fetchWikipedia(topic);
-                } else {
-                    texts = await this.fetchDuckDuckGo(topic);
-                }
-                
-                if(texts.length === 0) {
-                    this.addLog(`⚠️ Не найдено текстов по "${topic}". Попробуйте другую тему.`, "#ffaa66");
-                    this.isTraining = false;
-                    return;
-                }
-                
-                this.sourcesCountSpan.innerText = texts.length;
-                this.addLog(`📖 Найдено ${texts.length} текстов. Начинаю обучение...`);
-                
-                let learned = 0;
-                for(let i=0; i<texts.length; i++) {
-                    await this.learnText(texts[i], source === 'wiki' ? `Википедия: ${topic}` : `DuckDuckGo: ${topic}`);
-                    learned++;
-                    const percent = 10 + (i / texts.length) * 90;
-                    this.progressFill.style.width = percent + "%";
-                    await this.sleep(50);
-                }
-                
-                this.addLog(`✅ Обучение завершено! Выучено ${learned} текстов по теме "${topic}". Теперь можете задавать вопросы.`, "#0f0");
-                this.isTraining = false;
-                this.progressFill.style.width = "100%";
-                setTimeout(() => this.progressFill.style.width = "0%", 1500);
-            }
-            
-            async fetchWikipedia(topic) {
                 try {
-                    const url = `https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
+                    // DuckDuckGo API
+                    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
                     const response = await fetch(url);
                     const data = await response.json();
-                    if(data.extract) {
-                        return [data.extract];
-                    }
-                    // Поиск по категории
-                    const searchUrl = `https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*`;
-                    const searchRes = await fetch(searchUrl);
-                    const searchData = await searchRes.json();
-                    const pages = searchData.query?.search || [];
-                    const texts = [];
-                    for(const page of pages.slice(0, 5)) {
-                        const pageUrl = `https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page.title)}`;
-                        const pageRes = await fetch(pageUrl);
-                        const pageData = await pageRes.json();
-                        if(pageData.extract) texts.push(pageData.extract);
-                        await this.sleep(100);
-                    }
-                    return texts;
-                } catch(e) {
-                    this.addLog(`Ошибка Википедии: ${e.message}`, "#ff8888");
-                    return [];
-                }
-            }
-            
-            async fetchDuckDuckGo(topic) {
-                try {
-                    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1&skip_disambig=1`;
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    const texts = [];
                     
-                    if(data.AbstractText) texts.push(data.AbstractText);
-                    if(data.Definition) texts.push(data.Definition);
-                    if(data.RelatedTopics) {
-                        for(const item of data.RelatedTopics.slice(0, 8)) {
-                            if(item.Text) texts.push(item.Text);
-                            if(item.Topics) {
-                                for(const sub of item.Topics) {
-                                    if(sub.Text) texts.push(sub.Text);
+                    const fragments = [];
+                    
+                    // Основное описание
+                    if (data.AbstractText && data.AbstractText.length > 50) {
+                        fragments.push({
+                            text: data.AbstractText,
+                            source: data.AbstractSource || "DuckDuckGo"
+                        });
+                    }
+                    
+                    // Определение
+                    if (data.Definition && data.Definition.length > 30) {
+                        fragments.push({
+                            text: data.Definition,
+                            source: data.DefinitionSource || "DuckDuckGo"
+                        });
+                    }
+                    
+                    // Связанные темы
+                    if (data.RelatedTopics) {
+                        for (const item of data.RelatedTopics) {
+                            if (item.Text && item.Text.length > 40) {
+                                fragments.push({
+                                    text: item.Text,
+                                    source: "Связанная тема"
+                                });
+                            }
+                            if (item.Topics) {
+                                for (const sub of item.Topics) {
+                                    if (sub.Text && sub.Text.length > 40) {
+                                        fragments.push({
+                                            text: sub.Text,
+                                            source: "Подтема"
+                                        });
+                                    }
                                 }
                             }
                         }
                     }
-                    return texts.filter(t => t.length > 50).slice(0, 15);
+                    
+                    // Если ничего не нашли — пробуем Википедию
+                    if (fragments.length === 0) {
+                        this.addLog(`📚 Ищу в Википедии...`);
+                        const wikiFragments = await this.searchWikipedia(query);
+                        fragments.push(...wikiFragments);
+                    }
+                    
+                    return fragments.slice(0, 12); // не больше 12 фрагментов
+                    
                 } catch(e) {
-                    this.addLog(`Ошибка DuckDuckGo: ${e.message}`, "#ff8888");
+                    this.addLog(`Ошибка поиска: ${e.message}`, "#ff8888");
                     return [];
                 }
             }
             
+            async searchWikipedia(query) {
+                try {
+                    const url = `https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&origin=*`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    const pages = data.query?.search || [];
+                    
+                    const fragments = [];
+                    for (const page of pages.slice(0, 3)) {
+                        const pageUrl = `https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=true&explaintext=true&titles=${encodeURIComponent(page.title)}&format=json&origin=*`;
+                        const pageRes = await fetch(pageUrl);
+                        const pageData = await pageRes.json();
+                        const pagesData = pageData.query?.pages;
+                        if (pagesData) {
+                            for (const id in pagesData) {
+                                const extract = pagesData[id].extract;
+                                if (extract && extract.length > 100) {
+                                    fragments.push({
+                                        text: extract.slice(0, 800),
+                                        source: `Википедия: ${page.title}`
+                                    });
+                                }
+                            }
+                        }
+                        await this.sleep(200);
+                    }
+                    return fragments;
+                } catch(e) {
+                    return [];
+                }
+            }
+            
+            // Обучение по теме
+            async learnTopic(topic) {
+                if (!topic.trim()) {
+                    this.addLog("❌ Введите тему", "#ff8888");
+                    return;
+                }
+                
+                this.addLog(`📖 Начинаю изучение темы: "${topic}"`);
+                this.progressFill.style.width = "10%";
+                
+                const fragments = await this.searchInternet(topic);
+                
+                if (fragments.length === 0) {
+                    this.addLog(`⚠️ Не удалось найти информацию по теме "${topic}". Попробуйте другие ключевые слова.`, "#ffaa66");
+                    this.progressFill.style.width = "0%";
+                    return;
+                }
+                
+                this.addLog(`📚 Найдено ${fragments.length} фрагментов информации. Сохраняю...`);
+                
+                // Обновляем или создаём тему
+                let topicEntry = this.knowledge.find(k => k.topic.toLowerCase() === topic.toLowerCase());
+                if (topicEntry) {
+                    topicEntry.fragments = fragments;
+                } else {
+                    this.knowledge.push({
+                        topic: topic,
+                        fragments: fragments
+                    });
+                }
+                
+                this.currentTopic = topic;
+                this.updateStats();
+                this.updateKnowledgeList();
+                
+                this.progressFill.style.width = "100%";
+                setTimeout(() => this.progressFill.style.width = "0%", 1000);
+                
+                this.addLog(`✅ Готово! Я выучил тему "${topic}". Теперь можешь задавать вопросы.`, "#0f0");
+                
+                // Добавляем приветственное сообщение
+                this.addBotMessage(`Я выучил тему "${topic}". Спроси меня о ней!`);
+            }
+            
+            // Поиск ответа на вопрос
+            answer(question) {
+                if (this.knowledge.length === 0) {
+                    return "Я ещё ничего не выучил. Нажми «НАУЧИТЬ ПО ТЕМЕ» и введи что-нибудь (например, «космос», «Яндекс игры», «нейросети»).";
+                }
+                
+                const lowerQuestion = question.toLowerCase();
+                
+                // Определяем, о какой теме спрашивают
+                let bestTopic = null;
+                let bestScore = 0;
+                
+                for (const topicEntry of this.knowledge) {
+                    let score = 0;
+                    const topicWords = topicEntry.topic.toLowerCase().split(/\s+/);
+                    for (const word of topicWords) {
+                        if (lowerQuestion.includes(word)) score += 3;
+                    }
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestTopic = topicEntry;
+                    }
+                }
+                
+                if (!bestTopic) {
+                    bestTopic = this.knowledge[0];
+                }
+                
+                // Ищем самый релевантный фрагмент
+                const questionWords = this.extractKeywords(lowerQuestion);
+                
+                let bestFragment = null;
+                let bestFragmentScore = 0;
+                
+                for (const fragment of bestTopic.fragments) {
+                    let score = 0;
+                    const fragmentLower = fragment.text.toLowerCase();
+                    for (const word of questionWords) {
+                        if (fragmentLower.includes(word)) score++;
+                    }
+                    // Длинные фрагменты с большим совпадением
+                    if (score > bestFragmentScore) {
+                        bestFragmentScore = score;
+                        bestFragment = fragment;
+                    }
+                }
+                
+                if (bestFragment && bestFragmentScore > 0) {
+                    return `📖 ${bestFragment.text}\n\n— ${bestFragment.source}`;
+                } else if (bestTopic.fragments.length > 0) {
+                    // Если точного совпадения нет, показываем первый фрагмент
+                    return `📖 ${bestTopic.fragments[0].text}\n\n— ${bestTopic.fragments[0].source}`;
+                } else {
+                    return "Извините, у меня нет информации по этому вопросу. Попробуйте переформулировать или выучить другую тему.";
+                }
+            }
+            
+            extractKeywords(text) {
+                // Убираем стоп-слова и короткие слова
+                const stopWords = ['что', 'кто', 'где', 'когда', 'как', 'почему', 'зачем', 'это', 'такой', 'этих', 'этом', 'эту', 'этот', 'про', 'без', 'для', 'по', 'и', 'в', 'на', 'с', 'о', 'у', 'а', 'но', 'или', 'же', 'бы', 'да', 'не', 'ни'];
+                const words = text.split(/[\s,?!.]+/).filter(w => w.length > 2 && !stopWords.includes(w));
+                return words;
+            }
+            
+            updateStats() {
+                this.topicsCountSpan.innerText = this.knowledge.length;
+                const totalFragments = this.knowledge.reduce((sum, t) => sum + t.fragments.length, 0);
+                this.fragmentsCountSpan.innerText = totalFragments;
+            }
+            
+            updateKnowledgeList() {
+                this.knowledgeDiv.innerHTML = "";
+                if (this.knowledge.length === 0) {
+                    this.knowledgeDiv.innerHTML = '<div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>';
+                    return;
+                }
+                
+                for (const topicEntry of this.knowledge) {
+                    const div = document.createElement('div');
+                    div.className = 'knowledge-item';
+                    div.innerHTML = `<div class="knowledge-topic">📘 ${topicEntry.topic}</div><div>${topicEntry.fragments.length} фрагментов</div>`;
+                    this.knowledgeDiv.appendChild(div);
+                }
+            }
+            
+            addBotMessage(text) {
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML += `<div class="message bot-message">${this.escapeHtml(text)}</div>`;
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            }
+            
+            addUserMessage(text) {
+                const msgDiv = document.getElementById('messages');
+                msgDiv.innerHTML += `<div class="message user-message">${this.escapeHtml(text)}</div>`;
+                msgDiv.scrollTop = msgDiv.scrollHeight;
+            }
+            
+            escapeHtml(str) {
+                return str.replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                }).replace(/\n/g, '<br>');
+            }
+            
             clearMemory() {
                 this.knowledge = [];
-                this.vocabulary.clear();
-                this.vocabSize = 0;
-                this.initWeights();
-                this.memoryCountSpan.innerText = "0";
-                this.sourcesCountSpan.innerText = "0";
+                this.currentTopic = null;
+                this.updateStats();
                 this.updateKnowledgeList();
-                this.addLog("🗑️ Память очищена. Нейросеть готова к новому обучению.");
+                this.addLog("🗑️ Память очищена. Все темы удалены.");
+                this.addBotMessage("Память очищена. Выбери новую тему для изучения!");
             }
             
             addLog(msg, color = "#86efac") {
@@ -694,13 +568,15 @@
             sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         }
         
-        const nanu = new NanuBot();
+        const nanu = new NanuSmartBot();
         
         document.getElementById('learnBtn').onclick = async () => {
             const topic = document.getElementById('searchTopic').value.trim();
-            const source = document.getElementById('searchSource').value;
-            if(!topic) { nanu.addLog("❌ Введите тему для обучения"); return; }
-            await nanu.searchAndLearn(topic, source);
+            if (!topic) {
+                nanu.addLog("❌ Введите тему для изучения", "#ff8888");
+                return;
+            }
+            await nanu.learnTopic(topic);
         };
         
         document.getElementById('clearMemoryBtn').onclick = () => nanu.clearMemory();
@@ -708,30 +584,16 @@
         window.askQuestion = () => {
             const input = document.getElementById('userQuestion');
             const question = input.value.trim();
-            if(!question) return;
+            if (!question) return;
             
-            const messagesDiv = document.getElementById('messages');
-            messagesDiv.innerHTML += `<div class="message user-message">${escapeHtml(question)}</div>`;
+            nanu.addUserMessage(question);
             input.value = "";
             
             const answer = nanu.answer(question);
-            setTimeout(() => {
-                messagesDiv.innerHTML += `<div class="message bot-message">${escapeHtml(answer)}</div>`;
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 100);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            setTimeout(() => nanu.addBotMessage(answer), 100);
         };
         
         document.getElementById('askBtn').onclick = () => askQuestion();
-        
-        function escapeHtml(str) {
-            return str.replace(/[&<>]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                return m;
-            }).replace(/\n/g, '<br>');
-        }
     })();
 </script>
 </body>
