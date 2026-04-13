@@ -3,491 +3,736 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nanu — реальные фото + генерация видео</title>
+    <title>Nanu — чат-бот, обучающийся на текстах из интернета</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: radial-gradient(circle at 20% 30%, #0a0f1a, #03060c);
+            background: linear-gradient(135deg, #0a0f1a, #0c1222);
             font-family: 'Segoe UI', system-ui, monospace;
+            min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1500px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 30px; }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
         h1 {
             font-size: 3rem;
-            background: linear-gradient(135deg, #ff6a6a, #6a9eff, #6aff9e);
+            background: linear-gradient(135deg, #6ee7ff, #3b82f6, #a855f7);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
         }
+
+        .sub {
+            color: #8a9bbb;
+            font-size: 0.85rem;
+        }
+
         .control-panel {
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.5);
             backdrop-filter: blur(12px);
-            border-radius: 32px;
+            border-radius: 28px;
             padding: 20px;
             margin-bottom: 25px;
+            border: 1px solid #2a3a60;
         }
+
         .flex-row {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
-        input {
-            flex: 1;
-            background: #0b1020;
-            border: 2px solid #2a3f6e;
+
+        input, select {
+            background: #0e1625;
+            border: 2px solid #2a3a60;
             padding: 12px 20px;
             border-radius: 60px;
             color: white;
-            font-size: 1rem;
+            font-size: 0.95rem;
+            font-family: monospace;
         }
+
+        input {
+            flex: 2;
+        }
+
+        select {
+            flex: 1;
+            min-width: 150px;
+        }
+
         button {
-            background: #1f3a6b;
+            background: linear-gradient(135deg, #1f3a6b, #0f1a2e);
             border: none;
-            padding: 10px 24px;
+            padding: 12px 28px;
             border-radius: 60px;
             color: white;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
         }
-        button.primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
-        button.success { background: linear-gradient(135deg, #10b981, #059669); }
-        button.danger { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+
+        button.primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            box-shadow: 0 0 12px #3b82f6aa;
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
-            margin: 15px 0;
+            margin-bottom: 15px;
         }
+
         .stat-card {
             background: #0f1625aa;
             border-radius: 20px;
             padding: 10px;
             text-align: center;
         }
-        .stat-number { font-size: 1.8rem; font-weight: bold; color: #7aa9ff; }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #7aa9ff;
+        }
+
         .progress {
             height: 20px;
-            background: #1a2440;
-            border-radius: 40px;
+            background: #1e293b;
+            border-radius: 30px;
             overflow: hidden;
         }
+
         .progress-fill {
             width: 0%;
             height: 100%;
             background: linear-gradient(90deg, #3b82f6, #ec489a);
             transition: width 0.2s;
         }
-        .memory-section {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .memory-card {
-            background: #050b16aa;
-            border-radius: 20px;
-            padding: 12px;
-        }
-        .image-strip {
-            display: flex;
-            gap: 6px;
-            overflow-x: auto;
-            min-height: 70px;
-        }
-        .mini-img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 12px;
-            border: 2px solid #3b82f6;
-            background: #111;
-        }
-        .video-area {
+
+        .chat-area {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
             margin-bottom: 25px;
         }
-        .video-box {
+
+        .knowledge-panel {
             flex: 1;
-            background: #00000055;
+            background: #050b16aa;
+            border-radius: 24px;
+            padding: 15px;
+        }
+
+        .knowledge-title {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            color: #bbd7ff;
+        }
+
+        .knowledge-list {
+            max-height: 250px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            color: #aac8ff;
+        }
+
+        .knowledge-item {
+            background: #0f1a2e;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 12px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .chat-panel {
+            flex: 2;
+            background: #050b16aa;
+            border-radius: 24px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages {
+            flex: 1;
+            height: 350px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
             border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-bottom-left-radius: 5px;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
             padding: 12px;
-            text-align: center;
+            border-radius: 30px;
         }
-        canvas {
-            width: 100%;
-            background: black;
-            border-radius: 16px;
-            border: 1px solid #3b82f6;
-        }
+
         .log {
             background: #020617aa;
             border-radius: 16px;
             padding: 12px;
-            height: 130px;
+            height: 100px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 0.7rem;
         }
-        .log-line { color: #86efac; border-left: 2px solid #3b82f6; padding-left: 8px; margin: 4px 0; }
+
+        .log-line {
+            color: #86efac;
+            border-left: 2px solid #3b82f6;
+            padding-left: 8px;
+            margin: 4px 0;
+        }
+
         @media (max-width: 800px) {
-            .memory-section { grid-template-columns: 1fr; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
+            .chat-area { flex-direction: column; }
             h1 { font-size: 2rem; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="header"><h1>🧠 NANU</h1><div style="font-size:0.7rem;">реальные фото · генерация видео 5 сек</div></div>
+    <div class="header">
+        <h1>🧠 NANU</h1>
+        <div class="sub">чат-бот, который учится на реальных текстах из интернета</div>
+    </div>
+
     <div class="control-panel">
         <div class="flex-row">
-            <input type="text" id="prompt" value="kitten yawning" placeholder="например: kitten, sunset, cyberpunk, panda">
-            <button id="searchBtn" class="primary">🌐 ПОИСК РЕАЛЬНЫХ ФОТО</button>
-            <button id="generateBtn" class="success">🎬 ОБУЧИТЬ + ВИДЕО 5 сек</button>
-            <button id="stopBtn" class="danger">⏹️ СТОП</button>
+            <input type="text" id="searchTopic" placeholder="Тема для обучения (например: программирование, психология, космос)" value="искусственный интеллект">
+            <select id="searchSource">
+                <option value="ddg">🌐 DuckDuckGo (новости/статьи)</option>
+                <option value="wiki">📚 Википедия (энциклопедические знания)</option>
+            </select>
+            <button id="learnBtn" class="primary">📖 ОБУЧИТЬ ИЗ ИНТЕРНЕТА</button>
+            <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
         </div>
         <div class="stats">
-            <div class="stat-card"><div>📸 РЕАЛЬНЫХ ФОТО</div><div class="stat-number" id="realCount">0</div></div>
-            <div class="stat-card"><div>🎞️ ПАМЯТЬ ИИ</div><div class="stat-number" id="pastCount">0</div></div>
-            <div class="stat-card"><div>📉 LOSS</div><div class="stat-number" id="lossVal">—</div></div>
-            <div class="stat-card"><div>⚡ ЭПОХА</div><div class="stat-number" id="epochVal">0</div></div>
+            <div class="stat-card"><div>📚 ФРАЗ В ПАМЯТИ</div><div class="stat-number" id="memoryCount">0</div></div>
+            <div class="stat-card"><div>🎓 ИСТОЧНИКОВ</div><div class="stat-number" id="sourcesCount">0</div></div>
+            <div class="stat-card"><div>🧠 ВЕСОВ НЕЙРОСЕТИ</div><div class="stat-number" id="weightsSize">0</div></div>
         </div>
         <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
-    <div class="memory-section">
-        <div class="memory-card"><div>📚 РЕАЛЬНЫЕ ФОТО (то, на чём учится)</div><div id="realStrip" class="image-strip"></div></div>
-        <div class="memory-card"><div>🤖 ПРОШЛЫЕ КАДРЫ (память ИИ)</div><div id="pastStrip" class="image-strip"></div></div>
-        <div class="memory-card"><div>🎯 ТЕКУЩИЙ КАДР</div><div id="currentStrip" class="image-strip"><canvas id="miniCanvas" width="60" height="60" style="width:60px;height:60px;border-radius:12px;"></canvas></div></div>
+    <div class="chat-area">
+        <div class="knowledge-panel">
+            <div class="knowledge-title">📚 ЗНАНИЯ NANU (выучено из интернета)</div>
+            <div class="knowledge-list" id="knowledgeList">
+                <div class="knowledge-item">Пока пусто. Нажмите "ОБУЧИТЬ ИЗ ИНТЕРНЕТА"</div>
+            </div>
+        </div>
+
+        <div class="chat-panel">
+            <div class="messages" id="messages">
+                <div class="message bot-message">👋 Привет! Я Nanu. Обучи меня по какой-нибудь теме из интернета, и я смогу отвечать на вопросы.</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="userQuestion" placeholder="Спроси меня о том, чему я научился..." onkeypress="if(event.key==='Enter') askQuestion()">
+                <button id="askBtn" class="success">💬 СПРОСИТЬ</button>
+            </div>
+        </div>
     </div>
 
-    <div class="video-area">
-        <div class="video-box"><div>🖼️ РЕАЛЬНОЕ ФОТО (пример)</div><canvas id="realVideo" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
-        <div class="video-box"><div>✨ ГЕНЕРАЦИЯ NANU (60fps, 5 сек)</div><canvas id="genVideo" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
-    </div>
     <div class="log" id="logPanel"></div>
 </div>
 
 <script>
     (function(){
-        class RealNanu {
+        // ============================================
+        // NANU - нейросеть, обучающаяся на текстах из интернета
+        // Архитектура: bag-of-words + простая нейронная сеть
+        // ============================================
+        
+        class NanuBot {
             constructor() {
-                this.realPhotos = [];
-                this.pastFrames = [];
-                this.currentVideo = [];
-                this.animFrame = null;
-                this.running = false;
-                this.imgSize = 64;
-                this.pixels = 64*64*3;
-                this.latent = 96;
-                this.initWeights();
+                this.knowledge = [];        // массив {text, embedding}
+                this.vocabulary = new Map();  // слово -> индекс
+                this.vocabSize = 0;
+                this.maxVocab = 2000;
                 
-                // DOM
-                this.realCanvas = document.getElementById('realVideo');
-                this.realCtx = this.realCanvas.getContext('2d');
-                this.genCanvas = document.getElementById('genVideo');
-                this.genCtx = this.genCanvas.getContext('2d');
-                this.miniCanvas = document.getElementById('miniCanvas');
-                this.miniCtx = this.miniCanvas.getContext('2d');
-                this.realCountSpan = document.getElementById('realCount');
-                this.pastCountSpan = document.getElementById('pastCount');
-                this.lossSpan = document.getElementById('lossVal');
-                this.epochSpan = document.getElementById('epochVal');
+                // Веса нейросети: вход (размер словаря) -> скрытый слой (128) -> выход (размер словаря)
+                this.W1 = null;   // vocabSize x hidden
+                this.b1 = null;
+                this.W2 = null;   // hidden x vocabSize
+                this.b2 = null;
+                this.hiddenSize = 128;
+                
+                this.isTraining = false;
+                
+                // DOM элементы
+                this.memoryCountSpan = document.getElementById('memoryCount');
+                this.sourcesCountSpan = document.getElementById('sourcesCount');
+                this.weightsSizeSpan = document.getElementById('weightsSize');
                 this.progressFill = document.getElementById('progressFill');
-                this.realStripDiv = document.getElementById('realStrip');
-                this.pastStripDiv = document.getElementById('pastStrip');
+                this.knowledgeDiv = document.getElementById('knowledgeList');
+                this.messagesDiv = document.getElementById('messages');
                 this.logDiv = document.getElementById('logPanel');
                 
-                this.realCanvas.width = 480; this.realCanvas.height = 270;
-                this.genCanvas.width = 480; this.genCanvas.height = 270;
-                this.addLog("🧠 NANU готова. Ищем реальные фото через Pexels API (настоящие котята и не только)");
+                this.addLog("🧠 NANU готова. Нажмите «ОБУЧИТЬ ИЗ ИНТЕРНЕТА», чтобы я выучил новую тему.");
             }
             
+            // Токенизация и нормализация
+            tokenize(text) {
+                return text.toLowerCase()
+                    .replace(/[^а-яёa-z0-9\s]/gi, ' ')
+                    .split(/\s+/)
+                    .filter(w => w.length > 2 && !['это', 'или', 'для', 'без', 'между', 'через'].includes(w));
+            }
+            
+            // Добавление слова в словарь
+            addToVocabulary(word) {
+                if(!this.vocabulary.has(word) && this.vocabSize < this.maxVocab) {
+                    this.vocabulary.set(word, this.vocabSize++);
+                    return true;
+                }
+                return false;
+            }
+            
+            // Преобразование текста в вектор (bag-of-words)
+            textToVector(text) {
+                const tokens = this.tokenize(text);
+                const vec = new Array(this.vocabSize).fill(0);
+                for(const token of tokens) {
+                    const idx = this.vocabulary.get(token);
+                    if(idx !== undefined) vec[idx] = (vec[idx] || 0) + 1;
+                }
+                // Нормализация
+                const sum = vec.reduce((a,b) => a+b, 0);
+                if(sum > 0) return vec.map(v => v / sum);
+                return vec;
+            }
+            
+            // Инициализация весов нейросети
             initWeights() {
-                this.GW1 = this.randMat(this.latent, 256);
-                this.GB1 = this.randArr(256);
-                this.GW2 = this.randMat(256, 512);
-                this.GB2 = this.randArr(512);
-                this.GW3 = this.randMat(512, this.pixels);
-                this.GB3 = this.randArr(this.pixels);
-                this.DW1 = this.randMat(this.pixels, 512);
-                this.DB1 = this.randArr(512);
-                this.DW2 = this.randMat(512, 256);
-                this.DB2 = this.randArr(256);
-                this.DW3 = this.randMat(256, 1);
-                this.DB3 = this.randArr(1);
-            }
-            
-            randMat(r,c) { let m=[]; let s=Math.sqrt(2/r); for(let i=0;i<r;i++){ m[i]=[]; for(let j=0;j<c;j++) m[i][j]=(Math.random()-0.5)*s; } return m; }
-            randArr(n) { let a=[]; for(let i=0;i<n;i++) a[i]=(Math.random()-0.5)*0.1; return a; }
-            relu(x) { return x>0?x:0; }
-            sigmoid(x) { return 1/(1+Math.exp(-x)); }
-            matVecMul(M,v) { let r=[]; for(let i=0;i<M.length;i++){ let s=0; for(let j=0;j<M[i].length;j++) s+=M[i][j]*v[j]; r[i]=s; } return r; }
-            vecAdd(a,b) { return a.map((v,i)=>v+b[i]); }
-            
-            generate(z) {
-                let h1 = this.matVecMul(this.GW1, z);
-                h1 = this.vecAdd(h1, this.GB1);
-                h1 = h1.map(x=>this.relu(x));
-                let h2 = this.matVecMul(this.GW2, h1);
-                h2 = this.vecAdd(h2, this.GB2);
-                h2 = h2.map(x=>this.relu(x));
-                let out = this.matVecMul(this.GW3, h2);
-                out = this.vecAdd(out, this.GB3);
-                return out.map(x=>Math.tanh(x));
-            }
-            
-            discriminate(img) {
-                let h1 = this.matVecMul(this.DW1, img);
-                h1 = this.vecAdd(h1, this.DB1);
-                h1 = h1.map(x=>this.relu(x));
-                let h2 = this.matVecMul(this.DW2, h1);
-                h2 = this.vecAdd(h2, this.DB2);
-                h2 = h2.map(x=>this.relu(x));
-                let out = this.matVecMul(this.DW3, h2);
-                out = this.vecAdd(out, this.DB3);
-                return this.sigmoid(out[0]);
-            }
-            
-            trainStep(realVec) {
-                let z = this.randomVec(this.latent);
-                let fake = this.generate(z);
-                let rScore = this.discriminate(realVec);
-                let fScore = this.discriminate(fake);
-                let dLoss = -Math.log(rScore+1e-8) - Math.log(1-fScore+1e-8);
-                let gLoss = -Math.log(fScore+1e-8);
-                return { loss: dLoss+gLoss, fakeImg: fake };
-            }
-            
-            randomVec(d) { let v=[]; for(let i=0;i<d;i++) v[i]=Math.random()*2-1; return v; }
-            
-            vecToImage(vec,w,h) {
-                let img=new ImageData(w,h);
-                for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
-                    let idx=(y*w+x)*3;
-                    let r=(vec[idx]+1)/2*255;
-                    let g=(vec[idx+1]+1)/2*255;
-                    let b=(vec[idx+2]+1)/2*255;
-                    let p=(y*w+x)*4;
-                    img.data[p]=r; img.data[p+1]=g; img.data[p+2]=b; img.data[p+3]=255;
-                }
-                return img;
-            }
-            
-            // === РЕАЛЬНЫЙ ПОИСК через Pexels API (рабочий, быстрый, настоящие фото) ===
-            async searchRealPhotos(query) {
-                this.addLog(`🔍 ПОИСК РЕАЛЬНЫХ ФОТО: "${query}" через Pexels...`);
-                this.realPhotos = [];
-                
-                // Pexels API (нужен ключ, но можно использовать демо-ключ с ограничениями)
-                // Для полной свободы используем публичный прокси к Pexels
-                const apiKey = "563492ad6f91700001000001b5e5b5b5b5b5b5b5b5b5b5b5b5"; // демо-ключ Pexels (работает)
-                const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=25`;
-                
-                try {
-                    const response = await fetch(url, {
-                        headers: { "Authorization": apiKey }
-                    });
-                    const data = await response.json();
-                    const photos = data.photos || [];
-                    if(photos.length === 0) throw new Error("Нет фото");
-                    
-                    this.addLog(`📸 Найдено ${photos.length} реальных фото. Загружаем...`);
-                    
-                    for(let i = 0; i < Math.min(photos.length, 24); i++) {
-                        const photoUrl = photos[i].src?.small || photos[i].src?.tiny;
-                        if(photoUrl) {
-                            const vec = await this.loadImageAsVector(photoUrl);
-                            if(vec) {
-                                this.realPhotos.push(vec);
-                                this.realCountSpan.innerText = this.realPhotos.length;
-                                this.updateRealStrip();
-                                if(this.realPhotos.length === 1) this.showRealExample(vec);
-                            }
-                        }
-                        await this.sleep(50);
+                if(this.vocabSize === 0) return;
+                this.W1 = new Array(this.vocabSize);
+                for(let i=0; i<this.vocabSize; i++) {
+                    this.W1[i] = new Array(this.hiddenSize);
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        this.W1[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.vocabSize);
                     }
-                } catch(e) {
-                    this.addLog(`⚠️ Ошибка API: ${e.message}. Пробую резервный Unsplash...`, "#ffaa66");
-                    await this.fallbackUnsplash(query);
+                }
+                this.b1 = new Array(this.hiddenSize).fill(0);
+                
+                this.W2 = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    this.W2[i] = new Array(this.vocabSize);
+                    for(let j=0; j<this.vocabSize; j++) {
+                        this.W2[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.hiddenSize);
+                    }
+                }
+                this.b2 = new Array(this.vocabSize).fill(0);
+                
+                this.weightsSizeSpan.innerText = (this.vocabSize * this.hiddenSize + this.hiddenSize * this.vocabSize).toLocaleString();
+            }
+            
+            relu(x) { return Math.max(0, x); }
+            reluDeriv(x) { return x > 0 ? 1 : 0; }
+            softmax(arr) {
+                const max = Math.max(...arr);
+                const exps = arr.map(v => Math.exp(v - max));
+                const sum = exps.reduce((a,b) => a+b, 0);
+                return exps.map(v => v / sum);
+            }
+            
+            // Прямой проход
+            forward(inputVec) {
+                // Скрытый слой
+                let hidden = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    let sum = this.b1[i];
+                    for(let j=0; j<this.vocabSize; j++) {
+                        sum += inputVec[j] * this.W1[j][i];
+                    }
+                    hidden[i] = this.relu(sum);
+                }
+                // Выходной слой
+                let output = new Array(this.vocabSize);
+                for(let i=0; i<this.vocabSize; i++) {
+                    let sum = this.b2[i];
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        sum += hidden[j] * this.W2[j][i];
+                    }
+                    output[i] = sum;
+                }
+                return { hidden, logits: output, probs: this.softmax(output) };
+            }
+            
+            // Обучение на одном примере (градиентный спуск)
+            trainStep(inputVec, targetVec, lr = 0.05) {
+                const { hidden, logits, probs } = this.forward(inputVec);
+                
+                // Градиент выходного слоя (softmax cross-entropy)
+                const dLogits = new Array(this.vocabSize);
+                for(let i=0; i<this.vocabSize; i++) {
+                    dLogits[i] = probs[i] - targetVec[i];
                 }
                 
-                if(this.realPhotos.length === 0) {
-                    this.addLog(`❌ Не удалось загрузить фото. Проверьте интернет или введите другой запрос.`, "#ff8888");
-                } else {
-                    this.addLog(`✅ ГОТОВО! ${this.realPhotos.length} настоящих фото "${query}" загружено.`);
-                }
-            }
-            
-            async fallbackUnsplash(query) {
-                for(let i=0;i<16;i++) {
-                    const url = `https://source.unsplash.com/featured/300x300?${encodeURIComponent(query)}&sig=${i}`;
-                    const vec = await this.loadImageAsVector(url);
-                    if(vec) {
-                        this.realPhotos.push(vec);
-                        this.realCountSpan.innerText = this.realPhotos.length;
-                        this.updateRealStrip();
-                        if(this.realPhotos.length === 1) this.showRealExample(vec);
+                // Градиент для W2 и b2
+                const dW2 = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    dW2[i] = new Array(this.vocabSize);
+                    for(let j=0; j<this.vocabSize; j++) {
+                        dW2[i][j] = dLogits[j] * hidden[i];
                     }
-                    await this.sleep(40);
                 }
+                const db2 = dLogits.slice();
+                
+                // Градиент скрытого слоя
+                const dHidden = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    let sum = 0;
+                    for(let j=0; j<this.vocabSize; j++) {
+                        sum += dLogits[j] * this.W2[i][j];
+                    }
+                    dHidden[i] = sum * this.reluDeriv(hidden[i]);
+                }
+                
+                // Градиент для W1 и b1
+                const dW1 = new Array(this.vocabSize);
+                for(let i=0; i<this.vocabSize; i++) {
+                    dW1[i] = new Array(this.hiddenSize);
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        dW1[i][j] = dHidden[j] * inputVec[i];
+                    }
+                }
+                const db1 = dHidden.slice();
+                
+                // Обновление весов
+                for(let i=0; i<this.hiddenSize; i++) {
+                    for(let j=0; j<this.vocabSize; j++) {
+                        this.W2[i][j] -= lr * dW2[i][j];
+                    }
+                }
+                for(let j=0; j<this.vocabSize; j++) this.b2[j] -= lr * db2[j];
+                
+                for(let i=0; i<this.vocabSize; i++) {
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        this.W1[i][j] -= lr * dW1[i][j];
+                    }
+                }
+                for(let j=0; j<this.hiddenSize; j++) this.b1[j] -= lr * db1[j];
+                
+                // Вычисляем loss
+                let loss = 0;
+                for(let i=0; i<this.vocabSize; i++) {
+                    loss -= targetVec[i] * Math.log(probs[i] + 1e-8);
+                }
+                return loss;
             }
             
-            async loadImageAsVector(url) {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = "Anonymous";
-                    const timeout = setTimeout(() => resolve(null), 3000);
-                    img.onload = () => {
-                        clearTimeout(timeout);
-                        const canvas = document.createElement('canvas');
-                        canvas.width = this.imgSize;
-                        canvas.height = this.imgSize;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, this.imgSize, this.imgSize);
-                        const data = ctx.getImageData(0, 0, this.imgSize, this.imgSize);
-                        const vec = new Array(this.pixels);
-                        for(let y=0; y<this.imgSize; y++) {
-                            for(let x=0; x<this.imgSize; x++) {
-                                const idx = (y*this.imgSize + x)*4;
-                                const r = data.data[idx]/255;
-                                const g = data.data[idx+1]/255;
-                                const b = data.data[idx+2]/255;
-                                const p = (y*this.imgSize + x)*3;
-                                vec[p] = r*2-1;
-                                vec[p+1] = g*2-1;
-                                vec[p+2] = b*2-1;
-                            }
-                        }
-                        resolve(vec);
-                    };
-                    img.onerror = () => { clearTimeout(timeout); resolve(null); };
-                    img.src = url;
+            // Добавление текста в память и обучение
+            async learnText(text, source) {
+                const tokens = this.tokenize(text);
+                if(tokens.length < 5) return false;
+                
+                // Добавляем новые слова в словарь
+                let newWords = 0;
+                for(const token of tokens) {
+                    if(this.addToVocabulary(token)) newWords++;
+                }
+                
+                // Если появились новые слова — переинициализируем веса
+                if(newWords > 0) {
+                    this.initWeights();
+                    this.addLog(`📚 Словарь пополнен: ${this.vocabSize} слов`, "#ffaa66");
+                }
+                
+                // Преобразуем текст в вектор
+                const inputVec = this.textToVector(text);
+                
+                // Целевой вектор — предсказание следующего слова (упрощённо: тот же вектор)
+                // Для реального обучения нужны пары, но для демо используем autoencoding
+                const targetVec = inputVec.slice();
+                
+                // Обучаем нейросеть
+                let totalLoss = 0;
+                for(let epoch = 0; epoch < 15; epoch++) {
+                    const loss = this.trainStep(inputVec, targetVec, 0.03);
+                    totalLoss += loss;
+                }
+                
+                // Сохраняем в память
+                this.knowledge.push({
+                    text: text.slice(0, 200),
+                    source: source,
+                    embedding: inputVec
                 });
+                
+                this.memoryCountSpan.innerText = this.knowledge.length;
+                this.updateKnowledgeList();
+                
+                this.addLog(`✅ Выучено: "${text.slice(0, 80)}..." (loss: ${(totalLoss/15).toFixed(4)})`, "#a0ffc0");
+                return true;
             }
             
-            async trainAndGenerate() {
-                if(this.realPhotos.length === 0) {
-                    this.addLog("❌ Сначала нажмите ПОИСК РЕАЛЬНЫХ ФОТО");
+            // Генерация ответа на вопрос
+            answer(question) {
+                if(this.vocabSize === 0 || this.knowledge.length === 0) {
+                    return "Я ещё ничего не выучил. Нажми «ОБУЧИТЬ ИЗ ИНТЕРНЕТА», чтобы я научился новой теме!";
+                }
+                
+                const questionVec = this.textToVector(question);
+                const { probs } = this.forward(questionVec);
+                
+                // Находим наиболее вероятные слова
+                const topIndices = [];
+                for(let i=0; i<Math.min(10, this.vocabSize); i++) {
+                    let maxIdx = 0;
+                    for(let j=1; j<this.vocabSize; j++) {
+                        if(probs[j] > probs[maxIdx] && !topIndices.includes(j)) maxIdx = j;
+                    }
+                    topIndices.push(maxIdx);
+                }
+                
+                const topWords = topIndices.map(idx => {
+                    for(let [word, wordIdx] of this.vocabulary) {
+                        if(wordIdx === idx) return word;
+                    }
+                    return '';
+                }).filter(w => w);
+                
+                // Ищем самый релевантный фрагмент знаний
+                let bestMatch = null;
+                let bestScore = 0;
+                for(const item of this.knowledge) {
+                    let score = 0;
+                    for(const word of topWords.slice(0,5)) {
+                        if(item.text.toLowerCase().includes(word)) score++;
+                    }
+                    if(score > bestScore) {
+                        bestScore = score;
+                        bestMatch = item;
+                    }
+                }
+                
+                if(bestMatch && bestScore > 0) {
+                    return `📖 По моим знаниям: ${bestMatch.text}\n\n(источник: ${bestMatch.source})`;
+                } else if(topWords.length > 0) {
+                    return `🧠 Ассоциирую ваш вопрос с: ${topWords.slice(0,5).join(', ')}...\n\nНо для точного ответа мне нужно больше текстов по этой теме.`;
+                } else {
+                    return "Я не совсем понял вопрос. Попробуйте обучить меня на большем количестве текстов по этой теме!";
+                }
+            }
+            
+            updateKnowledgeList() {
+                this.knowledgeDiv.innerHTML = "";
+                if(this.knowledge.length === 0) {
+                    this.knowledgeDiv.innerHTML = '<div class="knowledge-item">Пока пусто. Нажмите "ОБУЧИТЬ ИЗ ИНТЕРНЕТА"</div>';
                     return;
                 }
-                this.running = true;
-                this.addLog(`🚀 ОБУЧЕНИЕ на ${this.realPhotos.length} реальных фото + ${this.pastFrames.length} прошлых кадрах`);
-                const epochs = 40;
-                for(let ep=0; ep<epochs && this.running; ep++) {
-                    let totalLoss = 0;
-                    const allData = [...this.realPhotos];
-                    if(this.pastFrames.length > 0) allData.push(...this.pastFrames.slice(-50));
-                    for(const img of allData) {
-                        const step = this.trainStep(img);
-                        totalLoss += step.loss;
-                    }
-                    const avgLoss = totalLoss / allData.length;
-                    this.lossSpan.innerText = avgLoss.toFixed(5);
-                    this.epochSpan.innerText = ep+1;
-                    const percent = ((ep+1)/epochs)*100;
-                    this.progressFill.style.width = percent+"%";
-                    if(ep % 5 === 0) this.addLog(`📊 эпоха ${ep+1}/${epochs} loss=${avgLoss.toFixed(4)}`);
-                    await this.sleep(35);
-                }
-                this.addLog(`🎬 ГЕНЕРАЦИЯ 300 кадров (5 секунд, 60fps)...`);
-                this.currentVideo = [];
-                for(let i=0; i<300; i++) {
-                    const frame = this.generate(this.randomVec(this.latent));
-                    this.currentVideo.push(frame);
-                    if(i % 40 === 0) {
-                        this.showOnGenCanvas(frame);
-                        this.updateMiniPreview(frame);
-                        this.addPastFrame(frame);
-                        await this.sleep(10);
-                    }
-                }
-                this.pastCountSpan.innerText = this.pastFrames.length;
-                this.addLog(`✅ ВИДЕО ГОТОВО! Запуск воспроизведения.`);
-                this.startPlayback();
-            }
-            
-            startPlayback() {
-                if(this.animFrame) cancelAnimationFrame(this.animFrame);
-                let idx = 0, last = performance.now(), interval = 1000/60;
-                const play = (now) => {
-                    if(!this.running && this.currentVideo.length===0) return;
-                    if(now - last >= interval) {
-                        if(idx >= this.currentVideo.length) idx = 0;
-                        this.showOnGenCanvas(this.currentVideo[idx]);
-                        this.updateMiniPreview(this.currentVideo[idx]);
-                        idx++; last = now;
-                    }
-                    this.animFrame = requestAnimationFrame(play);
-                };
-                this.animFrame = requestAnimationFrame(play);
-            }
-            
-            showOnGenCanvas(vec) {
-                const imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
-                const off = document.createElement('canvas');
-                off.width = this.imgSize; off.height = this.imgSize;
-                off.getContext('2d').putImageData(imgData, 0, 0);
-                this.genCtx.drawImage(off, 0, 0, this.genCanvas.width, this.genCanvas.height);
-            }
-            
-            showRealExample(vec) {
-                const imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
-                const off = document.createElement('canvas');
-                off.width = this.imgSize; off.height = this.imgSize;
-                off.getContext('2d').putImageData(imgData, 0, 0);
-                this.realCtx.drawImage(off, 0, 0, this.realCanvas.width, this.realCanvas.height);
-            }
-            
-            updateMiniPreview(vec) {
-                const imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
-                this.miniCtx.putImageData(imgData, 0, 0);
-            }
-            
-            addPastFrame(vec) {
-                this.pastFrames.push(vec);
-                if(this.pastFrames.length > 200) this.pastFrames.shift();
-                const imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
-                const c = document.createElement('canvas');
-                c.width = 60; c.height = 60;
-                c.getContext('2d').putImageData(imgData, 0, 0);
-                const img = document.createElement('img');
-                img.src = c.toDataURL();
-                img.className = "mini-img";
-                this.pastStripDiv.prepend(img);
-                while(this.pastStripDiv.children.length > 20) this.pastStripDiv.removeChild(this.pastStripDiv.lastChild);
-            }
-            
-            updateRealStrip() {
-                this.realStripDiv.innerHTML = "";
-                for(let i=0; i<Math.min(this.realPhotos.length, 20); i++) {
-                    const imgData = this.vecToImage(this.realPhotos[i], this.imgSize, this.imgSize);
-                    const c = document.createElement('canvas');
-                    c.width = 60; c.height = 60;
-                    c.getContext('2d').putImageData(imgData, 0, 0);
-                    const img = document.createElement('img');
-                    img.src = c.toDataURL();
-                    img.className = "mini-img";
-                    this.realStripDiv.appendChild(img);
+                for(const item of this.knowledge.slice(-12).reverse()) {
+                    const div = document.createElement('div');
+                    div.className = 'knowledge-item';
+                    div.innerHTML = `<strong>📘 ${item.source}</strong><br>${item.text.slice(0, 100)}...`;
+                    this.knowledgeDiv.appendChild(div);
                 }
             }
             
-            stop() { this.running = false; if(this.animFrame) cancelAnimationFrame(this.animFrame); this.addLog("⏹️ Остановлено."); }
-            addLog(msg, col="#a0ffc0") { const d=document.createElement('div'); d.className="log-line"; d.style.color=col; d.innerText=`[${new Date().toLocaleTimeString()}] ${msg}`; this.logDiv.appendChild(d); d.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
-            sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+            // === ПОИСК ТЕКСТОВ ИЗ ИНТЕРНЕТА ===
+            async searchAndLearn(topic, source) {
+                this.addLog(`🔍 Поиск текстов по теме "${topic}" в ${source === 'wiki' ? 'Википедии' : 'DuckDuckGo'}...`);
+                this.isTraining = true;
+                
+                let texts = [];
+                this.progressFill.style.width = "10%";
+                
+                if(source === 'wiki') {
+                    texts = await this.fetchWikipedia(topic);
+                } else {
+                    texts = await this.fetchDuckDuckGo(topic);
+                }
+                
+                if(texts.length === 0) {
+                    this.addLog(`⚠️ Не найдено текстов по "${topic}". Попробуйте другую тему.`, "#ffaa66");
+                    this.isTraining = false;
+                    return;
+                }
+                
+                this.sourcesCountSpan.innerText = texts.length;
+                this.addLog(`📖 Найдено ${texts.length} текстов. Начинаю обучение...`);
+                
+                let learned = 0;
+                for(let i=0; i<texts.length; i++) {
+                    await this.learnText(texts[i], source === 'wiki' ? `Википедия: ${topic}` : `DuckDuckGo: ${topic}`);
+                    learned++;
+                    const percent = 10 + (i / texts.length) * 90;
+                    this.progressFill.style.width = percent + "%";
+                    await this.sleep(50);
+                }
+                
+                this.addLog(`✅ Обучение завершено! Выучено ${learned} текстов по теме "${topic}". Теперь можете задавать вопросы.`, "#0f0");
+                this.isTraining = false;
+                this.progressFill.style.width = "100%";
+                setTimeout(() => this.progressFill.style.width = "0%", 1500);
+            }
+            
+            async fetchWikipedia(topic) {
+                try {
+                    const url = `https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if(data.extract) {
+                        return [data.extract];
+                    }
+                    // Поиск по категории
+                    const searchUrl = `https://ru.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*`;
+                    const searchRes = await fetch(searchUrl);
+                    const searchData = await searchRes.json();
+                    const pages = searchData.query?.search || [];
+                    const texts = [];
+                    for(const page of pages.slice(0, 5)) {
+                        const pageUrl = `https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page.title)}`;
+                        const pageRes = await fetch(pageUrl);
+                        const pageData = await pageRes.json();
+                        if(pageData.extract) texts.push(pageData.extract);
+                        await this.sleep(100);
+                    }
+                    return texts;
+                } catch(e) {
+                    this.addLog(`Ошибка Википедии: ${e.message}`, "#ff8888");
+                    return [];
+                }
+            }
+            
+            async fetchDuckDuckGo(topic) {
+                try {
+                    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(topic)}&format=json&no_html=1&skip_disambig=1`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    const texts = [];
+                    
+                    if(data.AbstractText) texts.push(data.AbstractText);
+                    if(data.Definition) texts.push(data.Definition);
+                    if(data.RelatedTopics) {
+                        for(const item of data.RelatedTopics.slice(0, 8)) {
+                            if(item.Text) texts.push(item.Text);
+                            if(item.Topics) {
+                                for(const sub of item.Topics) {
+                                    if(sub.Text) texts.push(sub.Text);
+                                }
+                            }
+                        }
+                    }
+                    return texts.filter(t => t.length > 50).slice(0, 15);
+                } catch(e) {
+                    this.addLog(`Ошибка DuckDuckGo: ${e.message}`, "#ff8888");
+                    return [];
+                }
+            }
+            
+            clearMemory() {
+                this.knowledge = [];
+                this.vocabulary.clear();
+                this.vocabSize = 0;
+                this.initWeights();
+                this.memoryCountSpan.innerText = "0";
+                this.sourcesCountSpan.innerText = "0";
+                this.updateKnowledgeList();
+                this.addLog("🗑️ Память очищена. Нейросеть готова к новому обучению.");
+            }
+            
+            addLog(msg, color = "#86efac") {
+                const entry = document.createElement('div');
+                entry.className = 'log-line';
+                entry.style.color = color;
+                entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                this.logDiv.appendChild(entry);
+                entry.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+            
+            sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         }
         
-        const nanu = new RealNanu();
-        window.nanu = nanu;
-        document.getElementById('searchBtn').onclick = async () => { const p=document.getElementById('prompt').value; if(p.trim()) await nanu.searchRealPhotos(p); };
-        document.getElementById('generateBtn').onclick = async () => { await nanu.trainAndGenerate(); };
-        document.getElementById('stopBtn').onclick = () => nanu.stop();
+        const nanu = new NanuBot();
+        
+        document.getElementById('learnBtn').onclick = async () => {
+            const topic = document.getElementById('searchTopic').value.trim();
+            const source = document.getElementById('searchSource').value;
+            if(!topic) { nanu.addLog("❌ Введите тему для обучения"); return; }
+            await nanu.searchAndLearn(topic, source);
+        };
+        
+        document.getElementById('clearMemoryBtn').onclick = () => nanu.clearMemory();
+        
+        window.askQuestion = () => {
+            const input = document.getElementById('userQuestion');
+            const question = input.value.trim();
+            if(!question) return;
+            
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML += `<div class="message user-message">${escapeHtml(question)}</div>`;
+            input.value = "";
+            
+            const answer = nanu.answer(question);
+            setTimeout(() => {
+                messagesDiv.innerHTML += `<div class="message bot-message">${escapeHtml(answer)}</div>`;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }, 100);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        };
+        
+        document.getElementById('askBtn').onclick = () => askQuestion();
+        
+        function escapeHtml(str) {
+            return str.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            }).replace(/\n/g, '<br>');
+        }
     })();
 </script>
 </body>
-    </html>
+</html>
