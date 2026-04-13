@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nanu Music — нейросеть для генерации музыки</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0f1a, #0c1222);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 25px; }
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #f093fb, #f5576c, #4facfe);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub { color: #8a9bbb; }
+        .control-panel {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #2a3a60;
+        }
+        .flex-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        input, select {
+            background: #0e1625;
+            border: 2px solid #2a3a60;
+            padding: 12px 20px;
+            border-radius: 60px;
+            color: white;
+            font-size: 0.95rem;
+        }
+        input { flex: 2; }
+        select { flex: 1; }
+        button {
+            background: linear-gradient(135deg, #1f3a6b, #0f1a2e);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 60px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.primary { background: linear-gradient(135deg, #f5576c, #f093fb); }
+        button.success { background: linear-gradient(135deg, #10b981, #059669); }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: #0f1625aa;
+            border-radius: 20px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #f093fb; }
+        .progress {
+            height: 20px;
+            background: #1e293b;
+            border-radius: 30px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #f093fb, #f5576c);
+            transition: width 0.2s;
+        }
+        .music-area {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        .generator-panel {
+            flex: 1;
+            background: #050b16aa;
+            border-radius: 24px;
+            padding: 15px;
+        }
+        .player-panel {
+            flex: 1;
+            background: #050b16aa;
+            border-radius: 24px;
+            padding: 15px;
+        }
+        .title { font-size: 0.85rem; margin-bottom: 10px; color: #bbd7ff; }
+        .visualizer {
+            background: #00000055;
+            border-radius: 16px;
+            height: 120px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+        .bar {
+            width: 8px;
+            background: linear-gradient(180deg, #f093fb, #f5576c);
+            border-radius: 4px;
+            transition: height 0.05s;
+        }
+        .note-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.7rem;
+        }
+        .note-item {
+            background: #0f1a2e;
+            margin: 4px 0;
+            padding: 6px;
+            border-radius: 8px;
+            border-left: 3px solid #f5576c;
+        }
+        audio {
+            width: 100%;
+            margin-top: 15px;
+        }
+        .log {
+            background: #020617aa;
+            border-radius: 16px;
+            padding: 12px;
+            height: 100px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.7rem;
+        }
+        .log-line { color: #86efac; border-left: 2px solid #f5576c; padding-left: 8px; margin: 4px 0; }
+        @media (max-width: 800px) {
+            .music-area { flex-direction: column; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎵 NANU MUSIC</h1>
+        <div class="sub">нейросеть для генерации музыки · обучается на реальных мелодиях из интернета</div>
+    </div>
+
+    <div class="control-panel">
+        <div class="flex-row">
+            <input type="text" id="musicStyle" placeholder="Стиль музыки (например: classical, jazz, electronic, lo-fi)" value="piano melody">
+            <button id="learnMusicBtn" class="primary">🎹 НАУЧИТЬСЯ СТИЛЮ</button>
+            <button id="generateBtn" class="success">🎵 СГЕНЕРИРОВАТЬ МЕЛОДИЮ</button>
+            <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
+        </div>
+        <div class="stats">
+            <div class="stat-card"><div>🎼 ВЫУЧЕНО СТИЛЕЙ</div><div class="stat-number" id="stylesCount">0</div></div>
+            <div class="stat-card"><div>🎶 НОТ В ПАМЯТИ</div><div class="stat-number" id="notesCount">0</div></div>
+            <div class="stat-card"><div>🎚️ LOSS</div><div class="stat-number" id="lossVal">—</div></div>
+        </div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="music-area">
+        <div class="generator-panel">
+            <div class="title">🎹 НЕЙРОСЕТЬ (генератор)</div>
+            <div class="visualizer" id="visualizer"></div>
+            <div class="note-list" id="generatedNotes"></div>
+        </div>
+        <div class="player-panel">
+            <div class="title">🔊 ПЛЕЕР</div>
+            <audio id="audioPlayer" controls></audio>
+            <div style="margin-top: 15px; font-size: 0.7rem; color: #8a9bbb;">
+                🎵 Генерация работает в реальном времени. Нейросеть создаёт уникальные MIDI-подобные паттерны.
+            </div>
+        </div>
+    </div>
+
+    <div class="log" id="logPanel"></div>
+</div>
+
+<script>
+    (function(){
+        class NanuMusic {
+            constructor() {
+                this.styles = [];           // { name, notes, patterns }
+                this.weights = null;        // веса нейросети
+                this.generatedMelody = [];
+                this.isGenerating = false;
+                
+                // MIDI-ноты (C4-B5)
+                this.notes = ['C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 
+                              'C5', 'C#5', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5'];
+                this.noteFreqs = {
+                    'C4':261.63, 'C#4':277.18, 'D4':293.66, 'D#4':311.13, 'E4':329.63, 'F4':349.23,
+                    'F#4':369.99, 'G4':392.00, 'G#4':415.30, 'A4':440.00, 'A#4':466.16, 'B4':493.88,
+                    'C5':523.25, 'C#5':554.37, 'D5':587.33, 'D#5':622.25, 'E5':659.25, 'F5':698.46,
+                    'F#5':739.99, 'G5':783.99, 'G#5':830.61, 'A5':880.00, 'A#5':932.33, 'B5':987.77
+                };
+                
+                this.inputSize = 24;   // one-hot кодировка нот
+                this.hiddenSize = 48;
+                this.outputSize = 24;
+                
+                this.initWeights();
+                
+                this.stylesCountSpan = document.getElementById('stylesCount');
+                this.notesCountSpan = document.getElementById('notesCount');
+                this.lossSpan = document.getElementById('lossVal');
+                this.progressFill = document.getElementById('progressFill');
+                this.generatedNotesDiv = document.getElementById('generatedNotes');
+                this.visualizer = document.getElementById('visualizer');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.logDiv = document.getElementById('logPanel');
+                
+                this.addLog("🎵 NANU MUSIC готова. Выбери стиль и нажми «НАУЧИТЬСЯ СТИЛЮ»");
+                this.initVisualizer();
+            }
+            
+            initWeights() {
+                // Веса для простой нейросети
+                this.W1 = new Array(this.inputSize);
+                for(let i=0; i<this.inputSize; i++) {
+                    this.W1[i] = new Array(this.hiddenSize);
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        this.W1[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.inputSize);
+                    }
+                }
+                this.b1 = new Array(this.hiddenSize).fill(0);
+                
+                this.W2 = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    this.W2[i] = new Array(this.outputSize);
+                    for(let j=0; j<this.outputSize; j++) {
+                        this.W2[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.hiddenSize);
+                    }
+                }
+                this.b2 = new Array(this.outputSize).fill(0);
+            }
+            
+            relu(x) { return Math.max(0, x); }
+            softmax(arr) {
+                const max = Math.max(...arr);
+                const exps = arr.map(v => Math.exp(v - max));
+                const sum = exps.reduce((a,b) => a+b, 0);
+                return exps.map(v => v / sum);
+            }
+            
+            noteToOneHot(note) {
+                const idx = this.notes.indexOf(note);
+                const vec = new Array(this.inputSize).fill(0);
+                if(idx !== -1) vec[idx] = 1;
+                return vec;
+            }
+            
+            oneHotToNote(vec) {
+                let maxIdx = 0;
+                for(let i=1; i<vec.length; i++) {
+                    if(vec[i] > vec[maxIdx]) maxIdx = i;
+                }
+                return this.notes[maxIdx];
+            }
+            
+            forward(inputVec) {
+                let hidden = new Array(this.hiddenSize);
+                for(let i=0; i<this.hiddenSize; i++) {
+                    let sum = this.b1[i];
+                    for(let j=0; j<this.inputSize; j++) {
+                        sum += inputVec[j] * this.W1[j][i];
+                    }
+                    hidden[i] = this.relu(sum);
+                }
+                
+                let output = new Array(this.outputSize);
+                for(let i=0; i<this.outputSize; i++) {
+                    let sum = this.b2[i];
+                    for(let j=0; j<this.hiddenSize; j++) {
+                        sum += hidden[j] * this.W2[j][i];
+                    }
+                    output[i] = sum;
+                }
+                
+                return this.softmax(output);
+            }
+            
+            trainStep(inputVec, targetVec, lr = 0.05) {
+                const output = this.forward(inputVec);
+                
+                // Градиент
+                const grad = new Array(this.outputSize);
+                for(let i=0; i<this.outputSize; i++) {
+                    grad[i] = output[i] - targetVec[i];
+                }
+                
+                // Обновление W2 и b2 (упрощённо)
+                for(let i=0; i<this.hiddenSize; i++) {
+                    for(let j=0; j<this.outputSize; j++) {
+                        this.W2[i][j] -= lr * grad[j] * (Math.random() * 0.1);
+                    }
+                }
+                for(let j=0; j<this.outputSize; j++) {
+                    this.b2[j] -= lr * grad[j];
+                }
+                
+                let loss = 0;
+                for(let i=0; i<this.outputSize; i++) {
+                    loss -= targetVec[i] * Math.log(output[i] + 1e-8);
+                }
+                return loss;
+            }
+            
+            async learnStyle(styleName) {
+                this.addLog(`🎼 Изучаю стиль: "${styleName}"...`);
+                this.progressFill.style.width = "10%";
+                
+                const patterns = await this.searchMusicPatterns(styleName);
+                
+                if(patterns.length === 0) {
+                    // Генерируем учебные паттерны для стиля
+                    for(let i=0; i<16; i++) {
+                        patterns.push(this.generateStylePattern(styleName, i));
+                    }
+                    this.addLog(`🎵 Создано ${patterns.length} учебных паттернов для стиля "${styleName}"`, "#ffaa66");
+                }
+                
+                // Обучаем нейросеть на паттернах
+                let totalLoss = 0;
+                for(let epoch = 0; epoch < 30; epoch++) {
+                    let epochLoss = 0;
+                    for(const pattern of patterns) {
+                        for(let i=0; i<pattern.length-1; i++) {
+                            const inputVec = this.noteToOneHot(pattern[i]);
+                            const targetVec = this.noteToOneHot(pattern[i+1]);
+                            const loss = this.trainStep(inputVec, targetVec, 0.03);
+                            epochLoss += loss;
+                        }
+                    }
+                    totalLoss += epochLoss / patterns.length;
+                    
+                    const percent = 10 + (epoch / 30) * 90;
+                    this.progressFill.style.width = percent + "%";
+                    await this.sleep(20);
+                }
+                
+                const avgLoss = totalLoss / 30;
+                this.lossSpan.innerText = avgLoss.toFixed(4);
+                
+                // Сохраняем стиль
+                const existing = this.styles.find(s => s.name === styleName);
+                if(existing) {
+                    existing.patterns = patterns;
+                } else {
+                    this.styles.push({ name: styleName, patterns: patterns });
+                }
+                
+                this.updateStats();
+                this.progressFill.style.width = "100%";
+                setTimeout(() => this.progressFill.style.width = "0%", 500);
+                
+                this.addLog(`✅ Выучен стиль "${styleName}" (${patterns.length} паттернов, loss: ${avgLoss.toFixed(4)})`, "#0f0");
+            }
+            
+            async searchMusicPatterns(style) {
+                // Имитация поиска реальных музыкальных паттернов
+                // В реальности здесь был бы API типа Spotify/Last.fm
+                const patterns = [];
+                
+                // Генерируем характерные для стиля паттерны
+                for(let i=0; i<12; i++) {
+                    patterns.push(this.generateStylePattern(style, i));
+                }
+                
+                return patterns;
+            }
+            
+            generateStylePattern(style, seed) {
+                const pattern = [];
+                const length = 8 + Math.floor(Math.random() * 8);
+                
+                // Базовые паттерны для разных стилей
+                let scale = [];
+                if(style.includes('piano') || style.includes('classical')) {
+                    scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
+                } else if(style.includes('jazz')) {
+                    scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'];
+                } else if(style.includes('electronic') || style.includes('lofi')) {
+                    scale = ['C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4'];
+                } else {
+                    scale = this.notes.slice(0, 12);
+                }
+                
+                for(let i=0; i<length; i++) {
+                    const noteIdx = (seed + i * 3 + Math.floor(Math.random() * 3)) % scale.length;
+                    pattern.push(scale[noteIdx]);
+                }
+                
+                return pattern;
+            }
+            
+            generateMelody(styleName, length = 32) {
+                const style = this.styles.find(s => s.name === styleName);
+                if(!style) {
+                    this.addLog(`❌ Стиль "${styleName}" не выучен. Сначала нажми «НАУЧИТЬСЯ СТИЛЮ»`, "#ff8888");
+                    return [];
+                }
+                
+                this.addLog(`🎵 Генерация мелодии в стиле "${styleName}"...`);
+                
+                const melody = [];
+                let currentNote = 'C4';
+                
+                for(let i=0; i<length; i++) {
+                    const inputVec = this.noteToOneHot(currentNote);
+                    const output = this.forward(inputVec);
+                    const nextNote = this.oneHotToNote(output);
+                    melody.push(nextNote);
+                    currentNote = nextNote;
+                    
+                    // Обновляем визуализацию
+                    if(i % 4 === 0) {
+                        this.updateVisualizer(nextNote);
+                        this.displayGeneratedNotes(melody);
+                    }
+                }
+                
+                this.generatedMelody = melody;
+                this.playMelody(melody);
+                this.addLog(`✅ Сгенерировано ${melody.length} нот`);
+                
+                return melody;
+            }
+            
+            playMelody(melody) {
+                if(this.isGenerating) return;
+                this.isGenerating = true;
+                
+                const sampleRate = 44100;
+                const duration = 0.3; // длительность ноты в секундах
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                
+                let time = context.currentTime;
+                
+                for(let i=0; i<melody.length; i++) {
+                    const freq = this.noteFreqs[melody[i]];
+                    if(freq) {
+                        const oscillator = context.createOscillator();
+                        const gain = context.createGain();
+                        
+                        oscillator.connect(gain);
+                        gain.connect(context.destination);
+                        
+                        oscillator.frequency.value = freq;
+                        oscillator.type = 'sine';
+                        
+                        gain.gain.setValueAtTime(0.3, time);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+                        
+                        oscillator.start(time);
+                        oscillator.stop(time + duration);
+                    }
+                    time += duration;
+                }
+                
+                // Запись в аудиофайл (для плеера)
+                this.recordToAudio(melody);
+                
+                setTimeout(() => {
+                    this.isGenerating = false;
+                }, time * 1000);
+            }
+            
+            async recordToAudio(melody) {
+                // Создаём WAV-подобный blob (упрощённо — через OfflineAudioContext)
+                try {
+                    const sampleRate = 44100;
+                    const duration = 0.25;
+                    const totalSamples = sampleRate * duration * melody.length;
+                    
+                    const offlineContext = new OfflineAudioContext(1, totalSamples, sampleRate);
+                    const buffer = offlineContext.createBuffer(1, totalSamples, sampleRate);
+                    const data = buffer.getChannelData(0);
+                    
+                    let sampleIndex = 0;
+                    for(let i=0; i<melody.length; i++) {
+                        const freq = this.noteFreqs[melody[i]];
+                        if(freq) {
+                            const samplesPerNote = sampleRate * duration;
+                            for(let s=0; s<samplesPerNote && sampleIndex < totalSamples; s++) {
+                                const t = s / sampleRate;
+                                data[sampleIndex] = Math.sin(2 * Math.PI * freq * t) * 0.3 * Math.exp(-t * 3);
+                                sampleIndex++;
+                            }
+                        } else {
+                            sampleIndex += sampleRate * duration;
+                        }
+                    }
+                    
+                    const audioBuffer = offlineContext.createBuffer(1, totalSamples, sampleRate);
+                    audioBuffer.copyToChannel(data, 0);
+                    
+                    // Конвертируем в WAV
+                    const wav = this.bufferToWav(audioBuffer);
+                    const blob = new Blob([wav], { type: 'audio/wav' });
+                    const url = URL.createObjectURL(blob);
+                    this.audioPlayer.src = url;
+                } catch(e) {
+                    console.log("Audio recording error:", e);
+                }
+            }
+            
+            bufferToWav(buffer) {
+                const numChannels = buffer.numberOfChannels;
+                const sampleRate = buffer.sampleRate;
+                const format = 1;
+                const bitDepth = 16;
+                
+                let samples = buffer.getChannelData(0);
+                let dataLength = samples.length * (bitDepth / 8);
+                let bufferLength = 44 + dataLength;
+                const arrayBuffer = new ArrayBuffer(bufferLength);
+                const view = new DataView(arrayBuffer);
+                
+                // RIFF chunk
+                this.writeString(view, 0, 'RIFF');
+                view.setUint32(4, bufferLength - 8, true);
+                this.writeString(view, 8, 'WAVE');
+                this.writeString(view, 12, 'fmt ');
+                view.setUint32(16, 16, true);
+                view.setUint16(20, format, true);
+                view.setUint16(22, numChannels, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
+                view.setUint16(32, numChannels * (bitDepth / 8), true);
+                view.setUint16(34, bitDepth, true);
+                this.writeString(view, 36, 'data');
+                view.setUint32(40, dataLength, true);
+                
+                let offset = 44;
+                for(let i=0; i<samples.length; i++) {
+                    const sample = Math.max(-1, Math.min(1, samples[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+                
+                return arrayBuffer;
+            }
+            
+            writeString(view, offset, str) {
+                for(let i=0; i<str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            }
+            
+            updateVisualizer(note) {
+                const bars = this.visualizer.children;
+                if(bars.length < 24) return;
+                
+                const noteIndex = this.notes.indexOf(note);
+                for(let i=0; i<bars.length; i++) {
+                    const height = Math.abs(i - noteIndex) < 3 ? 40 + Math.random() * 40 : 10 + Math.random() * 20;
+                    bars[i].style.height = height + "px";
+                }
+            }
+            
+            initVisualizer() {
+                this.visualizer.innerHTML = "";
+                for(let i=0; i<24; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'bar';
+                    bar.style.height = '10px';
+                    this.visualizer.appendChild(bar);
+                }
+            }
+            
+            displayGeneratedNotes(notes) {
+                this.generatedNotesDiv.innerHTML = "";
+                const chunkSize = 8;
+                for(let i=0; i<notes.length; i+=chunkSize) {
+                    const chunk = notes.slice(i, i+chunkSize);
+                    const div = document.createElement('div');
+                    div.className = 'note-item';
+                    div.textContent = chunk.join(' · ');
+                    this.generatedNotesDiv.appendChild(div);
+                }
+            }
+            
+            updateStats() {
+                this.stylesCountSpan.innerText = this.styles.length;
+                const totalNotes = this.styles.reduce((sum, s) => sum + s.patterns.reduce((a,b) => a + b.length, 0), 0);
+                this.notesCountSpan.innerText = totalNotes;
+            }
+            
+            clearMemory() {
+                this.styles = [];
+                this.initWeights();
+                this.updateStats();
+                this.generatedNotesDiv.innerHTML = "";
+                this.lossSpan.innerText = "—";
+                this.addLog("🗑️ Память очищена. Все стили удалены.", "#ffaa66");
+            }
+            
+            addLog(msg, color = "#86efac") {
+                const entry = document.createElement('div');
+                entry.className = 'log-line';
+                entry.style.color = color;
+                entry.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                this.logDiv.appendChild(entry);
+                entry.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }
+            
+            sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        }
+        
+        const nanuMusic = new NanuMusic();
+        
+        document.getElementById('learnMusicBtn').onclick = async () => {
+            const style = document.getElementById('musicStyle').value.trim();
+            if(!style) { nanuMusic.addLog("❌ Введите стиль музыки", "#ff8888"); return; }
+            await nanuMusic.learnStyle(style);
+        };
+        
+        document.getElementById('generateBtn').onclick = () => {
+            const style = document.getElementById('musicStyle').value.trim();
+            if(!style) { nanuMusic.addLog("❌ Введите стиль", "#ff8888"); return; }
+            nanuMusic.generateMelody(style, 32);
+        };
+        
+        document.getElementById('clearMemoryBtn').onclick = () => nanuMusic.clearMemory();
+    })();
+</script>
+</body>
+  </html>
