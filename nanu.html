@@ -3,31 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nanu — умный чат-бот с поиском в интернете</title>
+    <title>Nanu — автообучение в реальном времени</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a0f1a, #0c1222);
             font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
         }
-
-        .container {
-            max-width: 1300px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 25px; }
         h1 {
             font-size: 3rem;
             background: linear-gradient(135deg, #6ee7ff, #3b82f6, #a855f7);
@@ -35,11 +21,7 @@
             -webkit-background-clip: text;
             color: transparent;
         }
-
-        .sub {
-            color: #8a9bbb;
-        }
-
+        .sub { color: #8a9bbb; }
         .control-panel {
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(12px);
@@ -48,15 +30,14 @@
             margin-bottom: 25px;
             border: 1px solid #2a3a60;
         }
-
         .flex-row {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
-
-        input, select {
+        input {
+            flex: 2;
             background: #0e1625;
             border: 2px solid #2a3a60;
             padding: 12px 20px;
@@ -64,16 +45,6 @@
             color: white;
             font-size: 0.95rem;
         }
-
-        input {
-            flex: 2;
-        }
-
-        select {
-            flex: 1;
-            min-width: 150px;
-        }
-
         button {
             background: linear-gradient(135deg, #1f3a6b, #0f1a2e);
             border: none;
@@ -84,75 +55,61 @@
             cursor: pointer;
             transition: 0.2s;
         }
-
-        button.primary {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-        }
-
-        button.success {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
+        button.primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        button.success { background: linear-gradient(135deg, #10b981, #059669); }
+        button.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        button.active { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 0 12px #ef4444aa; }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
             margin-bottom: 15px;
         }
-
         .stat-card {
             background: #0f1625aa;
             border-radius: 20px;
             padding: 10px;
             text-align: center;
         }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #7aa9ff;
-        }
-
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #7aa9ff; }
         .progress {
             height: 20px;
             background: #1e293b;
             border-radius: 30px;
             overflow: hidden;
         }
-
         .progress-fill {
             width: 0%;
             height: 100%;
             background: linear-gradient(90deg, #3b82f6, #ec489a);
             transition: width 0.2s;
         }
-
+        .auto-badge {
+            display: inline-block;
+            background: #10b981;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
         .chat-area {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
             margin-bottom: 25px;
         }
-
         .knowledge-panel {
             flex: 1;
             background: #050b16aa;
             border-radius: 24px;
             padding: 15px;
         }
-
-        .knowledge-title {
-            font-size: 0.85rem;
-            margin-bottom: 10px;
-            color: #bbd7ff;
-        }
-
+        .knowledge-title { font-size: 0.85rem; margin-bottom: 10px; color: #bbd7ff; }
         .knowledge-list {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             font-size: 0.75rem;
         }
-
         .knowledge-item {
             background: #0f1a2e;
             margin: 8px 0;
@@ -160,12 +117,7 @@
             border-radius: 12px;
             border-left: 3px solid #3b82f6;
         }
-
-        .knowledge-topic {
-            font-weight: bold;
-            color: #6ee7ff;
-        }
-
+        .knowledge-topic { font-weight: bold; color: #6ee7ff; }
         .chat-panel {
             flex: 2;
             background: #050b16aa;
@@ -174,50 +126,48 @@
             display: flex;
             flex-direction: column;
         }
-
         .messages {
             flex: 1;
-            height: 400px;
+            height: 450px;
             overflow-y: auto;
             margin-bottom: 15px;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-
         .message {
-            max-width: 80%;
+            max-width: 85%;
             padding: 10px 15px;
             border-radius: 20px;
             font-size: 0.9rem;
             word-wrap: break-word;
+            white-space: pre-wrap;
         }
-
         .user-message {
             align-self: flex-end;
             background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border-bottom-right-radius: 5px;
         }
-
         .bot-message {
             align-self: flex-start;
             background: #1e293b;
             color: #e2e8f0;
             border-bottom-left-radius: 5px;
         }
-
+        .bot-message.learning {
+            background: #7c3aed;
+            border-left: 3px solid #f59e0b;
+        }
         .chat-input {
             display: flex;
             gap: 10px;
         }
-
         .chat-input input {
             flex: 1;
             padding: 12px;
             border-radius: 30px;
         }
-
         .log {
             background: #020617aa;
             border-radius: 16px;
@@ -227,14 +177,7 @@
             font-family: monospace;
             font-size: 0.7rem;
         }
-
-        .log-line {
-            color: #86efac;
-            border-left: 2px solid #3b82f6;
-            padding-left: 8px;
-            margin: 4px 0;
-        }
-
+        .log-line { color: #86efac; border-left: 2px solid #3b82f6; padding-left: 8px; margin: 4px 0; }
         @media (max-width: 800px) {
             .chat-area { flex-direction: column; }
             h1 { font-size: 2rem; }
@@ -245,25 +188,27 @@
 <div class="container">
     <div class="header">
         <h1>🧠 NANU</h1>
-        <div class="sub">чат-бот, который ищет ответы в интернете и учится на них</div>
+        <div class="sub">автообучение · сам ищет ответы в интернете</div>
     </div>
 
     <div class="control-panel">
         <div class="flex-row">
-            <input type="text" id="searchTopic" placeholder="Тема для изучения (например: космос, программирование, история)" value="Яндекс игры">
+            <input type="text" id="searchTopic" placeholder="Тема для изучения" value="Яндекс игры">
             <button id="learnBtn" class="primary">📖 НАУЧИТЬ ПО ТЕМЕ</button>
+            <button id="autoLearnBtn" class="warning">🤖 АВТООБУЧЕНИЕ 🔛</button>
             <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
         </div>
         <div class="stats">
             <div class="stat-card"><div>📚 ВЫУЧЕНО ТЕМ</div><div class="stat-number" id="topicsCount">0</div></div>
             <div class="stat-card"><div>📄 ФРАГМЕНТОВ</div><div class="stat-number" id="fragmentsCount">0</div></div>
+            <div class="stat-card"><div>🤖 АВТООБУЧЕНИЕ</div><div class="stat-number" id="autoStatus">ВКЛ</div></div>
         </div>
         <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
     <div class="chat-area">
         <div class="knowledge-panel">
-            <div class="knowledge-title">📚 ЗНАНИЯ NANU (выученные темы)</div>
+            <div class="knowledge-title">📚 ЗНАНИЯ NANU</div>
             <div class="knowledge-list" id="knowledgeList">
                 <div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>
             </div>
@@ -271,10 +216,10 @@
 
         <div class="chat-panel">
             <div class="messages" id="messages">
-                <div class="message bot-message">👋 Привет! Я Nanu. Выбери тему (например, "космос", "Яндекс игры", "нейросети") и нажми "НАУЧИТЬ ПО ТЕМЕ". Я найду информацию в интернете и смогу отвечать на вопросы.</div>
+                <div class="message bot-message">👋 Привет! Я Nanu. Включено <strong>автообучение</strong> — если я не знаю тему вопроса, я сам найду ответ в интернете и запомню его!</div>
             </div>
             <div class="chat-input">
-                <input type="text" id="userQuestion" placeholder="Спроси меня о выученной теме..." onkeypress="if(event.key==='Enter') askQuestion()">
+                <input type="text" id="userQuestion" placeholder="Спроси о чём угодно..." onkeypress="if(event.key==='Enter') askQuestion()">
                 <button id="askBtn" class="success">💬 СПРОСИТЬ</button>
             </div>
         </div>
@@ -285,82 +230,57 @@
 
 <script>
     (function(){
-        class NanuSmartBot {
+        class NanuAutoBot {
             constructor() {
-                this.knowledge = [];      // {topic, fragments: [{text, source}]}
-                this.currentTopic = null;
+                this.knowledge = [];
+                this.autoLearnEnabled = true;  // автообучение включено по умолчанию
                 
                 this.topicsCountSpan = document.getElementById('topicsCount');
                 this.fragmentsCountSpan = document.getElementById('fragmentsCount');
+                this.autoStatusSpan = document.getElementById('autoStatus');
                 this.progressFill = document.getElementById('progressFill');
                 this.knowledgeDiv = document.getElementById('knowledgeList');
                 this.messagesDiv = document.getElementById('messages');
                 this.logDiv = document.getElementById('logPanel');
+                this.autoLearnBtn = document.getElementById('autoLearnBtn');
                 
-                this.addLog("🧠 NANU готова. Введите тему и нажмите «НАУЧИТЬ ПО ТЕМЕ»");
+                this.addLog("🧠 NANU готова. Автообучение ВКЛЮЧЕНО — бот сам будет искать ответы.");
             }
             
-            // Поиск в интернете через DuckDuckGo API
             async searchInternet(query) {
-                this.addLog(`🔍 Ищу: "${query}" в интернете...`);
-                
+                this.addLog(`🔍 Ищу: "${query}"...`);
                 try {
-                    // DuckDuckGo API
                     const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
                     const response = await fetch(url);
                     const data = await response.json();
-                    
                     const fragments = [];
                     
-                    // Основное описание
                     if (data.AbstractText && data.AbstractText.length > 50) {
-                        fragments.push({
-                            text: data.AbstractText,
-                            source: data.AbstractSource || "DuckDuckGo"
-                        });
+                        fragments.push({ text: data.AbstractText, source: data.AbstractSource || "DuckDuckGo" });
                     }
-                    
-                    // Определение
                     if (data.Definition && data.Definition.length > 30) {
-                        fragments.push({
-                            text: data.Definition,
-                            source: data.DefinitionSource || "DuckDuckGo"
-                        });
+                        fragments.push({ text: data.Definition, source: data.DefinitionSource || "DuckDuckGo" });
                     }
-                    
-                    // Связанные темы
                     if (data.RelatedTopics) {
                         for (const item of data.RelatedTopics) {
-                            if (item.Text && item.Text.length > 40) {
-                                fragments.push({
-                                    text: item.Text,
-                                    source: "Связанная тема"
-                                });
-                            }
+                            if (item.Text && item.Text.length > 40) fragments.push({ text: item.Text, source: "Связанная тема" });
                             if (item.Topics) {
                                 for (const sub of item.Topics) {
-                                    if (sub.Text && sub.Text.length > 40) {
-                                        fragments.push({
-                                            text: sub.Text,
-                                            source: "Подтема"
-                                        });
-                                    }
+                                    if (sub.Text && sub.Text.length > 40) fragments.push({ text: sub.Text, source: "Подтема" });
                                 }
                             }
                         }
                     }
                     
-                    // Если ничего не нашли — пробуем Википедию
                     if (fragments.length === 0) {
                         this.addLog(`📚 Ищу в Википедии...`);
                         const wikiFragments = await this.searchWikipedia(query);
                         fragments.push(...wikiFragments);
                     }
                     
-                    return fragments.slice(0, 12); // не больше 12 фрагментов
-                    
+                    return fragments.slice(0, 8);
                 } catch(e) {
-                    this.addLog(`Ошибка поиска: ${e.message}`, "#ff8888");
+                    this.addLog(`Ошибка: ${e.message}`, "#ff8888");
                     return [];
                 }
             }
@@ -371,9 +291,8 @@
                     const response = await fetch(url);
                     const data = await response.json();
                     const pages = data.query?.search || [];
-                    
                     const fragments = [];
-                    for (const page of pages.slice(0, 3)) {
+                    for (const page of pages.slice(0, 2)) {
                         const pageUrl = `https://ru.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=true&explaintext=true&titles=${encodeURIComponent(page.title)}&format=json&origin=*`;
                         const pageRes = await fetch(pageUrl);
                         const pageData = await pageRes.json();
@@ -382,10 +301,7 @@
                             for (const id in pagesData) {
                                 const extract = pagesData[id].extract;
                                 if (extract && extract.length > 100) {
-                                    fragments.push({
-                                        text: extract.slice(0, 800),
-                                        source: `Википедия: ${page.title}`
-                                    });
+                                    fragments.push({ text: extract.slice(0, 800), source: `Википедия: ${page.title}` });
                                 }
                             }
                         }
@@ -397,138 +313,168 @@
                 }
             }
             
-            // Обучение по теме
-            async learnTopic(topic) {
-                if (!topic.trim()) {
-                    this.addLog("❌ Введите тему", "#ff8888");
-                    return;
-                }
+            async learnTopic(topic, showMessages = true) {
+                if (!topic.trim()) return false;
                 
-                this.addLog(`📖 Начинаю изучение темы: "${topic}"`);
+                if (showMessages) this.addLog(`📖 Изучаю тему: "${topic}"`);
                 this.progressFill.style.width = "10%";
                 
                 const fragments = await this.searchInternet(topic);
                 
                 if (fragments.length === 0) {
-                    this.addLog(`⚠️ Не удалось найти информацию по теме "${topic}". Попробуйте другие ключевые слова.`, "#ffaa66");
+                    if (showMessages) this.addLog(`⚠️ Не найдено информации по "${topic}"`, "#ffaa66");
                     this.progressFill.style.width = "0%";
-                    return;
+                    return false;
                 }
                 
-                this.addLog(`📚 Найдено ${fragments.length} фрагментов информации. Сохраняю...`);
-                
-                // Обновляем или создаём тему
                 let topicEntry = this.knowledge.find(k => k.topic.toLowerCase() === topic.toLowerCase());
                 if (topicEntry) {
                     topicEntry.fragments = fragments;
                 } else {
-                    this.knowledge.push({
-                        topic: topic,
-                        fragments: fragments
-                    });
+                    this.knowledge.push({ topic: topic, fragments: fragments });
                 }
                 
-                this.currentTopic = topic;
                 this.updateStats();
                 this.updateKnowledgeList();
-                
                 this.progressFill.style.width = "100%";
-                setTimeout(() => this.progressFill.style.width = "0%", 1000);
+                setTimeout(() => this.progressFill.style.width = "0%", 500);
                 
-                this.addLog(`✅ Готово! Я выучил тему "${topic}". Теперь можешь задавать вопросы.`, "#0f0");
-                
-                // Добавляем приветственное сообщение
-                this.addBotMessage(`Я выучил тему "${topic}". Спроси меня о ней!`);
+                if (showMessages) {
+                    this.addLog(`✅ Выучил тему "${topic}" (${fragments.length} фрагментов)`, "#0f0");
+                }
+                return true;
             }
             
-            // Поиск ответа на вопрос
-            answer(question) {
-                if (this.knowledge.length === 0) {
-                    return "Я ещё ничего не выучил. Нажми «НАУЧИТЬ ПО ТЕМЕ» и введи что-нибудь (например, «космос», «Яндекс игры», «нейросети»).";
-                }
+            findBestTopic(question) {
+                if (this.knowledge.length === 0) return null;
                 
                 const lowerQuestion = question.toLowerCase();
+                const stopWords = ['это', 'этот', 'эта', 'этих', 'этом', 'эту', 'про', 'о'];
                 
-                // Определяем, о какой теме спрашивают
-                let bestTopic = null;
-                let bestScore = 0;
+                const questionWords = lowerQuestion
+                    .split(/[\s,?!.]+/)
+                    .filter(w => w.length > 2 && !stopWords.includes(w));
+                
+                const scores = [];
                 
                 for (const topicEntry of this.knowledge) {
+                    const topicLower = topicEntry.topic.toLowerCase();
                     let score = 0;
-                    const topicWords = topicEntry.topic.toLowerCase().split(/\s+/);
-                    for (const word of topicWords) {
-                        if (lowerQuestion.includes(word)) score += 3;
+                    
+                    if (lowerQuestion.includes(topicLower)) score += 100;
+                    
+                    const topicKeywords = topicLower.split(/\s+/);
+                    for (const kw of topicKeywords) {
+                        if (kw.length > 2 && lowerQuestion.includes(kw)) score += 30;
                     }
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestTopic = topicEntry;
+                    
+                    for (const fragment of topicEntry.fragments) {
+                        const fragmentLower = fragment.text.toLowerCase();
+                        for (const word of questionWords) {
+                            if (fragmentLower.includes(word)) score += 5;
+                        }
                     }
+                    
+                    if (topicLower.includes('лгбт')) {
+                        if (lowerQuestion.includes('гей') || lowerQuestion.includes('лесби') || 
+                            lowerQuestion.includes('бисек') || lowerQuestion.includes('транс')) {
+                            score += 80;
+                        }
+                    }
+                    
+                    if (topicLower.includes('космос') || topicLower.includes('гагарин')) {
+                        if (lowerQuestion.includes('полёт') || lowerQuestion.includes('полетел') ||
+                            lowerQuestion.includes('космос') || lowerQuestion.includes('гагарин')) {
+                            score += 80;
+                        }
+                    }
+                    
+                    scores.push({ topicEntry, score });
+                }
+                
+                scores.sort((a, b) => b.score - a.score);
+                
+                if (scores.length > 0 && scores[0].score > 10) {
+                    return scores[0].topicEntry;
+                }
+                return scores.length > 0 ? scores[0].topicEntry : null;
+            }
+            
+            async answerWithAutoLearn(question, showLearningMsg = true) {
+                if (this.knowledge.length === 0) {
+                    if (this.autoLearnEnabled) {
+                        if (showLearningMsg) {
+                            this.addBotMessage("📚 Я ещё ничего не знаю об этом. Сейчас научусь!", "learning");
+                        }
+                        const success = await this.learnTopic(question, false);
+                        if (success) {
+                            const answer = this.getAnswerFromTopic(question, this.findBestTopic(question));
+                            return answer;
+                        } else {
+                            return "😔 Не удалось найти информацию в интернете. Попробуйте переформулировать вопрос.";
+                        }
+                    } else {
+                        return "Я ещё ничего не выучил. Включи автообучение или нажми «НАУЧИТЬ ПО ТЕМЕ».";
+                    }
+                }
+                
+                let bestTopic = this.findBestTopic(question);
+                
+                if (!bestTopic && this.autoLearnEnabled) {
+                    if (showLearningMsg) {
+                        this.addBotMessage("🔍 Я не знаю эту тему. Сейчас найду и выучу!", "learning");
+                    }
+                    const success = await this.learnTopic(question, false);
+                    if (success) {
+                        bestTopic = this.findBestTopic(question);
+                        if (bestTopic) {
+                            return this.getAnswerFromTopic(question, bestTopic);
+                        }
+                    }
+                    return "😔 Не удалось найти информацию. Попробуйте другие слова.";
                 }
                 
                 if (!bestTopic) {
-                    bestTopic = this.knowledge[0];
+                    return "Я не знаю ответа на этот вопрос. Попробуйте выучить новую тему или включить автообучение.";
                 }
                 
-                // Ищем самый релевантный фрагмент
-                const questionWords = this.extractKeywords(lowerQuestion);
+                return this.getAnswerFromTopic(question, bestTopic);
+            }
+            
+            getAnswerFromTopic(question, topicEntry) {
+                if (!topicEntry || !topicEntry.fragments.length) {
+                    return "У меня нет информации по этому вопросу.";
+                }
+                
+                const lowerQuestion = question.toLowerCase();
+                const questionWords = lowerQuestion.split(/[\s,?!.]+/).filter(w => w.length > 3);
                 
                 let bestFragment = null;
-                let bestFragmentScore = 0;
+                let bestScore = 0;
                 
-                for (const fragment of bestTopic.fragments) {
+                for (const fragment of topicEntry.fragments) {
                     let score = 0;
                     const fragmentLower = fragment.text.toLowerCase();
                     for (const word of questionWords) {
                         if (fragmentLower.includes(word)) score++;
                     }
-                    // Длинные фрагменты с большим совпадением
-                    if (score > bestFragmentScore) {
-                        bestFragmentScore = score;
+                    if (score > bestScore) {
+                        bestScore = score;
                         bestFragment = fragment;
                     }
                 }
                 
-                if (bestFragment && bestFragmentScore > 0) {
+                if (bestFragment && bestScore > 0) {
                     return `📖 ${bestFragment.text}\n\n— ${bestFragment.source}`;
-                } else if (bestTopic.fragments.length > 0) {
-                    // Если точного совпадения нет, показываем первый фрагмент
-                    return `📖 ${bestTopic.fragments[0].text}\n\n— ${bestTopic.fragments[0].source}`;
                 } else {
-                    return "Извините, у меня нет информации по этому вопросу. Попробуйте переформулировать или выучить другую тему.";
+                    return `📖 ${topicEntry.fragments[0].text}\n\n— ${topicEntry.fragments[0].source}`;
                 }
             }
             
-            extractKeywords(text) {
-                // Убираем стоп-слова и короткие слова
-                const stopWords = ['что', 'кто', 'где', 'когда', 'как', 'почему', 'зачем', 'это', 'такой', 'этих', 'этом', 'эту', 'этот', 'про', 'без', 'для', 'по', 'и', 'в', 'на', 'с', 'о', 'у', 'а', 'но', 'или', 'же', 'бы', 'да', 'не', 'ни'];
-                const words = text.split(/[\s,?!.]+/).filter(w => w.length > 2 && !stopWords.includes(w));
-                return words;
-            }
-            
-            updateStats() {
-                this.topicsCountSpan.innerText = this.knowledge.length;
-                const totalFragments = this.knowledge.reduce((sum, t) => sum + t.fragments.length, 0);
-                this.fragmentsCountSpan.innerText = totalFragments;
-            }
-            
-            updateKnowledgeList() {
-                this.knowledgeDiv.innerHTML = "";
-                if (this.knowledge.length === 0) {
-                    this.knowledgeDiv.innerHTML = '<div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>';
-                    return;
-                }
-                
-                for (const topicEntry of this.knowledge) {
-                    const div = document.createElement('div');
-                    div.className = 'knowledge-item';
-                    div.innerHTML = `<div class="knowledge-topic">📘 ${topicEntry.topic}</div><div>${topicEntry.fragments.length} фрагментов</div>`;
-                    this.knowledgeDiv.appendChild(div);
-                }
-            }
-            
-            addBotMessage(text) {
+            addBotMessage(text, type = "normal") {
                 const msgDiv = document.getElementById('messages');
-                msgDiv.innerHTML += `<div class="message bot-message">${this.escapeHtml(text)}</div>`;
+                const className = type === "learning" ? "message bot-message learning" : "message bot-message";
+                msgDiv.innerHTML += `<div class="${className}">${this.escapeHtml(text)}</div>`;
                 msgDiv.scrollTop = msgDiv.scrollHeight;
             }
             
@@ -547,13 +493,49 @@
                 }).replace(/\n/g, '<br>');
             }
             
+            updateStats() {
+                this.topicsCountSpan.innerText = this.knowledge.length;
+                const totalFragments = this.knowledge.reduce((sum, t) => sum + t.fragments.length, 0);
+                this.fragmentsCountSpan.innerText = totalFragments;
+            }
+            
+            updateKnowledgeList() {
+                this.knowledgeDiv.innerHTML = "";
+                if (this.knowledge.length === 0) {
+                    this.knowledgeDiv.innerHTML = '<div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>';
+                    return;
+                }
+                for (const topicEntry of this.knowledge) {
+                    const div = document.createElement('div');
+                    div.className = 'knowledge-item';
+                    div.innerHTML = `<div class="knowledge-topic">📘 ${this.escapeHtml(topicEntry.topic)}</div><div>${topicEntry.fragments.length} фрагментов</div>`;
+                    this.knowledgeDiv.appendChild(div);
+                }
+            }
+            
+            toggleAutoLearn() {
+                this.autoLearnEnabled = !this.autoLearnEnabled;
+                if (this.autoLearnEnabled) {
+                    this.autoStatusSpan.innerText = "ВКЛ";
+                    this.autoStatusSpan.style.color = "#10b981";
+                    this.autoLearnBtn.innerHTML = "🤖 АВТООБУЧЕНИЕ 🔛";
+                    this.autoLearnBtn.classList.remove("active");
+                    this.addLog("🤖 Автообучение ВКЛЮЧЕНО — бот будет сам искать ответы", "#0f0");
+                } else {
+                    this.autoStatusSpan.innerText = "ВЫКЛ";
+                    this.autoStatusSpan.style.color = "#ef4444";
+                    this.autoLearnBtn.innerHTML = "🤖 АВТООБУЧЕНИЕ 🔘";
+                    this.autoLearnBtn.classList.add("active");
+                    this.addLog("⛔ Автообучение ВЫКЛЮЧЕНО — бот отвечает только по выученным темам", "#ffaa66");
+                }
+            }
+            
             clearMemory() {
                 this.knowledge = [];
-                this.currentTopic = null;
                 this.updateStats();
                 this.updateKnowledgeList();
-                this.addLog("🗑️ Память очищена. Все темы удалены.");
-                this.addBotMessage("Память очищена. Выбери новую тему для изучения!");
+                this.addLog("🗑️ Память очищена", "#ffaa66");
+                this.addBotMessage("Память очищена. Теперь я ничего не помню!");
             }
             
             addLog(msg, color = "#86efac") {
@@ -568,20 +550,18 @@
             sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         }
         
-        const nanu = new NanuSmartBot();
+        const nanu = new NanuAutoBot();
         
         document.getElementById('learnBtn').onclick = async () => {
             const topic = document.getElementById('searchTopic').value.trim();
-            if (!topic) {
-                nanu.addLog("❌ Введите тему для изучения", "#ff8888");
-                return;
-            }
-            await nanu.learnTopic(topic);
+            if (!topic) { nanu.addLog("❌ Введите тему", "#ff8888"); return; }
+            await nanu.learnTopic(topic, true);
         };
         
+        document.getElementById('autoLearnBtn').onclick = () => nanu.toggleAutoLearn();
         document.getElementById('clearMemoryBtn').onclick = () => nanu.clearMemory();
         
-        window.askQuestion = () => {
+        window.askQuestion = async () => {
             const input = document.getElementById('userQuestion');
             const question = input.value.trim();
             if (!question) return;
@@ -589,7 +569,7 @@
             nanu.addUserMessage(question);
             input.value = "";
             
-            const answer = nanu.answer(question);
+            const answer = await nanu.answerWithAutoLearn(question, true);
             setTimeout(() => nanu.addBotMessage(answer), 100);
         };
         
