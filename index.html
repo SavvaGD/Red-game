@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Красная игра — команда разработчиков</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #0a0c10 0%, #0f1117 100%);
+            color: #eef2ff;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* Красные акценты — "Красная игра" */
+        :root {
+            --red-brand: #e11d2c;
+            --red-dark: #991b1b;
+            --red-glow: rgba(225, 29, 44, 0.4);
+            --gray-bg: #1a1c23;
+            --card-bg: rgba(22, 24, 32, 0.8);
+            --border-dim: #2a2e3a;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Логотип: квадратная обрезка */
+        .logo-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #00000022;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(225, 29, 44, 0.4);
+            transition: transform 0.2s ease;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;  /* обрезает до квадрата, сохраняя пропорции */
+            display: block;
+        }
+        .logo-wrapper:hover {
+            transform: scale(1.02);
+        }
+
+        /* шапка */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            flex-wrap: wrap;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-dim);
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .team-name h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #e11d2c);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .team-name p {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+        .badge {
+            background: var(--red-brand);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* герой */
+        .hero {
+            text-align: center;
+            margin: 60px 0 40px;
+        }
+        .hero h2 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #f87171);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: #cbd5e6;
+            max-width: 700px;
+            margin: 20px auto 0;
+        }
+
+        /* секции */
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 48px 0 24px;
+            border-left: 5px solid var(--red-brand);
+            padding-left: 20px;
+        }
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+        .project-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 32px;
+            border: 1px solid var(--border-dim);
+            padding: 28px 24px;
+            transition: all 0.25s ease;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.4);
+        }
+        .project-card:hover {
+            border-color: var(--red-brand);
+            transform: translateY(-5px);
+            box-shadow: 0 20px 30px -12px rgba(225, 29, 44, 0.2);
+        }
+        .project-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .project-badge {
+            background: var(--red-dark);
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-weight: normal;
+        }
+        .project-desc {
+            color: #cbd5e1;
+            margin: 12px 0 20px;
+            font-size: 0.95rem;
+        }
+        .feature-list {
+            list-style: none;
+            margin: 16px 0;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .feature-list li::before {
+            content: "🔥";
+            font-size: 0.9rem;
+        }
+        .project-link {
+            display: inline-block;
+            margin-top: 16px;
+            background: rgba(225, 29, 44, 0.1);
+            border: 1px solid var(--red-brand);
+            padding: 10px 20px;
+            border-radius: 40px;
+            color: #ffa3a3;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .project-link:hover {
+            background: var(--red-brand);
+            color: white;
+            box-shadow: 0 0 12px var(--red-glow);
+        }
+
+        .cdfg-sub {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #a0aec0;
+        }
+
+        footer {
+            margin-top: 70px;
+            border-top: 1px solid var(--border-dim);
+            padding: 32px 0;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 680px) {
+            .container {
+                padding: 0 20px;
+            }
+            .hero h2 {
+                font-size: 1.9rem;
+            }
+            .section-title {
+                font-size: 1.6rem;
+            }
+            .logo-wrapper {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <div class="logo-area">
+                <div class="logo-wrapper">
+                    <!-- logo.jpg автоматически обрезается в квадрат через object-fit: cover -->
+                    <img src="logo.jpg" alt="Логотип Красная игра">
+                </div>
+                <div class="team-name">
+                    <h1>Красная игра</h1>
+                    <p>инди-команда разработчиков</p>
+                </div>
+            </div>
+            <div class="badge">⚡ game dev</div>
+        </nav>
+
+        <div class="hero">
+            <h2>Создаём инструменты<br> для свободы и приватности</h2>
+            <p>Merapob · CDFG · Игры и сервисы без компромиссов</p>
+        </div>
+
+        <!-- Наши проекты -->
+        <div class="section-title">📦 Наши проекты</div>
+        <div class="projects-grid">
+            <!-- Merapob -->
+            <div class="project-card">
+                <div class="project-title">
+                    Merapob
+                    <span class="project-badge">мессенджер</span>
+                </div>
+                <div class="project-desc">
+                    Простой, быстрый, твой. Мессенджер, который работает без слежки, с контролем видимости и поддержкой любых форматов общения.
+                </div>
+                <ul class="feature-list">
+                    <li>Приватность по умолчанию</li>
+                    <li>Режим «без интернета» (Bluetooth-ядро)</li>
+                    <li>Гибкий уровень видимости</li>
+                </ul>
+                <a href="https://savvagd.github.io/merapob" class="project-link" target="_blank" rel="noopener noreferrer">
+                    🧩 merapob →
+                </a>
+                <div style="font-size:0.75rem; margin-top: 12px; color:#6c757d;">в разработке</div>
+            </div>
+
+            <!-- CDFG экосистема -->
+            <div class="project-card">
+                <div class="project-title">
+                    CDFG
+                    <span class="project-badge">браузер + сервисы</span>
+                </div>
+                <div class="project-desc">
+                    Браузер, который не оставляет следов. Полное инкогнито, история НЕ сохраняется, экстренный режим «Мама идёт».
+                </div>
+                <ul class="feature-list">
+                    <li>🚫 Никакой истории — даже после проверки</li>
+                    <li>🗑️ Автоочистка при перезагрузке</li>
+                    <li>😱 Системная кнопка «Назад» — моментальное исчезновение следов</li>
+                </ul>
+                <div class="cdfg-sub">
+                    <span>🔍 CDFG Search</span>
+                    <span>✍️ CDFG SE (Site Editor)</span>
+                    <span>🎮 CDFG Games</span>
+                </div>
+                <a href="https://savvagd.github.io/CDFG" class="project-link" target="_blank" rel="noopener noreferrer">
+                    🌐 CDFG Browser →
+                </a>
+            </div>
+        </div>
+
+        <!-- дополнительный блок о команде -->
+        <div class="section-title">❤️ О команде</div>
+        <div style="background: rgba(0,0,0,0.3); border-radius: 32px; padding: 32px; border: 1px solid #2a2e3a; margin-bottom: 20px;">
+            <p style="font-size: 1.05rem;">«Красная игра» — это объединение разработчиков, которые делают упор на <strong>приватность, скорость и нестандартные решения</strong>. Мы создаём мессенджер, работающий напрямую, браузер без истории, и в будущем — игры и инструменты, где пользователь действительно владеет своими данными.</p>
+            <p style="margin-top: 20px;">🎯 Наши ценности: минимализм, инновации, открытость кода (где возможно) и уважение к пользователю.</p>
+        </div>
+
+        <footer>
+            <p>© 2026 Команда «Красная игра» — все проекты в активной разработке.</p>
+            <p style="margin-top: 8px;">📧 По вопросам сотрудничества: <span style="color:#e11d2c;">redgame@dev.team</span> (временный контакт)</p>
+        </footer>
+    </div>
+</body>
+                                           </html>
