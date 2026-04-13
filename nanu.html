@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nanu — автообучение в реальном времени</title>
+    <title>Nanu — чистый ИИ без встроенных тем</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -58,7 +58,6 @@
         button.primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
         button.success { background: linear-gradient(135deg, #10b981, #059669); }
         button.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        button.active { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 0 12px #ef4444aa; }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -118,6 +117,7 @@
             border-left: 3px solid #3b82f6;
         }
         .knowledge-topic { font-weight: bold; color: #6ee7ff; }
+        .knowledge-keywords { font-size: 0.65rem; color: #8a9bbb; margin-top: 5px; }
         .chat-panel {
             flex: 2;
             background: #050b16aa;
@@ -188,12 +188,12 @@
 <div class="container">
     <div class="header">
         <h1>🧠 NANU</h1>
-        <div class="sub">автообучение · сам ищет ответы в интернете</div>
+        <div class="sub">чистый ИИ · сам извлекает ключевые слова · автообучение</div>
     </div>
 
     <div class="control-panel">
         <div class="flex-row">
-            <input type="text" id="searchTopic" placeholder="Тема для изучения" value="Яндекс игры">
+            <input type="text" id="searchTopic" placeholder="Тема для изучения" value="Юрий Гагарин первый полёт в космос">
             <button id="learnBtn" class="primary">📖 НАУЧИТЬ ПО ТЕМЕ</button>
             <button id="autoLearnBtn" class="warning">🤖 АВТООБУЧЕНИЕ 🔛</button>
             <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
@@ -208,7 +208,7 @@
 
     <div class="chat-area">
         <div class="knowledge-panel">
-            <div class="knowledge-title">📚 ЗНАНИЯ NANU</div>
+            <div class="knowledge-title">📚 ЗНАНИЯ NANU (с собственными ключевыми словами)</div>
             <div class="knowledge-list" id="knowledgeList">
                 <div class="knowledge-item">Пока пусто. Нажмите "НАУЧИТЬ ПО ТЕМЕ"</div>
             </div>
@@ -216,7 +216,7 @@
 
         <div class="chat-panel">
             <div class="messages" id="messages">
-                <div class="message bot-message">👋 Привет! Я Nanu. Включено <strong>автообучение</strong> — если я не знаю тему вопроса, я сам найду ответ в интернете и запомню его!</div>
+                <div class="message bot-message">👋 Привет! Я Nanu. У меня нет встроенных тем. Я сам извлекаю ключевые слова из текстов, которые нахожу в интернете. Спроси меня о чём угодно!</div>
             </div>
             <div class="chat-input">
                 <input type="text" id="userQuestion" placeholder="Спроси о чём угодно..." onkeypress="if(event.key==='Enter') askQuestion()">
@@ -230,10 +230,10 @@
 
 <script>
     (function(){
-        class NanuAutoBot {
+        class NanuPureBot {
             constructor() {
-                this.knowledge = [];
-                this.autoLearnEnabled = true;  // автообучение включено по умолчанию
+                this.knowledge = [];      // { topic, fragments, keywords }
+                this.autoLearnEnabled = true;
                 
                 this.topicsCountSpan = document.getElementById('topicsCount');
                 this.fragmentsCountSpan = document.getElementById('fragmentsCount');
@@ -244,7 +244,39 @@
                 this.logDiv = document.getElementById('logPanel');
                 this.autoLearnBtn = document.getElementById('autoLearnBtn');
                 
-                this.addLog("🧠 NANU готова. Автообучение ВКЛЮЧЕНО — бот сам будет искать ответы.");
+                this.addLog("🧠 NANU: чистая нейросеть. Никаких встроенных тем. Всё извлекаю сам.");
+            }
+            
+            // Извлечение ключевых слов из текста (автоматически, без жёстких списков)
+            extractKeywords(text, topicName = "") {
+                const stopWords = [
+                    'это', 'которые', 'также', 'такой', 'такие', 'такая', 'такое', 'этих', 'этом', 'эту',
+                    'было', 'были', 'была', 'был', 'быть', 'есть', 'является', 'называется', 'может',
+                    'очень', 'более', 'менее', 'кроме', 'между', 'через', 'вокруг', 'после', 'перед',
+                    'и', 'в', 'на', 'с', 'о', 'у', 'а', 'но', 'или', 'же', 'бы', 'да', 'не', 'ни', 'то'
+                ];
+                
+                // Объединяем название темы и все фрагменты
+                let fullText = topicName + " " + text;
+                fullText = fullText.toLowerCase();
+                
+                // Разбиваем на слова
+                const words = fullText.split(/[\s,?!.():;""''\-–—]+/);
+                
+                // Считаем частоту слов
+                const freq = new Map();
+                for (const word of words) {
+                    if (word.length < 3) continue;
+                    if (stopWords.includes(word)) continue;
+                    if (/^\d+$/.test(word)) continue;
+                    freq.set(word, (freq.get(word) || 0) + 1);
+                }
+                
+                // Берём 10 самых частых слов
+                const sorted = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]);
+                const keywords = sorted.slice(0, 12).map(k => k[0]);
+                
+                return keywords;
             }
             
             async searchInternet(query) {
@@ -261,16 +293,6 @@
                     if (data.Definition && data.Definition.length > 30) {
                         fragments.push({ text: data.Definition, source: data.DefinitionSource || "DuckDuckGo" });
                     }
-                    if (data.RelatedTopics) {
-                        for (const item of data.RelatedTopics) {
-                            if (item.Text && item.Text.length > 40) fragments.push({ text: item.Text, source: "Связанная тема" });
-                            if (item.Topics) {
-                                for (const sub of item.Topics) {
-                                    if (sub.Text && sub.Text.length > 40) fragments.push({ text: sub.Text, source: "Подтема" });
-                                }
-                            }
-                        }
-                    }
                     
                     if (fragments.length === 0) {
                         this.addLog(`📚 Ищу в Википедии...`);
@@ -278,7 +300,7 @@
                         fragments.push(...wikiFragments);
                     }
                     
-                    return fragments.slice(0, 8);
+                    return fragments.slice(0, 6);
                 } catch(e) {
                     this.addLog(`Ошибка: ${e.message}`, "#ff8888");
                     return [];
@@ -315,7 +337,6 @@
             
             async learnTopic(topic, showMessages = true) {
                 if (!topic.trim()) return false;
-                
                 if (showMessages) this.addLog(`📖 Изучаю тему: "${topic}"`);
                 this.progressFill.style.width = "10%";
                 
@@ -327,11 +348,20 @@
                     return false;
                 }
                 
+                // Склеиваем текст всех фрагментов для извлечения ключевых слов
+                const allText = fragments.map(f => f.text).join(" ");
+                const keywords = this.extractKeywords(allText, topic);
+                
                 let topicEntry = this.knowledge.find(k => k.topic.toLowerCase() === topic.toLowerCase());
                 if (topicEntry) {
                     topicEntry.fragments = fragments;
+                    topicEntry.keywords = keywords;
                 } else {
-                    this.knowledge.push({ topic: topic, fragments: fragments });
+                    this.knowledge.push({ 
+                        topic: topic, 
+                        fragments: fragments,
+                        keywords: keywords
+                    });
                 }
                 
                 this.updateStats();
@@ -340,64 +370,63 @@
                 setTimeout(() => this.progressFill.style.width = "0%", 500);
                 
                 if (showMessages) {
-                    this.addLog(`✅ Выучил тему "${topic}" (${fragments.length} фрагментов)`, "#0f0");
+                    this.addLog(`✅ Выучил тему "${topic}" (${fragments.length} фрагментов, ${keywords.length} ключевых слов)`, "#0f0");
+                    this.addBotMessage(`Я выучил тему "${topic}". Ключевые слова: ${keywords.slice(0, 8).join(", ")}...`);
                 }
                 return true;
             }
             
+            // ПОЛНОСТЬЮ ДИНАМИЧЕСКИЙ ВЫБОР ТЕМЫ — только на основе извлечённых ключевых слов
             findBestTopic(question) {
                 if (this.knowledge.length === 0) return null;
                 
                 const lowerQuestion = question.toLowerCase();
-                const stopWords = ['это', 'этот', 'эта', 'этих', 'этом', 'эту', 'про', 'о'];
                 
-                const questionWords = lowerQuestion
-                    .split(/[\s,?!.]+/)
-                    .filter(w => w.length > 2 && !stopWords.includes(w));
-                
+                // Считаем релевантность для каждой темы на основе её собственных ключевых слов
                 const scores = [];
                 
                 for (const topicEntry of this.knowledge) {
-                    const topicLower = topicEntry.topic.toLowerCase();
                     let score = 0;
                     
-                    if (lowerQuestion.includes(topicLower)) score += 100;
-                    
-                    const topicKeywords = topicLower.split(/\s+/);
-                    for (const kw of topicKeywords) {
-                        if (kw.length > 2 && lowerQuestion.includes(kw)) score += 30;
+                    // Проверяем ключевые слова темы
+                    for (const kw of topicEntry.keywords) {
+                        if (lowerQuestion.includes(kw)) {
+                            score += 10;  // Совпадение с ключевым словом
+                        }
                     }
                     
+                    // Проверяем название темы
+                    const topicLower = topicEntry.topic.toLowerCase();
+                    const topicWords = topicLower.split(/\s+/);
+                    for (const word of topicWords) {
+                        if (word.length > 2 && lowerQuestion.includes(word)) {
+                            score += 5;
+                        }
+                    }
+                    
+                    // Проверяем фрагменты
                     for (const fragment of topicEntry.fragments) {
                         const fragmentLower = fragment.text.toLowerCase();
-                        for (const word of questionWords) {
-                            if (fragmentLower.includes(word)) score += 5;
-                        }
-                    }
-                    
-                    if (topicLower.includes('лгбт')) {
-                        if (lowerQuestion.includes('гей') || lowerQuestion.includes('лесби') || 
-                            lowerQuestion.includes('бисек') || lowerQuestion.includes('транс')) {
-                            score += 80;
-                        }
-                    }
-                    
-                    if (topicLower.includes('космос') || topicLower.includes('гагарин')) {
-                        if (lowerQuestion.includes('полёт') || lowerQuestion.includes('полетел') ||
-                            lowerQuestion.includes('космос') || lowerQuestion.includes('гагарин')) {
-                            score += 80;
+                        const questionWords = lowerQuestion.split(/\s+/).filter(w => w.length > 3);
+                        for (const qw of questionWords) {
+                            if (fragmentLower.includes(qw)) {
+                                score += 2;
+                            }
                         }
                     }
                     
                     scores.push({ topicEntry, score });
                 }
                 
+                // Сортируем по убыванию
                 scores.sort((a, b) => b.score - a.score);
                 
-                if (scores.length > 0 && scores[0].score > 10) {
+                // Возвращаем тему с наибольшим счётом, если есть хоть какое-то совпадение
+                if (scores.length > 0 && scores[0].score > 0) {
                     return scores[0].topicEntry;
                 }
-                return scores.length > 0 ? scores[0].topicEntry : null;
+                
+                return null;
             }
             
             async answerWithAutoLearn(question, showLearningMsg = true) {
@@ -408,11 +437,12 @@
                         }
                         const success = await this.learnTopic(question, false);
                         if (success) {
-                            const answer = this.getAnswerFromTopic(question, this.findBestTopic(question));
-                            return answer;
-                        } else {
-                            return "😔 Не удалось найти информацию в интернете. Попробуйте переформулировать вопрос.";
+                            const bestTopic = this.findBestTopic(question);
+                            if (bestTopic) {
+                                return this.getAnswerFromTopic(question, bestTopic);
+                            }
                         }
+                        return "😔 Не удалось найти информацию в интернете. Попробуйте переформулировать вопрос.";
                     } else {
                         return "Я ещё ничего не выучил. Включи автообучение или нажми «НАУЧИТЬ ПО ТЕМЕ».";
                     }
@@ -508,7 +538,11 @@
                 for (const topicEntry of this.knowledge) {
                     const div = document.createElement('div');
                     div.className = 'knowledge-item';
-                    div.innerHTML = `<div class="knowledge-topic">📘 ${this.escapeHtml(topicEntry.topic)}</div><div>${topicEntry.fragments.length} фрагментов</div>`;
+                    div.innerHTML = `
+                        <div class="knowledge-topic">📘 ${this.escapeHtml(topicEntry.topic)}</div>
+                        <div>${topicEntry.fragments.length} фрагментов</div>
+                        <div class="knowledge-keywords">🔑 ${topicEntry.keywords.slice(0, 8).join(", ")}</div>
+                    `;
                     this.knowledgeDiv.appendChild(div);
                 }
             }
@@ -519,13 +553,11 @@
                     this.autoStatusSpan.innerText = "ВКЛ";
                     this.autoStatusSpan.style.color = "#10b981";
                     this.autoLearnBtn.innerHTML = "🤖 АВТООБУЧЕНИЕ 🔛";
-                    this.autoLearnBtn.classList.remove("active");
                     this.addLog("🤖 Автообучение ВКЛЮЧЕНО — бот будет сам искать ответы", "#0f0");
                 } else {
                     this.autoStatusSpan.innerText = "ВЫКЛ";
                     this.autoStatusSpan.style.color = "#ef4444";
                     this.autoLearnBtn.innerHTML = "🤖 АВТООБУЧЕНИЕ 🔘";
-                    this.autoLearnBtn.classList.add("active");
                     this.addLog("⛔ Автообучение ВЫКЛЮЧЕНО — бот отвечает только по выученным темам", "#ffaa66");
                 }
             }
@@ -534,7 +566,7 @@
                 this.knowledge = [];
                 this.updateStats();
                 this.updateKnowledgeList();
-                this.addLog("🗑️ Память очищена", "#ffaa66");
+                this.addLog("🗑️ Память очищена. Все темы удалены.", "#ffaa66");
                 this.addBotMessage("Память очищена. Теперь я ничего не помню!");
             }
             
@@ -550,7 +582,7 @@
             sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         }
         
-        const nanu = new NanuAutoBot();
+        const nanu = new NanuPureBot();
         
         document.getElementById('learnBtn').onclick = async () => {
             const topic = document.getElementById('searchTopic').value.trim();
