@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Reder — нейросеть в браузере (настоящий ИИ)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(135deg, #0a0f1e, #0c1222);
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(15, 25, 45, 0.65);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 24px 28px 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(66, 153, 225, 0.2);
+            border: 1px solid rgba(80, 140, 210, 0.3);
+        }
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, #7aa9ff, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -1px;
+        }
+        .sub {
+            color: #9bb5e0;
+            border-left: 3px solid #3b82f6;
+            padding-left: 16px;
+            margin-bottom: 32px;
+            font-weight: 500;
+        }
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: center;
+        }
+        .canvas-panel {
+            background: #0a0e17;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            flex: 1;
+            min-width: 260px;
+            text-align: center;
+        }
+        .draw-area {
+            background: white;
+            display: inline-block;
+            border-radius: 24px;
+            padding: 10px;
+            box-shadow: 0 0 0 2px #1e2a4a;
+        }
+        canvas {
+            background: #11161f;
+            border-radius: 20px;
+            cursor: crosshair;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+        }
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #1f2a44;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 60px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+        }
+        button.primary {
+            background: #3b82f6;
+            box-shadow: 0 0 8px #3b82f680;
+        }
+        button.warning {
+            background: #dc2626;
+        }
+        button:hover {
+            transform: scale(0.97);
+            filter: brightness(1.1);
+        }
+        .info-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: #0b1020cc;
+            border-radius: 32px;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+        .prediction {
+            background: #03061770;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .prediction-number {
+            font-size: 5rem;
+            font-weight: 800;
+            font-family: monospace;
+            background: linear-gradient(145deg, #e0eaff, #6c9eff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            line-height: 1;
+        }
+        .confidence-bar {
+            background: #1e253e;
+            border-radius: 40px;
+            height: 28px;
+            width: 100%;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .confidence-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #a855f7);
+            border-radius: 40px;
+            transition: width 0.2s ease;
+        }
+        .stats {
+            font-size: 0.85rem;
+            color: #b9ceff;
+        }
+        .neuron-viz {
+            background: #03061760;
+            border-radius: 28px;
+            padding: 16px;
+            margin-top: 18px;
+        }
+        .loss-value {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #facc15;
+        }
+        footer {
+            margin-top: 32px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #5f7fae;
+        }
+        @media (max-width: 760px) {
+            .container { padding: 18px; }
+            h1 { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚡ Reder</h1>
+    <div class="sub">нейросеть прямого распространения · работает локально · настоящий ИИ без API</div>
+
+    <div class="dashboard">
+        <div class="canvas-panel">
+            <div class="draw-area">
+                <canvas id="drawCanvas" width="280" height="280" style="width:280px; height:280px; touch-action: none;"></canvas>
+            </div>
+            <div class="button-group">
+                <button id="clearBtn">🧽 Очистить</button>
+                <button id="predictBtn" class="primary">🧠 Распознать (ИИ)</button>
+            </div>
+            <div class="button-group">
+                <button id="addToTrainBtn" class="primary">📚 Добавить как пример</button>
+                <label style="background:#1f2a44; padding: 8px 18px; border-radius: 60px; font-weight:bold;">Цифра: 
+                    <input type="number" id="labelInput" min="0" max="9" value="5" style="width:55px; background:#0b0f1c; color:white; border-radius:40px; border:1px solid #3b82f6; text-align:center;">
+                </label>
+            </div>
+            <div class="button-group">
+                <button id="trainBtn">⚙️ Обучить нейросеть (на примерах)</button>
+                <button id="resetDataBtn" class="warning">🗑️ Сбросить данные обучения</button>
+            </div>
+            <div class="stats" style="margin-top:12px;">
+                📊 Собрано примеров: <span id="exampleCount">0</span>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="prediction">
+                <div>🤖 МНЕНИЕ НЕЙРОСЕТИ</div>
+                <div class="prediction-number" id="predictedDigit">—</div>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill"></div>
+                </div>
+                <div>Уверенность: <span id="confidencePercent">0</span>%</div>
+            </div>
+            <div class="neuron-viz">
+                <div>🧬 СТАТУС НЕЙРОСЕТИ</div>
+                <div style="font-size:0.8rem;">Слои: 784 → 64 → 32 → 10</div>
+                <div>Активация: ReLU + Softmax (выход)</div>
+                <div>Функция потерь: категориальная кросс-энтропия</div>
+                <div>🔄 Последняя ошибка (loss): <span id="lastLoss" class="loss-value">—</span></div>
+                <div style="margin-top:8px;">⚡ Обучение происходит прямо в браузере. Никаких запросов к серверу.</div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        🔮 Reder — настоящая нейронная сеть на JavaScript (матричные операции). Рисуйте цифру → обучайте → ИИ распознает без интернета.
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // -------- ПОЛНОСТЬЮ ЛОКАЛЬНАЯ НЕЙРОСЕТЬ (Pure JS, без TensorFlow) ----------
+        // Архитектура: 784 вход -> 64 скрытый (ReLU) -> 32 скрытый (ReLU) -> 10 выход (Softmax)
+        // Веса и смещения инициализируются случайно. Обучение: градиентный спуск + обратное распространение.
+        
+        // Параметры
+        const INPUT_SIZE = 784;   // 28x28
+        const HIDDEN1 = 64;
+        const HIDDEN2 = 32;
+        const OUTPUT = 10;
+        
+        let W1 = null, b1 = null;
+        let W2 = null, b2 = null;
+        let W3 = null, b3 = null;
+        
+        // Данные обучения: массив { input: Float64Array(784), label: oneHot(10) }
+        let trainingData = [];
+        
+        // Гиперпараметры
+        let learningRate = 0.05;
+        
+        // Инициализация весов методом Ксавье
+        function initWeights(rows, cols) {
+            let W = new Array(rows);
+            let limit = Math.sqrt(6.0 / (rows + cols));
+            for(let i = 0; i < rows; i++) {
+                W[i] = new Float64Array(cols);
+                for(let j = 0; j < cols; j++) {
+                    W[i][j] = (Math.random() * 2 - 1) * limit;
+                }
+            }
+            return W;
+        }
+        
+        function initBiases(size) {
+            let b = new Float64Array(size);
+            for(let i = 0; i < size; i++) b[i] = 0.01;
+            return b;
+        }
+        
+        function resetNetwork() {
+            W1 = initWeights(INPUT_SIZE, HIDDEN1);
+            b1 = initBiases(HIDDEN1);
+            W2 = initWeights(HIDDEN1, HIDDEN2);
+            b2 = initBiases(HIDDEN2);
+            W3 = initWeights(HIDDEN2, OUTPUT);
+            b3 = initBiases(OUTPUT);
+        }
+        
+        // Активации
+        function relu(x) { return Math.max(0, x); }
+        function reluDeriv(x) { return x > 0 ? 1 : 0; }
+        
+        function softmax(logits) {
+            let max = Math.max(...logits);
+            let exps = logits.map(v => Math.exp(v - max));
+            let sum = exps.reduce((a,b) => a+b, 0);
+            return exps.map(v => v / sum);
+        }
+        
+        // Прямой проход
+        function forward(input) {
+            // input Float64Array(784)
+            let z1 = new Float64Array(HIDDEN1);
+            for(let i=0; i<HIDDEN1; i++) {
+                let sum = b1[i];
+                for(let j=0; j<INPUT_SIZE; j++) sum += input[j] * W1[j][i];
+                z1[i] = relu(sum);
+            }
+            let z2 = new Float64Array(HIDDEN2);
+            for(let i=0; i<HIDDEN2; i++) {
+                let sum = b2[i];
+                for(let j=0; j<HIDDEN1; j++) sum += z1[j] * W2[j][i];
+                z2[i] = relu(sum);
+            }
+            let z3 = new Float64Array(OUTPUT);
+            for(let i=0; i<OUTPUT; i++) {
+                let sum = b3[i];
+                for(let j=0; j<HIDDEN2; j++) sum += z2[j] * W3[j][i];
+                z3[i] = sum;
+            }
+            let probs = softmax(z3);
+            return { z1, z2, logits: z3, probs };
+        }
+        
+        // Функция потерь (кросс-энтропия)
+        function loss(probs, target) {
+            let loss = 0;
+            for(let i=0; i<OUTPUT; i++) {
+                loss -= target[i] * Math.log(probs[i] + 1e-8);
+            }
+            return loss;
+        }
+        
+        // Обратное распространение (обновление весов на одном примере)
+        function trainStep(input, targetOneHot) {
+            // forward
+            let { z1, z2, logits, probs } = forward(input);
+            
+            // градиент на выходном слое (softmax cross-entropy: grad = probs - target)
+            let dLogits = new Float64Array(OUTPUT);
+            for(let i=0; i<OUTPUT; i++) dLogits[i] = probs[i] - targetOneHot[i];
+            
+            // градиент для W3, b3
+            let dW3 = new Array(HIDDEN2);
+            for(let i=0; i<HIDDEN2; i++) {
+                dW3[i] = new Float64Array(OUTPUT);
+                for(let j=0; j<OUTPUT; j++) {
+                    dW3[i][j] = dLogits[j] * z2[i];
+                }
+            }
+            let db3 = new Float64Array(OUTPUT);
+            for(let j=0; j<OUTPUT; j++) db3[j] = dLogits[j];
+            
+            // градиент для hidden2 (перед ReLU)
+            let dZ2 = new Float64Array(HIDDEN2);
+            for(let i=0; i<HIDDEN2; i++) {
+                let grad = 0;
+                for(let j=0; j<OUTPUT; j++) grad += dLogits[j] * W3[i][j];
+                dZ2[i] = grad * reluDeriv(z2[i]);
+            }
+            
+            let dW2 = new Array(HIDDEN1);
+            for(let i=0; i<HIDDEN1; i++) {
+                dW2[i] = new Float64Array(HIDDEN2);
+                for(let j=0; j<HIDDEN2; j++) {
+                    dW2[i][j] = dZ2[j] * z1[i];
+                }
+            }
+            let db2 = new Float64Array(HIDDEN2);
+            for(let j=0; j<HIDDEN2; j++) db2[j] = dZ2[j];
+            
+            // градиент для hidden1
+            let dZ1 = new Float64Array(HIDDEN1);
+            for(let i=0; i<HIDDEN1; i++) {
+                let grad = 0;
+                for(let j=0; j<HIDDEN2; j++) grad += dZ2[j] * W2[i][j];
+                dZ1[i] = grad * reluDeriv(z1[i]);
+            }
+            
+            let dW1 = new Array(INPUT_SIZE);
+            for(let i=0; i<INPUT_SIZE; i++) {
+                dW1[i] = new Float64Array(HIDDEN1);
+                for(let j=0; j<HIDDEN1; j++) {
+                    dW1[i][j] = dZ1[j] * input[i];
+                }
+            }
+            let db1 = new Float64Array(HIDDEN1);
+            for(let j=0; j<HIDDEN1; j++) db1[j] = dZ1[j];
+            
+            // обновление весов и смещений
+            for(let i=0; i<HIDDEN2; i++) {
+                for(let j=0; j<OUTPUT; j++) {
+                    W3[i][j] -= learningRate * dW3[i][j];
+                }
+            }
+            for(let j=0; j<OUTPUT; j++) b3[j] -= learningRate * db3[j];
+            
+            for(let i=0; i<HIDDEN1; i++) {
+                for(let j=0; j<HIDDEN2; j++) {
+                    W2[i][j] -= learningRate * dW2[i][j];
+                }
+            }
+            for(let j=0; j<HIDDEN2; j++) b2[j] -= learningRate * db2[j];
+            
+            for(let i=0; i<INPUT_SIZE; i++) {
+                for(let j=0; j<HIDDEN1; j++) {
+                    W1[i][j] -= learningRate * dW1[i][j];
+                }
+            }
+            for(let j=0; j<HIDDEN1; j++) b1[j] -= learningRate * db1[j];
+            
+            return loss(probs, targetOneHot);
+        }
+        
+        // Обучение на всех накопленных данных (эпоха)
+        function trainOnAllData(epochs = 3) {
+            if(trainingData.length === 0) return 0;
+            let totalLoss = 0;
+            for(let epoch = 0; epoch < epochs; epoch++) {
+                for(let sample of trainingData) {
+                    let lossVal = trainStep(sample.input, sample.label);
+                    totalLoss += lossVal;
+                }
+            }
+            let avgLoss = totalLoss / (trainingData.length * epochs);
+            document.getElementById('lastLoss').innerText = avgLoss.toFixed(5);
+            return avgLoss;
+        }
+        
+        // конвертация canvas в 784 нормализованный вектор (0..1)
+        function getImageDataFromCanvas(canvas) {
+            const ctx = canvas.getContext('2d');
+            const imgData = ctx.getImageData(0, 0, 28, 28);
+            const data = imgData.data;
+            let input = new Float64Array(784);
+            for(let i=0; i<784; i++) {
+                let r = data[i*4];
+                let g = data[i*4+1];
+                let b = data[i*4+2];
+                let brightness = (r + g + b) / (3 * 255);
+                input[i] = brightness;
+            }
+            return input;
+        }
+        
+        // ----- ОТРИСОВКА НА CANVAS -----
+        const drawCanvas = document.getElementById('drawCanvas');
+        const ctxDraw = drawCanvas.getContext('2d');
+        let drawing = false;
+        
+        function resizeCanvasForDraw() {
+            drawCanvas.width = 280;
+            drawCanvas.height = 280;
+            ctxDraw.fillStyle = '#11161f';
+            ctxDraw.fillRect(0, 0, 280, 280);
+            ctxDraw.strokeStyle = '#3b82f6';
+            ctxDraw.lineWidth = 20;
+            ctxDraw.lineCap = 'round';
+            ctxDraw.lineJoin = 'round';
+        }
+        
+        function startDrawing(e) {
+            drawing = true;
+            const pos = getCanvasCoordinates(e);
+            ctxDraw.beginPath();
+            ctxDraw.moveTo(pos.x, pos.y);
+            ctxDraw.lineTo(pos.x+0.5, pos.y+0.5);
+            ctxDraw.stroke();
+        }
+        
+        function draw(e) {
+            if(!drawing) return;
+            const pos = getCanvasCoordinates(e);
+            ctxDraw.lineTo(pos.x, pos.y);
+            ctxDraw.stroke();
+        }
+        
+        function stopDrawing() { drawing = false; }
+        
+        function getCanvasCoordinates(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const scaleX = drawCanvas.width / rect.width;
+            const scaleY = drawCanvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                e.preventDefault();
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let x = (clientX - rect.left) * scaleX;
+            let y = (clientY - rect.top) * scaleY;
+            x = Math.min(Math.max(0, x), drawCanvas.width);
+            y = Math.min(Math.max(0, y), drawCanvas.height);
+            return {x, y};
+        }
+        
+        function clearCanvas() {
+            ctxDraw.fillStyle = '#11161f';
+            ctxDraw.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+        }
+        
+        // предсказание
+        function predictAndDisplay() {
+            let smallCanvas = document.createElement('canvas');
+            smallCanvas.width = 28;
+            smallCanvas.height = 28;
+            let smallCtx = smallCanvas.getContext('2d');
+            smallCtx.drawImage(drawCanvas, 0, 0, 28, 28);
+            let input = getImageDataFromCanvas(smallCanvas);
+            let { probs } = forward(input);
+            let maxIdx = 0;
+            for(let i=1; i<10; i++) if(probs[i] > probs[maxIdx]) maxIdx = i;
+            let confidence = probs[maxIdx] * 100;
+            document.getElementById('predictedDigit').innerText = maxIdx;
+            document.getElementById('confidencePercent').innerText = confidence.toFixed(1);
+            document.getElementById('confidenceFill').style.width = confidence + '%';
+        }
+        
+        // добавить текущий рисунок в тренировочные данные
+        function addCurrentToTraining() {
+            let labelVal = parseInt(document.getElementById('labelInput').value);
+            if(isNaN(labelVal)) labelVal = 0;
+            let smallCanvas = document.createElement('canvas');
+            smallCanvas.width = 28;
+            smallCanvas.height = 28;
+            let smallCtx = smallCanvas.getContext('2d');
+            smallCtx.drawImage(drawCanvas, 0, 0, 28, 28);
+            let inputVec = getImageDataFromCanvas(smallCanvas);
+            let oneHot = new Float64Array(10).fill(0);
+            oneHot[labelVal] = 1.0;
+            trainingData.push({ input: inputVec, label: oneHot });
+            document.getElementById('exampleCount').innerText = trainingData.length;
+        }
+        
+        function resetTrainingData() {
+            trainingData = [];
+            document.getElementById('exampleCount').innerText = 0;
+            resetNetwork();
+            document.getElementById('lastLoss').innerText = '—';
+        }
+        
+        function trainNetwork() {
+            if(trainingData.length === 0) {
+                alert("Добавьте хотя бы несколько примеров цифр, нажав «Добавить как пример»");
+                return;
+            }
+            let lossVal = trainOnAllData(5);
+            document.getElementById('lastLoss').innerText = lossVal.toFixed(5);
+            predictAndDisplay(); // обновить мнение после обучения
+        }
+        
+        // инициализация UI и событий
+        function init() {
+            resizeCanvasForDraw();
+            resetNetwork();
+            drawCanvas.addEventListener('mousedown', startDrawing);
+            drawCanvas.addEventListener('mousemove', draw);
+            drawCanvas.addEventListener('mouseup', stopDrawing);
+            drawCanvas.addEventListener('touchstart', startDrawing);
+            drawCanvas.addEventListener('touchmove', draw);
+            drawCanvas.addEventListener('touchend', stopDrawing);
+            document.getElementById('clearBtn').addEventListener('click', clearCanvas);
+            document.getElementById('predictBtn').addEventListener('click', predictAndDisplay);
+            document.getElementById('addToTrainBtn').addEventListener('click', addCurrentToTraining);
+            document.getElementById('trainBtn').addEventListener('click', trainNetwork);
+            document.getElementById('resetDataBtn').addEventListener('click', resetTrainingData);
+            clearCanvas();
+            document.getElementById('exampleCount').innerText = "0";
+        }
+        
+        init();
+    })();
+</script>
+</body>
+  </html>
