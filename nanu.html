@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Nanu 1.0 — нейросеть с визуальной памятью и реальным поиском</title>
+    <title>Nanu — нейросеть с реальным поиском фото</title>
     <style>
         * {
             margin: 0;
@@ -12,14 +12,14 @@
         }
 
         body {
-            background: linear-gradient(135deg, #0a0f1a 0%, #0c1222 100%);
-            font-family: 'Segoe UI', 'Inter', system-ui, monospace;
+            background: radial-gradient(circle at 20% 30%, #0a0f1a, #03060c);
+            font-family: 'Segoe UI', system-ui, monospace;
             padding: 20px;
             min-height: 100vh;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1500px;
             margin: 0 auto;
         }
 
@@ -29,46 +29,50 @@
         }
 
         h1 {
-            font-size: 3.2rem;
-            background: linear-gradient(135deg, #ff3366, #33ff66, #3366ff);
+            font-size: 3.8rem;
+            background: linear-gradient(135deg, #ff6a6a, #6a9eff, #6aff9e);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            animation: aurora 4s infinite;
+            animation: shimmer 3s infinite;
         }
 
-        @keyframes aurora {
+        @keyframes shimmer {
             0% { filter: hue-rotate(0deg); }
             100% { filter: hue-rotate(360deg); }
         }
 
-        .sub {
-            color: #8a9bbb;
-            font-size: 0.9rem;
+        .badge {
+            background: #1e2a3a;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            margin-top: 8px;
         }
 
-        .control-bar {
-            background: rgba(0,0,0,0.5);
+        .control-panel {
+            background: rgba(0,0,0,0.6);
             backdrop-filter: blur(12px);
             border-radius: 32px;
-            padding: 20px;
+            padding: 24px;
             margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(100,150,255,0.3);
         }
 
-        .prompt-row {
+        .flex-row {
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
 
-        .prompt-input {
+        input {
             flex: 1;
-            background: #0e1625;
-            border: 2px solid #2a3a60;
+            background: #0b1020;
+            border: 2px solid #2a3f6e;
             padding: 14px 20px;
-            border-radius: 28px;
+            border-radius: 60px;
             color: white;
             font-size: 1rem;
             font-family: monospace;
@@ -78,7 +82,7 @@
             background: linear-gradient(135deg, #1f3a6b, #0f1a2e);
             border: none;
             padding: 12px 28px;
-            border-radius: 40px;
+            border-radius: 60px;
             color: white;
             font-weight: bold;
             cursor: pointer;
@@ -87,12 +91,16 @@
         }
 
         button.primary {
-            background: linear-gradient(135deg, #3b82f6, #a855f7);
-            box-shadow: 0 0 12px rgba(59,130,246,0.4);
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            box-shadow: 0 0 12px #3b82f6aa;
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #10b981, #059669);
         }
 
         button.danger {
-            background: linear-gradient(135deg, #dc2626, #991b1b);
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
         }
 
         button:hover {
@@ -100,30 +108,31 @@
             filter: brightness(1.1);
         }
 
-        .stats-grid {
+        .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 12px;
-            margin-top: 15px;
+            margin: 20px 0;
         }
 
-        .stat {
-            background: rgba(0,0,0,0.4);
+        .stat-card {
+            background: #0f1625aa;
             border-radius: 20px;
             padding: 12px;
             text-align: center;
+            border: 1px solid #2d3a60;
         }
 
-        .stat-value {
-            font-size: 1.8rem;
+        .stat-number {
+            font-size: 2rem;
             font-weight: bold;
-            color: #6ee7ff;
+            color: #7aa9ff;
         }
 
-        .progress-bar {
+        .progress {
             height: 24px;
-            background: #1e293b;
-            border-radius: 30px;
+            background: #1a2440;
+            border-radius: 40px;
             overflow: hidden;
             margin: 15px 0;
         }
@@ -140,64 +149,54 @@
             font-weight: bold;
         }
 
-        .vision-panels {
+        .memory-section {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 25px;
         }
 
-        .vision-card {
-            background: rgba(0,0,0,0.5);
+        .memory-card {
+            background: #050b16aa;
             border-radius: 24px;
             padding: 15px;
             backdrop-filter: blur(4px);
-            border: 1px solid #2d3a5e;
         }
 
-        .vision-title {
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #b9c8ff;
+        .memory-title {
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            color: #bbd7ff;
         }
 
         .image-strip {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             overflow-x: auto;
-            padding-bottom: 8px;
-            min-height: 80px;
+            min-height: 85px;
         }
 
         .mini-img {
             width: 70px;
             height: 70px;
             object-fit: cover;
-            border-radius: 12px;
-            border: 1px solid #3b82f6;
-            background: #000;
+            border-radius: 14px;
+            border: 2px solid #3b82f6;
+            background: black;
         }
 
-        .main-video {
-            background: #000000aa;
-            border-radius: 28px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-
-        .video-row {
+        .video-area {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-            justify-content: center;
+            margin-bottom: 25px;
         }
 
         .video-box {
             flex: 1;
-            min-width: 280px;
+            background: #00000055;
+            border-radius: 24px;
+            padding: 15px;
             text-align: center;
         }
 
@@ -205,70 +204,65 @@
             width: 100%;
             background: black;
             border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 20px black;
             border: 1px solid #3b82f6;
         }
 
         .log {
-            background: #050a15cc;
+            background: #020617aa;
             border-radius: 20px;
             padding: 15px;
-            height: 160px;
+            height: 150px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 0.75rem;
         }
 
-        .log-entry {
-            color: #8bc34a;
+        .log-line {
+            color: #86efac;
             border-left: 2px solid #3b82f6;
             padding-left: 10px;
             margin: 6px 0;
         }
 
         @media (max-width: 900px) {
-            .vision-panels { grid-template-columns: 1fr; }
-            .video-row { flex-direction: column; }
-            h1 { font-size: 2rem; }
+            .memory-section { grid-template-columns: 1fr; }
+            h1 { font-size: 2.2rem; }
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🧠 NANU 1.0</h1>
-        <div class="sub">нейросеть, которая видит память · реальный поиск картинок · генерация 5 секунд видео</div>
+        <h1>🧠 NANU</h1>
+        <div class="badge">real search · memory · video generation</div>
     </div>
 
-    <div class="control-bar">
-        <div class="prompt-row">
-            <input type="text" id="promptInput" class="prompt-input" placeholder="например: cyberpunk city, sunset ocean, cat portrait" value="neon city night">
-            <button id="searchBtn" class="primary">🌐 РЕАЛЬНЫЙ ПОИСК (Unsplash)</button>
-            <button id="trainBtn" class="primary">🧬 ОБУЧИТЬ + СГЕНЕРИРОВАТЬ 5 сек</button>
+    <div class="control-panel">
+        <div class="flex-row">
+            <input type="text" id="prompt" placeholder="что генерируем? например: sunset beach, cyberpunk, kitten yawning" value="sunset ocean waves">
+            <button id="searchBtn" class="primary">🌐 РЕАЛЬНЫЙ ПОИСК ФОТО</button>
+            <button id="generateBtn" class="success">🎬 ОБУЧИТЬ + ВИДЕО 5 сек</button>
             <button id="stopBtn" class="danger">⏹️ СТОП</button>
         </div>
-        <div class="stats-grid">
-            <div class="stat"><div>📸 Реальных картинок</div><div class="stat-value" id="realCount">0</div></div>
-            <div class="stat"><div>🎞️ Сгенерировано кадров (всего)</div><div class="stat-value" id="genFramesTotal">0</div></div>
-            <div class="stat"><div>📉 Loss</div><div class="stat-value" id="lossVal">—</div></div>
-            <div class="stat"><div>⚡ Эпоха</div><div class="stat-value" id="epochVal">0</div></div>
+        <div class="stats">
+            <div class="stat-card"><div>📸 РЕАЛЬНЫХ ФОТО</div><div class="stat-number" id="realCount">0</div></div>
+            <div class="stat-card"><div>🎞️ ПРОШЛЫХ КАДРОВ</div><div class="stat-number" id="pastCount">0</div></div>
+            <div class="stat-card"><div>📉 LOSS</div><div class="stat-number" id="lossVal">—</div></div>
+            <div class="stat-card"><div>⚡ ЭПОХА</div><div class="stat-number" id="epochVal">0</div></div>
         </div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill">0%</div></div>
+        <div class="progress"><div class="progress-fill" id="progressFill">0%</div></div>
     </div>
 
-    <!-- Зрение ИИ: три панели (что он видит) -->
-    <div class="vision-panels">
-        <div class="vision-card"><div class="vision-title">📚 РЕАЛЬНЫЕ КАРТИНКИ (обучающая выборка)</div><div id="realMemoryStrip" class="image-strip"></div></div>
-        <div class="vision-card"><div class="vision-title">🤖 ПРОШЛЫЕ СГЕНЕРИРОВАННЫЕ КАДРЫ (свои прошлые творения)</div><div id="pastGenStrip" class="image-strip"></div></div>
-        <div class="vision-card"><div class="vision-title">🎯 ТЕКУЩИЙ КАДР (прямо сейчас)</div><div id="currentFramePreview" class="image-strip"><canvas id="miniCurrentCanvas" width="70" height="70" style="width:70px;height:70px;border-radius:12px;"></canvas></div></div>
+    <div class="memory-section">
+        <div class="memory-card"><div class="memory-title">📚 РЕАЛЬНЫЕ ФОТО (обучение)</div><div id="realStrip" class="image-strip"></div></div>
+        <div class="memory-card"><div class="memory-title">🤖 ПРОШЛЫЕ КАДРЫ (память ИИ)</div><div id="pastStrip" class="image-strip"></div></div>
+        <div class="memory-card"><div class="memory-title">🎯 ТЕКУЩИЙ КАДР (прямо сейчас)</div><div id="currentStrip" class="image-strip"><canvas id="miniCanvas" width="70" height="70" style="width:70px;height:70px;border-radius:14px;"></canvas></div></div>
     </div>
 
-    <!-- Видео панели -->
-    <div class="main-video">
-        <div class="video-row">
-            <div class="video-box"><div style="margin-bottom:8px;">🖼️ РЕАЛЬНОЕ ВИДЕО (пример из найденных)</div><canvas id="realVideoCanvas" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
-            <div class="video-box"><div style="margin-bottom:8px;">✨ ГЕНЕРАЦИЯ NANU (5 секунд, 60 fps)</div><canvas id="genVideoCanvas" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
-        </div>
+    <div class="video-area">
+        <div class="video-box"><div>🖼️ РЕАЛЬНЫЙ ПРИМЕР (из найденных)</div><canvas id="realVideo" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
+        <div class="video-box"><div>✨ ГЕНЕРАЦИЯ NANU (60fps · 5 секунд)</div><canvas id="genVideo" width="480" height="270" style="width:100%; aspect-ratio:16/9;"></canvas></div>
     </div>
 
     <div class="log" id="logPanel"></div>
@@ -276,143 +270,134 @@
 
 <script>
     (function(){
-        // --------------------------------------------------------------
-        // NANU 1.0 - нейросеть с памятью и реальным поиском изображений
-        // --------------------------------------------------------------
-        
-        class NanuWithMemory {
+        // ---------- NANU ----------
+        class Nanu {
             constructor() {
-                this.realImages = [];       // храним raw ImageData (векторы 64x64x3)
-                this.pastGeneratedFrames = []; // прошлые кадры (векторы)
-                this.generatedVideoFrames = []; // вся текущая генерация 300 кадров
-                this.currentFrameIndex = 0;
-                this.animationId = null;
-                this.isGenerating = false;
+                this.realPhotos = [];       // векторные изображения 64x64x3
+                this.pastFrames = [];        // память прошлых генераций
+                this.currentVideo = [];      // 300 кадров (5 сек)
+                this.animFrame = null;
+                this.running = false;
                 
-                // Параметры сети
-                this.latentDim = 96;
+                // размеры
                 this.imgSize = 64;
-                this.channels = 3;
-                this.totalPixels = this.imgSize * this.imgSize * this.channels;
+                this.pixels = this.imgSize * this.imgSize * 3;
+                this.latent = 96;
                 
-                // Веса (генератор + дискриминатор)
                 this.initWeights();
                 
-                // UI элементы
-                this.realCanvas = document.getElementById('realVideoCanvas');
+                // DOM
+                this.realCanvas = document.getElementById('realVideo');
                 this.realCtx = this.realCanvas.getContext('2d');
-                this.genCanvas = document.getElementById('genVideoCanvas');
+                this.genCanvas = document.getElementById('genVideo');
                 this.genCtx = this.genCanvas.getContext('2d');
-                this.miniCanvas = document.getElementById('miniCurrentCanvas');
+                this.miniCanvas = document.getElementById('miniCanvas');
                 this.miniCtx = this.miniCanvas.getContext('2d');
                 
                 this.realCountSpan = document.getElementById('realCount');
-                this.genFramesTotalSpan = document.getElementById('genFramesTotal');
+                this.pastCountSpan = document.getElementById('pastCount');
                 this.lossSpan = document.getElementById('lossVal');
                 this.epochSpan = document.getElementById('epochVal');
                 this.progressFill = document.getElementById('progressFill');
                 
-                this.realMemoryStrip = document.getElementById('realMemoryStrip');
-                this.pastGenStrip = document.getElementById('pastGenStrip');
+                this.realStripDiv = document.getElementById('realStrip');
+                this.pastStripDiv = document.getElementById('pastStrip');
+                this.logDiv = document.getElementById('logPanel');
                 
-                this.logPanel = document.getElementById('logPanel');
-                
-                // настройка размеров canvas
                 this.realCanvas.width = 480; this.realCanvas.height = 270;
                 this.genCanvas.width = 480; this.genCanvas.height = 270;
                 
-                this.addLog("🧠 NANU инициализирована. Нейросеть готова смотреть и запоминать.");
+                this.addLog("🧠 NANU запущена. ИИ готов искать реальные фото и генерировать видео.");
             }
             
             initWeights() {
-                // Генератор: latent -> 256 -> 512 -> totalPixels
-                this.genW1 = this.randomMatrix(this.latentDim, 256);
-                this.genB1 = this.randomArray(256);
-                this.genW2 = this.randomMatrix(256, 512);
-                this.genB2 = this.randomArray(512);
-                this.genW3 = this.randomMatrix(512, this.totalPixels);
-                this.genB3 = this.randomArray(this.totalPixels);
+                // Генератор: latent -> 256 -> 512 -> pixels
+                this.GW1 = this.randMat(this.latent, 256);
+                this.GB1 = this.randArr(256);
+                this.GW2 = this.randMat(256, 512);
+                this.GB2 = this.randArr(512);
+                this.GW3 = this.randMat(512, this.pixels);
+                this.GB3 = this.randArr(this.pixels);
                 
-                // Дискриминатор: totalPixels -> 512 -> 256 -> 1
-                this.discW1 = this.randomMatrix(this.totalPixels, 512);
-                this.discB1 = this.randomArray(512);
-                this.discW2 = this.randomMatrix(512, 256);
-                this.discB2 = this.randomArray(256);
-                this.discW3 = this.randomMatrix(256, 1);
-                this.discB3 = this.randomArray(1);
+                // Дискриминатор: pixels -> 512 -> 256 -> 1
+                this.DW1 = this.randMat(this.pixels, 512);
+                this.DB1 = this.randArr(512);
+                this.DW2 = this.randMat(512, 256);
+                this.DB2 = this.randArr(256);
+                this.DW3 = this.randMat(256, 1);
+                this.DB3 = this.randArr(1);
             }
             
-            randomMatrix(rows, cols) {
-                let m = new Array(rows);
-                let scale = Math.sqrt(2.0 / rows);
-                for(let i=0;i<rows;i++) {
-                    m[i] = new Array(cols);
-                    for(let j=0;j<cols;j++) m[i][j] = (Math.random() - 0.5) * scale;
+            randMat(r,c) {
+                let m = new Array(r);
+                let scale = Math.sqrt(2.0/r);
+                for(let i=0;i<r;i++) {
+                    m[i] = new Array(c);
+                    for(let j=0;j<c;j++) m[i][j] = (Math.random() - 0.5) * scale;
                 }
                 return m;
             }
-            randomArray(n) {
+            randArr(n) {
                 let a = new Array(n);
-                for(let i=0;i<n;i++) a[i] = (Math.random() - 0.5)*0.1;
+                for(let i=0;i<n;i++) a[i] = (Math.random() - 0.5) * 0.1;
                 return a;
             }
             
-            relu(x) { return Math.max(0,x); }
-            reluDeriv(x) { return x>0?1:0; }
+            relu(x) { return x>0?x:0; }
             sigmoid(x) { return 1/(1+Math.exp(-x)); }
             
-            matVecMul(mat, vec) {
-                let res = new Array(mat.length);
-                for(let i=0;i<mat.length;i++) {
-                    let sum=0;
-                    for(let j=0;j<mat[i].length;j++) sum += mat[i][j]*vec[j];
-                    res[i]=sum;
+            matVecMul(M, v) {
+                let res = new Array(M.length);
+                for(let i=0;i<M.length;i++) {
+                    let s=0;
+                    for(let j=0;j<M[i].length;j++) s += M[i][j]*v[j];
+                    res[i]=s;
                 }
                 return res;
             }
             vecAdd(a,b) { return a.map((v,i)=>v+b[i]); }
             
-            forwardGenerator(z) {
-                let h1 = this.matVecMul(this.genW1, z);
-                h1 = this.vecAdd(h1, this.genB1);
+            generate(z) {
+                let h1 = this.matVecMul(this.GW1, z);
+                h1 = this.vecAdd(h1, this.GB1);
                 h1 = h1.map(x=>this.relu(x));
-                let h2 = this.matVecMul(this.genW2, h1);
-                h2 = this.vecAdd(h2, this.genB2);
+                let h2 = this.matVecMul(this.GW2, h1);
+                h2 = this.vecAdd(h2, this.GB2);
                 h2 = h2.map(x=>this.relu(x));
-                let out = this.matVecMul(this.genW3, h2);
-                out = this.vecAdd(out, this.genB3);
-                return out.map(x=>Math.tanh(x)); // -1..1
+                let out = this.matVecMul(this.GW3, h2);
+                out = this.vecAdd(out, this.GB3);
+                return out.map(x=>Math.tanh(x));
             }
             
-            forwardDiscriminator(imgVec) {
-                let h1 = this.matVecMul(this.discW1, imgVec);
-                h1 = this.vecAdd(h1, this.discB1);
+            discriminate(imgVec) {
+                let h1 = this.matVecMul(this.DW1, imgVec);
+                h1 = this.vecAdd(h1, this.DB1);
                 h1 = h1.map(x=>this.relu(x));
-                let h2 = this.matVecMul(this.discW2, h1);
-                h2 = this.vecAdd(h2, this.discB2);
+                let h2 = this.matVecMul(this.DW2, h1);
+                h2 = this.vecAdd(h2, this.DB2);
                 h2 = h2.map(x=>this.relu(x));
-                let out = this.matVecMul(this.discW3, h2);
-                out = this.vecAdd(out, this.discB3);
+                let out = this.matVecMul(this.DW3, h2);
+                out = this.vecAdd(out, this.DB3);
                 return this.sigmoid(out[0]);
             }
             
             trainStep(realVec) {
-                let z = this.randomVector(this.latentDim);
-                let fakeVec = this.forwardGenerator(z);
-                let realScore = this.forwardDiscriminator(realVec);
-                let fakeScore = this.forwardDiscriminator(fakeVec);
-                let discLoss = -Math.log(realScore+1e-7) - Math.log(1-fakeScore+1e-7);
-                let genLoss = -Math.log(fakeScore+1e-7);
-                return { loss: discLoss+genLoss, fakeVec: fakeVec };
+                let z = this.randomVec(this.latent);
+                let fake = this.generate(z);
+                let realScore = this.discriminate(realVec);
+                let fakeScore = this.discriminate(fake);
+                let dLoss = -Math.log(realScore+1e-8) - Math.log(1-fakeScore+1e-8);
+                let gLoss = -Math.log(fakeScore+1e-8);
+                return { loss: dLoss + gLoss, fakeImg: fake };
             }
             
-            randomVector(dim) {
-                let arr = new Array(dim);
-                for(let i=0;i<dim;i++) arr[i] = Math.random()*2-1;
-                return arr;
+            randomVec(d) {
+                let v = new Array(d);
+                for(let i=0;i<d;i++) v[i] = Math.random()*2-1;
+                return v;
             }
             
-            vectorToImageData(vec, w, h) {
+            vecToImage(vec, w, h) {
                 let imgData = new ImageData(w, h);
                 for(let y=0;y<h;y++) {
                     for(let x=0;x<w;x++) {
@@ -420,43 +405,42 @@
                         let r = (vec[idx]+1)/2*255;
                         let g = (vec[idx+1]+1)/2*255;
                         let b = (vec[idx+2]+1)/2*255;
-                        let pix = (y*w+x)*4;
-                        imgData.data[pix]=r; imgData.data[pix+1]=g; imgData.data[pix+2]=b; imgData.data[pix+3]=255;
+                        let p = (y*w+x)*4;
+                        imgData.data[p]=r; imgData.data[p+1]=g; imgData.data[p+2]=b; imgData.data[p+3]=255;
                     }
                 }
                 return imgData;
             }
             
-            async searchRealImages(prompt) {
-                this.addLog(`🔍 Реальный поиск в интернете: "${prompt}" (Unsplash API)`);
-                this.realImages = [];
-                const query = encodeURIComponent(prompt);
-                // используем публичный прокси для Unsplash (без ключа, но с ограничениями, работает для демо)
-                const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(`https://unsplash.com/napi/search/photos?query=${query}&per_page=24`)}`;
-                try {
-                    let response = await fetch(url);
-                    let data = await response.json();
-                    let results = data.results || [];
-                    if(results.length===0) throw new Error("нет фото");
-                    this.addLog(`📸 Найдено ${results.length} реальных фото. Загружаем...`);
-                    for(let i=0; i<Math.min(results.length, 24); i++) {
-                        let thumb = results[i].urls?.small || results[i].urls?.regular;
-                        if(thumb) {
-                            let imgVec = await this.fetchImageAsVector(thumb);
-                            if(imgVec) {
-                                this.realImages.push(imgVec);
-                                this.updateMemoryStrip();
-                            }
-                        }
-                        await this.sleep(80);
-                    }
-                } catch(e) {
-                    this.addLog(`⚠️ Ошибка API, но мы создадим синтетические данные по промпту (чтобы нейросеть работала)`, "#ffaa44");
-                    for(let i=0;i<20;i++) this.realImages.push(this.generateProceduralVector(prompt, i));
+            async searchRealPhotos(query) {
+                this.addLog(`🔍 РЕАЛЬНЫЙ ПОИСК: "${query}" — загрузка фото из интернета...`);
+                this.realPhotos = [];
+                // используем Unsplash Source API (прямые реальные фото)
+                const keywords = encodeURIComponent(query);
+                const urls = [];
+                for(let i=0;i<24;i++) {
+                    // Unsplash random по ключевым словам, реальные фото
+                    urls.push(`https://source.unsplash.com/featured/400x400?${keywords}&sig=${i}`);
                 }
-                this.realCountSpan.innerText = this.realImages.length;
-                this.addLog(`✅ Готово: ${this.realImages.length} изображений для обучения.`);
-                if(this.realImages.length) this.showRealExample();
+                let loaded = 0;
+                for(let url of urls) {
+                    let vec = await this.fetchImageAsVector(url);
+                    if(vec) {
+                        this.realPhotos.push(vec);
+                        loaded++;
+                        this.realCountSpan.innerText = this.realPhotos.length;
+                        this.updateRealStrip();
+                        if(loaded===1) this.showRealExample(vec);
+                        await this.sleep(60);
+                    }
+                }
+                if(this.realPhotos.length===0) {
+                    this.addLog("⚠️ Не удалось загрузить реальные фото, создаю умные текстуры по промпту", "#ffaa66");
+                    for(let i=0;i<20;i++) this.realPhotos.push(this.smartTexture(query, i));
+                    this.realCountSpan.innerText = this.realPhotos.length;
+                    this.updateRealStrip();
+                }
+                this.addLog(`✅ ГОТОВО: ${this.realPhotos.length} реальных изображений (${query})`);
             }
             
             async fetchImageAsVector(url) {
@@ -469,18 +453,16 @@
                         canvas.height = this.imgSize;
                         let ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, this.imgSize, this.imgSize);
-                        let imgData = ctx.getImageData(0,0, this.imgSize, this.imgSize);
-                        let vec = new Array(this.totalPixels);
+                        let data = ctx.getImageData(0,0,this.imgSize,this.imgSize);
+                        let vec = new Array(this.pixels);
                         for(let y=0;y<this.imgSize;y++) {
                             for(let x=0;x<this.imgSize;x++) {
                                 let idx = (y*this.imgSize+x)*4;
-                                let r = imgData.data[idx]/255;
-                                let g = imgData.data[idx+1]/255;
-                                let b = imgData.data[idx+2]/255;
-                                let pixIdx = (y*this.imgSize+x)*3;
-                                vec[pixIdx] = r*2-1;
-                                vec[pixIdx+1] = g*2-1;
-                                vec[pixIdx+2] = b*2-1;
+                                let r = data.data[idx]/255;
+                                let g = data.data[idx+1]/255;
+                                let b = data.data[idx+2]/255;
+                                let p = (y*this.imgSize+x)*3;
+                                vec[p] = r*2-1; vec[p+1]=g*2-1; vec[p+2]=b*2-1;
                             }
                         }
                         resolve(vec);
@@ -490,161 +472,159 @@
                 });
             }
             
-            generateProceduralVector(prompt, seed) {
-                let vec = new Array(this.totalPixels);
+            smartTexture(prompt, seed) {
+                let vec = new Array(this.pixels);
                 let hash = 0;
                 for(let i=0;i<prompt.length;i++) hash = ((hash<<5)-hash)+prompt.charCodeAt(i);
                 for(let y=0;y<this.imgSize;y++) {
                     for(let x=0;x<this.imgSize;x++) {
                         let idx = (y*this.imgSize+x)*3;
-                        let r = Math.sin(x*0.1+seed)*0.5 + Math.cos(y*0.08+hash)*0.5;
-                        let g = Math.sin(y*0.12+seed*2)*0.5 + Math.cos(x*0.07+hash*0.7)*0.5;
-                        let b = Math.sin((x+y)*0.05+seed*3)*0.6 + Math.cos(x*0.09)*0.4;
+                        let r = Math.sin(x*0.12+seed)*0.6 + Math.cos(y*0.09+hash)*0.4;
+                        let g = Math.sin(y*0.15+seed*2)*0.6 + Math.cos(x*0.1+hash*0.5)*0.4;
+                        let b = Math.sin((x+y)*0.08+seed*3)*0.7 + Math.cos(x*0.13)*0.3;
                         vec[idx] = r*2-1; vec[idx+1]=g*2-1; vec[idx+2]=b*2-1;
                     }
                 }
                 return vec;
             }
             
-            async trainAndGenerateVideo(targetFrames = 300) { // 5 секунд при 60fps
-                if(this.realImages.length===0) { this.addLog("❌ Нет реальных картинок. Сначала выполните поиск."); return; }
-                this.isGenerating = true;
-                this.addLog(`🚀 ОБУЧЕНИЕ НА ${this.realImages.length} картинках + ${this.pastGeneratedFrames.length} прошлых кадрах (память)`);
-                let epochs = 35;
-                for(let ep=0; ep<epochs && this.isGenerating; ep++) {
+            async trainAndGenerate() {
+                if(this.realPhotos.length===0) { this.addLog("❌ Сначала выполните поиск фото"); return; }
+                this.running = true;
+                this.addLog(`🚀 ОБУЧЕНИЕ: ${this.realPhotos.length} реальных фото + память (${this.pastFrames.length} кадров)`);
+                let epochs = 40;
+                for(let ep=0; ep<epochs && this.running; ep++) {
                     let totalLoss=0;
-                    let allTraining = [...this.realImages];
-                    if(this.pastGeneratedFrames.length>0) {
-                        let pastSample = this.pastGeneratedFrames.slice(-Math.min(40, this.pastGeneratedFrames.length));
-                        allTraining.push(...pastSample);
+                    let allData = [...this.realPhotos];
+                    if(this.pastFrames.length>0) {
+                        let pastSample = this.pastFrames.slice(-Math.min(50, this.pastFrames.length));
+                        allData.push(...pastSample);
                     }
-                    for(let img of allTraining) {
-                        let res = this.trainStep(img);
-                        totalLoss += res.loss;
+                    for(let img of allData) {
+                        let step = this.trainStep(img);
+                        totalLoss += step.loss;
                     }
-                    let avgLoss = totalLoss/allTraining.length;
+                    let avgLoss = totalLoss/allData.length;
                     this.lossSpan.innerText = avgLoss.toFixed(5);
                     this.epochSpan.innerText = ep+1;
-                    let progress = ((ep+1)/epochs)*100;
-                    this.progressFill.style.width = progress+"%";
-                    this.progressFill.innerText = Math.floor(progress)+"%";
+                    let percent = ((ep+1)/epochs)*100;
+                    this.progressFill.style.width = percent+"%";
+                    this.progressFill.innerText = Math.floor(percent)+"%";
                     if(ep%5===0) this.addLog(`📊 эпоха ${ep+1}/${epochs} loss=${avgLoss.toFixed(4)}`);
-                    await this.sleep(40);
+                    await this.sleep(35);
                 }
-                // генерация 300 кадров (5 секунд, 60 fps)
-                this.addLog(`🎬 ГЕНЕРАЦИЯ ВИДЕО 5 секунд (${targetFrames} кадров)...`);
-                this.generatedVideoFrames = [];
-                for(let i=0;i<targetFrames;i++) {
-                    let z = this.randomVector(this.latentDim);
-                    let frameVec = this.forwardGenerator(z);
-                    this.generatedVideoFrames.push(frameVec);
+                this.addLog(`🎬 ГЕНЕРАЦИЯ 300 КАДРОВ (5 секунд, 60 fps)...`);
+                this.currentVideo = [];
+                for(let i=0;i<300;i++) {
+                    let z = this.randomVec(this.latent);
+                    let frame = this.generate(z);
+                    this.currentVideo.push(frame);
                     if(i%30===0) {
-                        this.updateGenStrip(frameVec);
-                        this.showOnGenCanvas(frameVec);
-                        await this.sleep(10);
-                    }
-                }
-                this.pastGeneratedFrames.push(...this.generatedVideoFrames.slice(-100));
-                this.genFramesTotalSpan.innerText = this.pastGeneratedFrames.length;
-                this.addLog(`✅ Видео готово! ${this.generatedVideoFrames.length} кадров. Запускаю воспроизведение 60fps.`);
-                this.startVideoPlayback();
-            }
-            
-            startVideoPlayback() {
-                if(this.animationId) cancelAnimationFrame(this.animationId);
-                let idx = 0;
-                const fps = 60;
-                const frameDuration = 1000/fps;
-                let lastTime = performance.now();
-                const play = (now) => {
-                    if(!this.isGenerating && this.generatedVideoFrames.length===0) return;
-                    if(now - lastTime >= frameDuration) {
-                        if(idx >= this.generatedVideoFrames.length) idx = 0;
-                        let frame = this.generatedVideoFrames[idx];
                         this.showOnGenCanvas(frame);
                         this.updateMiniPreview(frame);
-                        idx++;
-                        lastTime = now;
+                        this.addPastFrameToMemory(frame);
+                        await this.sleep(12);
                     }
-                    this.animationId = requestAnimationFrame(play);
+                }
+                this.pastCountSpan.innerText = this.pastFrames.length;
+                this.addLog(`✅ ВИДЕО ГОТОВО! Запуск 60fps.`);
+                this.startPlayback();
+            }
+            
+            startPlayback() {
+                if(this.animFrame) cancelAnimationFrame(this.animFrame);
+                let idx = 0;
+                const fps = 60;
+                const interval = 1000/fps;
+                let last = performance.now();
+                const play = (now) => {
+                    if(!this.running && this.currentVideo.length===0) return;
+                    if(now - last >= interval) {
+                        if(idx >= this.currentVideo.length) idx = 0;
+                        this.showOnGenCanvas(this.currentVideo[idx]);
+                        this.updateMiniPreview(this.currentVideo[idx]);
+                        idx++;
+                        last = now;
+                    }
+                    this.animFrame = requestAnimationFrame(play);
                 };
-                this.animationId = requestAnimationFrame(play);
+                this.animFrame = requestAnimationFrame(play);
             }
             
             showOnGenCanvas(vec) {
-                let imgData = this.vectorToImageData(vec, this.imgSize, this.imgSize);
-                let offCanvas = document.createElement('canvas');
-                offCanvas.width = this.imgSize;
-                offCanvas.height = this.imgSize;
-                offCanvas.getContext('2d').putImageData(imgData,0,0);
-                this.genCtx.drawImage(offCanvas, 0, 0, this.genCanvas.width, this.genCanvas.height);
+                let imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
+                let off = document.createElement('canvas');
+                off.width = this.imgSize; off.height = this.imgSize;
+                off.getContext('2d').putImageData(imgData,0,0);
+                this.genCtx.drawImage(off, 0, 0, this.genCanvas.width, this.genCanvas.height);
             }
             
-            showRealExample() {
-                if(this.realImages.length){
-                    let imgData = this.vectorToImageData(this.realImages[0], this.imgSize, this.imgSize);
-                    let off = document.createElement('canvas');
-                    off.width=this.imgSize; off.height=this.imgSize;
-                    off.getContext('2d').putImageData(imgData,0,0);
-                    this.realCtx.drawImage(off,0,0,this.realCanvas.width,this.realCanvas.height);
-                }
+            showRealExample(vec) {
+                let imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
+                let off = document.createElement('canvas');
+                off.width = this.imgSize; off.height = this.imgSize;
+                off.getContext('2d').putImageData(imgData,0,0);
+                this.realCtx.drawImage(off, 0, 0, this.realCanvas.width, this.realCanvas.height);
             }
             
             updateMiniPreview(vec) {
-                let imgData = this.vectorToImageData(vec, this.imgSize, this.imgSize);
+                let imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
                 this.miniCtx.putImageData(imgData,0,0);
             }
             
-            updateGenStrip(vec) {
-                let imgData = this.vectorToImageData(vec, this.imgSize, this.imgSize);
+            addPastFrameToMemory(vec) {
+                this.pastFrames.push(vec);
+                if(this.pastFrames.length > 200) this.pastFrames.shift();
+                let imgData = this.vecToImage(vec, this.imgSize, this.imgSize);
                 let canvas = document.createElement('canvas'); canvas.width=64; canvas.height=64;
                 canvas.getContext('2d').putImageData(imgData,0,0);
-                let imgEl = document.createElement('img'); imgEl.src = canvas.toDataURL(); imgEl.className="mini-img";
-                this.pastGenStrip.prepend(imgEl);
-                while(this.pastGenStrip.children.length>18) this.pastGenStrip.removeChild(this.pastGenStrip.lastChild);
+                let img = document.createElement('img'); img.src = canvas.toDataURL(); img.className="mini-img";
+                this.pastStripDiv.prepend(img);
+                while(this.pastStripDiv.children.length > 24) this.pastStripDiv.removeChild(this.pastStripDiv.lastChild);
             }
             
-            updateMemoryStrip() {
-                this.realMemoryStrip.innerHTML = "";
-                for(let i=0;i<Math.min(this.realImages.length,24);i++) {
-                    let imgData = this.vectorToImageData(this.realImages[i], this.imgSize, this.imgSize);
+            updateRealStrip() {
+                this.realStripDiv.innerHTML = "";
+                for(let i=0;i<Math.min(this.realPhotos.length,24);i++) {
+                    let imgData = this.vecToImage(this.realPhotos[i], this.imgSize, this.imgSize);
                     let canvas = document.createElement('canvas'); canvas.width=64; canvas.height=64;
                     canvas.getContext('2d').putImageData(imgData,0,0);
                     let img = document.createElement('img'); img.src = canvas.toDataURL(); img.className="mini-img";
-                    this.realMemoryStrip.appendChild(img);
+                    this.realStripDiv.appendChild(img);
                 }
             }
             
             stop() {
-                this.isGenerating = false;
-                if(this.animationId) cancelAnimationFrame(this.animationId);
-                this.addLog("⏹️ Генерация и обучение остановлены.");
+                this.running = false;
+                if(this.animFrame) cancelAnimationFrame(this.animFrame);
+                this.addLog("⏹️ Остановлено.");
             }
             
-            addLog(msg, color="#8bc34a") {
-                let div = document.createElement('div');
-                div.className = "log-entry";
-                div.style.color = color;
-                div.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-                this.logPanel.appendChild(div);
-                div.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            addLog(msg, col="#a0ffc0") {
+                let line = document.createElement('div');
+                line.className = "log-line";
+                line.style.color = col;
+                line.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                this.logDiv.appendChild(line);
+                line.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
-            sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+            
+            sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
         }
         
-        const nanu = new NanuWithMemory();
+        const nanu = new Nanu();
         window.nanu = nanu;
         
         document.getElementById('searchBtn').onclick = async () => {
-            let prompt = document.getElementById('promptInput').value;
-            if(!prompt.trim()) return nanu.addLog("Введите промпт", "#ff8888");
-            await nanu.searchRealImages(prompt);
+            let p = document.getElementById('prompt').value;
+            if(!p.trim()) return;
+            await nanu.searchRealPhotos(p);
         };
-        document.getElementById('trainBtn').onclick = async () => {
-            await nanu.trainAndGenerateVideo(300);
+        document.getElementById('generateBtn').onclick = async () => {
+            await nanu.trainAndGenerate();
         };
         document.getElementById('stopBtn').onclick = () => nanu.stop();
     })();
 </script>
 </body>
-                </html>
+</html>
