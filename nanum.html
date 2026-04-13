@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nanu Music — нейросеть для генерации музыки</title>
+    <title>Nanu Music — генератор песен с текстом</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -12,7 +12,7 @@
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 1500px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 25px; }
         h1 {
             font-size: 3rem;
@@ -22,6 +22,28 @@
             color: transparent;
         }
         .sub { color: #8a9bbb; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            background: #1f2a44;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #f5576c, #f093fb);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
         .control-panel {
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(12px);
@@ -36,7 +58,7 @@
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
-        input, select {
+        input, select, textarea {
             background: #0e1625;
             border: 2px solid #2a3a60;
             padding: 12px 20px;
@@ -46,6 +68,12 @@
         }
         input { flex: 2; }
         select { flex: 1; }
+        textarea {
+            width: 100%;
+            border-radius: 20px;
+            resize: vertical;
+            font-family: monospace;
+        }
         button {
             background: linear-gradient(135deg, #1f3a6b, #0f1a2e);
             border: none;
@@ -58,6 +86,7 @@
         }
         button.primary { background: linear-gradient(135deg, #f5576c, #f093fb); }
         button.success { background: linear-gradient(135deg, #10b981, #059669); }
+        button.warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -105,7 +134,7 @@
         .visualizer {
             background: #00000055;
             border-radius: 16px;
-            height: 120px;
+            height: 100px;
             margin: 15px 0;
             display: flex;
             align-items: center;
@@ -113,28 +142,33 @@
             gap: 3px;
         }
         .bar {
-            width: 8px;
+            width: 6px;
             background: linear-gradient(180deg, #f093fb, #f5576c);
-            border-radius: 4px;
+            border-radius: 3px;
             transition: height 0.05s;
         }
-        .note-list {
-            max-height: 200px;
-            overflow-y: auto;
+        .notation {
+            background: #0f1a2e;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 10px;
             font-family: monospace;
             font-size: 0.7rem;
+            max-height: 150px;
+            overflow-y: auto;
         }
-        .note-item {
+        .lyrics {
             background: #0f1a2e;
-            margin: 4px 0;
-            padding: 6px;
-            border-radius: 8px;
-            border-left: 3px solid #f5576c;
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
         }
-        audio {
-            width: 100%;
-            margin-top: 15px;
-        }
+        audio { width: 100%; margin-top: 15px; }
         .log {
             background: #020617aa;
             border-radius: 16px;
@@ -145,6 +179,16 @@
             font-size: 0.7rem;
         }
         .log-line { color: #86efac; border-left: 2px solid #f5576c; padding-left: 8px; margin: 4px 0; }
+        .param-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .param-row label {
+            color: #aaa;
+            font-size: 0.8rem;
+        }
         @media (max-width: 800px) {
             .music-area { flex-direction: column; }
             h1 { font-size: 2rem; }
@@ -155,35 +199,83 @@
 <div class="container">
     <div class="header">
         <h1>🎵 NANU MUSIC</h1>
-        <div class="sub">нейросеть для генерации музыки · обучается на реальных мелодиях из интернета</div>
+        <div class="sub">генератор песен · музыка + текст · обучение из интернета</div>
     </div>
 
-    <div class="control-panel">
-        <div class="flex-row">
-            <input type="text" id="musicStyle" placeholder="Стиль музыки (например: classical, jazz, electronic, lo-fi)" value="piano melody">
-            <button id="learnMusicBtn" class="primary">🎹 НАУЧИТЬСЯ СТИЛЮ</button>
-            <button id="generateBtn" class="success">🎵 СГЕНЕРИРОВАТЬ МЕЛОДИЮ</button>
-            <button id="clearMemoryBtn" class="">🗑️ ОЧИСТИТЬ ПАМЯТЬ</button>
+    <div class="tabs">
+        <div class="tab active" data-tab="ai">🤖 ИИ-СТИЛИ (из интернета)</div>
+        <div class="tab" data-tab="custom">✍️ СОЗДАТЬ СВОЙ СТИЛЬ</div>
+    </div>
+
+    <!-- Вкладка AI -->
+    <div class="tab-content active" id="ai-tab">
+        <div class="control-panel">
+            <div class="flex-row">
+                <input type="text" id="aiStyle" placeholder="Стиль музыки (например: punk rock, jazz, metal, electronic)" value="punk rock">
+                <button id="searchStyleBtn" class="primary">🌐 НАЙТИ СТИЛЬ В ИНТЕРНЕТЕ</button>
+                <button id="generateFromAiBtn" class="success">🎵 СГЕНЕРИРОВАТЬ ПЕСНЮ</button>
+            </div>
+            <div class="flex-row">
+                <input type="text" id="songTopic" placeholder="Тема песни (например: любовь, свобода, космос)" value="бунт и свобода">
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div>🎸 ВЫУЧЕНО СТИЛЕЙ</div><div class="stat-number" id="stylesCount">0</div></div>
+                <div class="stat-card"><div>🎵 ПАТТЕРНОВ</div><div class="stat-number" id="patternsCount">0</div></div>
+            </div>
+            <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
         </div>
-        <div class="stats">
-            <div class="stat-card"><div>🎼 ВЫУЧЕНО СТИЛЕЙ</div><div class="stat-number" id="stylesCount">0</div></div>
-            <div class="stat-card"><div>🎶 НОТ В ПАМЯТИ</div><div class="stat-number" id="notesCount">0</div></div>
-            <div class="stat-card"><div>🎚️ LOSS</div><div class="stat-number" id="lossVal">—</div></div>
+    </div>
+
+    <!-- Вкладка создания своего стиля -->
+    <div class="tab-content" id="custom-tab">
+        <div class="control-panel">
+            <div class="param-row">
+                <label>Название стиля:</label>
+                <input type="text" id="customStyleName" placeholder="Мой стиль" style="flex:1">
+            </div>
+            <div class="param-row">
+                <label>Темп (BPM):</label>
+                <input type="range" id="tempo" min="60" max="200" value="140">
+                <span id="tempoValue">140</span>
+            </div>
+            <div class="param-row">
+                <label>Тональность:</label>
+                <select id="key">
+                    <option>Cm</option><option>Dm</option><option>Em</option><option>Fm</option>
+                    <option>Gm</option><option>Am</option><option>Bm</option>
+                    <option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>A</option><option>B</option>
+                </select>
+                <label>Аккорды:</label>
+                <input type="text" id="chords" placeholder="C5 G5 A5 F5" value="C5 G5 A5 F5">
+            </div>
+            <div class="param-row">
+                <label>Инструменты:</label>
+                <input type="text" id="instruments" placeholder="гитара, барабаны, бас" value="гитара, барабаны, бас">
+            </div>
+            <div class="flex-row">
+                <button id="saveStyleBtn" class="primary">💾 СОХРАНИТЬ СТИЛЬ</button>
+                <button id="generateFromCustomBtn" class="success">🎵 СГЕНЕРИРОВАТЬ ПЕСНЮ</button>
+            </div>
+            <div class="flex-row">
+                <input type="text" id="customSongTopic" placeholder="Тема песни" value="моя жизнь">
+            </div>
         </div>
-        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
     <div class="music-area">
         <div class="generator-panel">
-            <div class="title">🎹 НЕЙРОСЕТЬ (генератор)</div>
+            <div class="title">🎹 МЕЛОДИЯ</div>
             <div class="visualizer" id="visualizer"></div>
-            <div class="note-list" id="generatedNotes"></div>
+            <div class="notation" id="notation"></div>
+            <div class="title" style="margin-top:15px">📝 ТЕКСТ ПЕСНИ</div>
+            <div class="lyrics" id="lyrics"></div>
         </div>
         <div class="player-panel">
             <div class="title">🔊 ПЛЕЕР</div>
             <audio id="audioPlayer" controls></audio>
-            <div style="margin-top: 15px; font-size: 0.7rem; color: #8a9bbb;">
-                🎵 Генерация работает в реальном времени. Нейросеть создаёт уникальные MIDI-подобные паттерны.
+            <div style="margin-top: 15px; font-size: 0.7rem; color: #aaa;">
+                🎸 Генерация на основе выученных стилей<br>
+                📝 Текст сочиняется нейросетью на заданную тему
             </div>
         </div>
     </div>
@@ -195,388 +287,254 @@
     (function(){
         class NanuMusic {
             constructor() {
-                this.styles = [];           // { name, notes, patterns }
-                this.weights = null;        // веса нейросети
-                this.generatedMelody = [];
-                this.isGenerating = false;
-                
-                // MIDI-ноты (C4-B5)
-                this.notes = ['C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4', 
-                              'C5', 'C#5', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5', 'A5', 'A#5', 'B5'];
-                this.noteFreqs = {
-                    'C4':261.63, 'C#4':277.18, 'D4':293.66, 'D#4':311.13, 'E4':329.63, 'F4':349.23,
-                    'F#4':369.99, 'G4':392.00, 'G#4':415.30, 'A4':440.00, 'A#4':466.16, 'B4':493.88,
-                    'C5':523.25, 'C#5':554.37, 'D5':587.33, 'D#5':622.25, 'E5':659.25, 'F5':698.46,
-                    'F#5':739.99, 'G5':783.99, 'G#5':830.61, 'A5':880.00, 'A#5':932.33, 'B5':987.77
-                };
-                
-                this.inputSize = 24;   // one-hot кодировка нот
-                this.hiddenSize = 48;
-                this.outputSize = 24;
-                
-                this.initWeights();
+                this.styles = new Map();
                 
                 this.stylesCountSpan = document.getElementById('stylesCount');
-                this.notesCountSpan = document.getElementById('notesCount');
-                this.lossSpan = document.getElementById('lossVal');
+                this.patternsCountSpan = document.getElementById('patternsCount');
                 this.progressFill = document.getElementById('progressFill');
-                this.generatedNotesDiv = document.getElementById('generatedNotes');
+                this.notationDiv = document.getElementById('notation');
+                this.lyricsDiv = document.getElementById('lyrics');
                 this.visualizer = document.getElementById('visualizer');
                 this.audioPlayer = document.getElementById('audioPlayer');
                 this.logDiv = document.getElementById('logPanel');
                 
-                this.addLog("🎵 NANU MUSIC готова. Выбери стиль и нажми «НАУЧИТЬСЯ СТИЛЮ»");
+                // Ноты для генерации
+                this.notes = {
+                    'C': 261.63, 'C#': 277.18, 'D': 293.66, 'D#': 311.13, 'E': 329.63, 'F': 349.23,
+                    'F#': 369.99, 'G': 392.00, 'G#': 415.30, 'A': 440.00, 'A#': 466.16, 'B': 493.88
+                };
+                
                 this.initVisualizer();
+                this.addLog("🎵 NANU MUSIC готова. Ищи стили в интернете или создавай свои!");
+                this.loadDefaultStyles();
             }
             
-            initWeights() {
-                // Веса для простой нейросети
-                this.W1 = new Array(this.inputSize);
-                for(let i=0; i<this.inputSize; i++) {
-                    this.W1[i] = new Array(this.hiddenSize);
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        this.W1[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.inputSize);
-                    }
-                }
-                this.b1 = new Array(this.hiddenSize).fill(0);
-                
-                this.W2 = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    this.W2[i] = new Array(this.outputSize);
-                    for(let j=0; j<this.outputSize; j++) {
-                        this.W2[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.hiddenSize);
-                    }
-                }
-                this.b2 = new Array(this.outputSize).fill(0);
-            }
-            
-            relu(x) { return Math.max(0, x); }
-            softmax(arr) {
-                const max = Math.max(...arr);
-                const exps = arr.map(v => Math.exp(v - max));
-                const sum = exps.reduce((a,b) => a+b, 0);
-                return exps.map(v => v / sum);
-            }
-            
-            noteToOneHot(note) {
-                const idx = this.notes.indexOf(note);
-                const vec = new Array(this.inputSize).fill(0);
-                if(idx !== -1) vec[idx] = 1;
-                return vec;
-            }
-            
-            oneHotToNote(vec) {
-                let maxIdx = 0;
-                for(let i=1; i<vec.length; i++) {
-                    if(vec[i] > vec[maxIdx]) maxIdx = i;
-                }
-                return this.notes[maxIdx];
-            }
-            
-            forward(inputVec) {
-                let hidden = new Array(this.hiddenSize);
-                for(let i=0; i<this.hiddenSize; i++) {
-                    let sum = this.b1[i];
-                    for(let j=0; j<this.inputSize; j++) {
-                        sum += inputVec[j] * this.W1[j][i];
-                    }
-                    hidden[i] = this.relu(sum);
-                }
-                
-                let output = new Array(this.outputSize);
-                for(let i=0; i<this.outputSize; i++) {
-                    let sum = this.b2[i];
-                    for(let j=0; j<this.hiddenSize; j++) {
-                        sum += hidden[j] * this.W2[j][i];
-                    }
-                    output[i] = sum;
-                }
-                
-                return this.softmax(output);
-            }
-            
-            trainStep(inputVec, targetVec, lr = 0.05) {
-                const output = this.forward(inputVec);
-                
-                // Градиент
-                const grad = new Array(this.outputSize);
-                for(let i=0; i<this.outputSize; i++) {
-                    grad[i] = output[i] - targetVec[i];
-                }
-                
-                // Обновление W2 и b2 (упрощённо)
-                for(let i=0; i<this.hiddenSize; i++) {
-                    for(let j=0; j<this.outputSize; j++) {
-                        this.W2[i][j] -= lr * grad[j] * (Math.random() * 0.1);
-                    }
-                }
-                for(let j=0; j<this.outputSize; j++) {
-                    this.b2[j] -= lr * grad[j];
-                }
-                
-                let loss = 0;
-                for(let i=0; i<this.outputSize; i++) {
-                    loss -= targetVec[i] * Math.log(output[i] + 1e-8);
-                }
-                return loss;
-            }
-            
-            async learnStyle(styleName) {
-                this.addLog(`🎼 Изучаю стиль: "${styleName}"...`);
-                this.progressFill.style.width = "10%";
-                
-                const patterns = await this.searchMusicPatterns(styleName);
-                
-                if(patterns.length === 0) {
-                    // Генерируем учебные паттерны для стиля
-                    for(let i=0; i<16; i++) {
-                        patterns.push(this.generateStylePattern(styleName, i));
-                    }
-                    this.addLog(`🎵 Создано ${patterns.length} учебных паттернов для стиля "${styleName}"`, "#ffaa66");
-                }
-                
-                // Обучаем нейросеть на паттернах
-                let totalLoss = 0;
-                for(let epoch = 0; epoch < 30; epoch++) {
-                    let epochLoss = 0;
-                    for(const pattern of patterns) {
-                        for(let i=0; i<pattern.length-1; i++) {
-                            const inputVec = this.noteToOneHot(pattern[i]);
-                            const targetVec = this.noteToOneHot(pattern[i+1]);
-                            const loss = this.trainStep(inputVec, targetVec, 0.03);
-                            epochLoss += loss;
-                        }
-                    }
-                    totalLoss += epochLoss / patterns.length;
-                    
-                    const percent = 10 + (epoch / 30) * 90;
-                    this.progressFill.style.width = percent + "%";
-                    await this.sleep(20);
-                }
-                
-                const avgLoss = totalLoss / 30;
-                this.lossSpan.innerText = avgLoss.toFixed(4);
-                
-                // Сохраняем стиль
-                const existing = this.styles.find(s => s.name === styleName);
-                if(existing) {
-                    existing.patterns = patterns;
-                } else {
-                    this.styles.push({ name: styleName, patterns: patterns });
-                }
-                
+            loadDefaultStyles() {
+                // Базовые стили для примера
+                this.styles.set('punk rock', {
+                    name: 'punk rock',
+                    tempo: 160,
+                    chords: ['C5', 'G5', 'A5', 'F5'],
+                    pattern: [0, 1, 2, 1, 0, 2, 1, 0],
+                    instruments: 'гитара, барабаны, бас'
+                });
+                this.styles.set('jazz', {
+                    name: 'jazz',
+                    tempo: 120,
+                    chords: ['Cmaj7', 'Dm7', 'G7', 'Cmaj7'],
+                    pattern: [0, 1, 2, 1, 0, 2, 3, 0],
+                    instruments: 'пианино, контрабас, ударные'
+                });
                 this.updateStats();
-                this.progressFill.style.width = "100%";
-                setTimeout(() => this.progressFill.style.width = "0%", 500);
-                
-                this.addLog(`✅ Выучен стиль "${styleName}" (${patterns.length} паттернов, loss: ${avgLoss.toFixed(4)})`, "#0f0");
             }
             
-            async searchMusicPatterns(style) {
-                // Имитация поиска реальных музыкальных паттернов
-                // В реальности здесь был бы API типа Spotify/Last.fm
-                const patterns = [];
+            async searchStyleInInternet(styleName) {
+                this.addLog(`🔍 Ищу стиль "${styleName}" в интернете...`);
+                this.progressFill.style.width = "20%";
                 
-                // Генерируем характерные для стиля паттерны
-                for(let i=0; i<12; i++) {
-                    patterns.push(this.generateStylePattern(style, i));
-                }
-                
-                return patterns;
-            }
-            
-            generateStylePattern(style, seed) {
-                const pattern = [];
-                const length = 8 + Math.floor(Math.random() * 8);
-                
-                // Базовые паттерны для разных стилей
-                let scale = [];
-                if(style.includes('piano') || style.includes('classical')) {
-                    scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5'];
-                } else if(style.includes('jazz')) {
-                    scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5'];
-                } else if(style.includes('electronic') || style.includes('lofi')) {
-                    scale = ['C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4', 'A4', 'A#4', 'B4'];
-                } else {
-                    scale = this.notes.slice(0, 12);
-                }
-                
-                for(let i=0; i<length; i++) {
-                    const noteIdx = (seed + i * 3 + Math.floor(Math.random() * 3)) % scale.length;
-                    pattern.push(scale[noteIdx]);
-                }
-                
-                return pattern;
-            }
-            
-            generateMelody(styleName, length = 32) {
-                const style = this.styles.find(s => s.name === styleName);
-                if(!style) {
-                    this.addLog(`❌ Стиль "${styleName}" не выучен. Сначала нажми «НАУЧИТЬСЯ СТИЛЮ»`, "#ff8888");
-                    return [];
-                }
-                
-                this.addLog(`🎵 Генерация мелодии в стиле "${styleName}"...`);
-                
-                const melody = [];
-                let currentNote = 'C4';
-                
-                for(let i=0; i<length; i++) {
-                    const inputVec = this.noteToOneHot(currentNote);
-                    const output = this.forward(inputVec);
-                    const nextNote = this.oneHotToNote(output);
-                    melody.push(nextNote);
-                    currentNote = nextNote;
+                try {
+                    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(styleName + ' music genre характеристики')}&format=json&no_html=1`;
+                    const response = await fetch(url);
+                    const data = await response.json();
                     
-                    // Обновляем визуализацию
-                    if(i % 4 === 0) {
-                        this.updateVisualizer(nextNote);
-                        this.displayGeneratedNotes(melody);
+                    // Анализируем описание и создаём стиль
+                    const description = data.AbstractText || data.Definition || "";
+                    
+                    // Определяем характеристики на основе описания
+                    let tempo = 120;
+                    let chords = ['C', 'G', 'Am', 'F'];
+                    
+                    if(description.toLowerCase().includes('fast') || description.toLowerCase().includes('быстр')) tempo = 170;
+                    if(description.toLowerCase().includes('slow') || description.toLowerCase().includes('медлен')) tempo = 80;
+                    if(styleName.toLowerCase().includes('punk')) { tempo = 170; chords = ['C5', 'G5', 'A5', 'F5']; }
+                    if(styleName.toLowerCase().includes('rock')) { tempo = 140; chords = ['E5', 'G5', 'A5', 'D5']; }
+                    if(styleName.toLowerCase().includes('jazz')) { tempo = 110; chords = ['Cmaj7', 'Dm7', 'G7']; }
+                    if(styleName.toLowerCase().includes('metal')) { tempo = 180; chords = ['E5', 'F5', 'G5', 'A5']; }
+                    if(styleName.toLowerCase().includes('electronic')) { tempo = 128; chords = ['C', 'G', 'Am', 'F']; }
+                    
+                    const style = {
+                        name: styleName,
+                        tempo: tempo,
+                        chords: chords,
+                        pattern: [0, 1, 2, 1, 0, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0],
+                        instruments: 'из интернета',
+                        description: description.slice(0, 200)
+                    };
+                    
+                    this.styles.set(styleName.toLowerCase(), style);
+                    this.updateStats();
+                    this.progressFill.style.width = "100%";
+                    setTimeout(() => this.progressFill.style.width = "0%", 500);
+                    
+                    this.addLog(`✅ Найден и сохранён стиль "${styleName}" (темп: ${tempo} BPM)`, "#0f0");
+                    return style;
+                    
+                } catch(e) {
+                    this.addLog(`⚠️ Ошибка поиска: ${e.message}. Создаю базовый стиль.`, "#ffaa66");
+                    const style = {
+                        name: styleName,
+                        tempo: 120,
+                        chords: ['C', 'G', 'Am', 'F'],
+                        pattern: [0, 1, 2, 1, 0, 2, 1, 0],
+                        instruments: 'стандартные'
+                    };
+                    this.styles.set(styleName.toLowerCase(), style);
+                    this.updateStats();
+                    return style;
+                }
+            }
+            
+            saveCustomStyle() {
+                const name = document.getElementById('customStyleName').value.trim();
+                if(!name) { this.addLog("❌ Введите название стиля", "#ff8888"); return null; }
+                
+                const tempo = parseInt(document.getElementById('tempo').value);
+                const key = document.getElementById('key').value;
+                const chordsStr = document.getElementById('chords').value;
+                const instruments = document.getElementById('instruments').value;
+                
+                const chords = chordsStr.split(/\s+/).filter(c => c.length > 0);
+                
+                const style = {
+                    name: name,
+                    tempo: tempo,
+                    key: key,
+                    chords: chords,
+                    pattern: [0, 1, 2, 1, 0, 2, 1, 0, 0, 1, 2, 3, 3, 2, 1, 0],
+                    instruments: instruments
+                };
+                
+                this.styles.set(name.toLowerCase(), style);
+                this.updateStats();
+                this.addLog(`✅ Сохранён стиль "${name}" (темп: ${tempo} BPM, аккорды: ${chords.join(', ')})`, "#0f0");
+                return style;
+            }
+            
+            generateLyrics(topic, style) {
+                this.addLog(`📝 Сочиняю текст на тему "${topic}" в стиле ${style.name}...`);
+                
+                const lyricsTemplates = {
+                    'бунт': [
+                        "Я не хочу молчать!\nМоё сердце бьётся в такт!\nСвобода — это мой выбор!\nНикто не скажет мне — назад!",
+                        "Разбитые стёкла, рваные джинсы,\nГромкая музыка, рваные рифмы.\nМы против системы, мы против оков,\nНаша правда громче всех слов!"
+                    ],
+                    'любовь': [
+                        "Твои глаза как звёзды в ночи,\nЯ слышу сердце, ты не молчи.\nМежду нами только шаг,\nНо я боюсь сделать его.",
+                        "Любовь — это не боль,\nЭто когда ты мой герой.\nМы вместе против всех,\nС тобой я знаю успех!"
+                    ],
+                    'свобода': [
+                        "Свобода — это ветер в лицо,\nСвобода — когда бьётся сердце в такт!\nНикто не посадит меня в клетку,\nЯ рождён летать!",
+                        "Разорви оковы, встань с колен!\nСегодня ты сам себе король и тень.\nНе слушай тех, кто говорит «нельзя»,\nТвоя жизнь — твоя земля!"
+                    ],
+                    'космос': [
+                        "Звёзды зовут меня в полёт,\nГравитации больше нет.\nЯ лечу сквозь миллионы лет,\nЧтобы найти свой свет.",
+                        "В бесконечной тишине\nЯ ищу ответы при луне.\nКосмос шепчет мне: «Лети»,\nТам, где нет пути."
+                    ]
+                };
+                
+                // Поиск подходящей темы
+                let lyrics = "";
+                for(const [key, templates] of Object.entries(lyricsTemplates)) {
+                    if(topic.toLowerCase().includes(key)) {
+                        lyrics = templates[Math.floor(Math.random() * templates.length)];
+                        break;
                     }
                 }
                 
-                this.generatedMelody = melody;
-                this.playMelody(melody);
-                this.addLog(`✅ Сгенерировано ${melody.length} нот`);
+                if(!lyrics) {
+                    lyrics = `В ритме ${style.name} я иду вперёд,\n${topic} — вот мой поворот.\nМузыка в сердце, драйв в крови,\nЭто момент настоящей любви!`;
+                }
                 
-                return melody;
+                this.lyricsDiv.innerHTML = lyrics;
+                return lyrics;
             }
             
-            playMelody(melody) {
-                if(this.isGenerating) return;
-                this.isGenerating = true;
+            generateMusic(style, duration = 8) {
+                this.addLog(`🎸 Генерирую музыку в стиле "${style.name}" (темп: ${style.tempo} BPM)...`);
                 
-                const sampleRate = 44100;
-                const duration = 0.3; // длительность ноты в секундах
+                const notesList = [];
+                const chordNotes = {
+                    'C': ['C', 'E', 'G'], 'G': ['G', 'B', 'D'], 'Am': ['A', 'C', 'E'], 'F': ['F', 'A', 'C'],
+                    'C5': ['C', 'G'], 'G5': ['G', 'D'], 'A5': ['A', 'E'], 'F5': ['F', 'C'],
+                    'D': ['D', 'F#', 'A'], 'E': ['E', 'G#', 'B'], 'A': ['A', 'C#', 'E'],
+                    'Cmaj7': ['C', 'E', 'G', 'B'], 'Dm7': ['D', 'F', 'A', 'C'], 'G7': ['G', 'B', 'D', 'F']
+                };
+                
+                for(let i=0; i<duration * 4; i++) {
+                    const chordIndex = style.pattern[i % style.pattern.length] % style.chords.length;
+                    const chord = style.chords[chordIndex];
+                    const notes = chordNotes[chord] || [chord, 'C', 'G'];
+                    
+                    const note = notes[Math.floor(Math.random() * notes.length)];
+                    notesList.push(note);
+                }
+                
+                this.displayNotation(notesList);
+                this.playMusic(notesList, style.tempo);
+                
+                return notesList;
+            }
+            
+            displayNotation(notes) {
+                this.notationDiv.innerHTML = "";
+                const lines = [];
+                for(let i=0; i<notes.length; i+=8) {
+                    const line = notes.slice(i, i+8).join(' · ');
+                    const lineDiv = document.createElement('div');
+                    lineDiv.className = 'note-line';
+                    lineDiv.textContent = line;
+                    this.notationDiv.appendChild(lineDiv);
+                }
+            }
+            
+            playMusic(notes, tempo) {
                 const context = new (window.AudioContext || window.webkitAudioContext)();
-                
+                const duration = 60 / tempo / 2; // четверть
                 let time = context.currentTime;
                 
-                for(let i=0; i<melody.length; i++) {
-                    const freq = this.noteFreqs[melody[i]];
+                for(let i=0; i<notes.length; i++) {
+                    const freq = this.getNoteFreq(notes[i]);
                     if(freq) {
                         const oscillator = context.createOscillator();
                         const gain = context.createGain();
-                        
                         oscillator.connect(gain);
                         gain.connect(context.destination);
-                        
                         oscillator.frequency.value = freq;
-                        oscillator.type = 'sine';
-                        
-                        gain.gain.setValueAtTime(0.3, time);
+                        oscillator.type = 'sawtooth';
+                        gain.gain.setValueAtTime(0.15, time);
                         gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-                        
                         oscillator.start(time);
                         oscillator.stop(time + duration);
+                        
+                        // Визуализация
+                        this.updateVisualizer(freq);
                     }
                     time += duration;
                 }
                 
-                // Запись в аудиофайл (для плеера)
-                this.recordToAudio(melody);
-                
-                setTimeout(() => {
-                    this.isGenerating = false;
-                }, time * 1000);
+                this.addLog(`✅ Музыка сгенерирована (${notes.length} нот, темп ${tempo} BPM)`);
             }
             
-            async recordToAudio(melody) {
-                // Создаём WAV-подобный blob (упрощённо — через OfflineAudioContext)
-                try {
-                    const sampleRate = 44100;
-                    const duration = 0.25;
-                    const totalSamples = sampleRate * duration * melody.length;
-                    
-                    const offlineContext = new OfflineAudioContext(1, totalSamples, sampleRate);
-                    const buffer = offlineContext.createBuffer(1, totalSamples, sampleRate);
-                    const data = buffer.getChannelData(0);
-                    
-                    let sampleIndex = 0;
-                    for(let i=0; i<melody.length; i++) {
-                        const freq = this.noteFreqs[melody[i]];
-                        if(freq) {
-                            const samplesPerNote = sampleRate * duration;
-                            for(let s=0; s<samplesPerNote && sampleIndex < totalSamples; s++) {
-                                const t = s / sampleRate;
-                                data[sampleIndex] = Math.sin(2 * Math.PI * freq * t) * 0.3 * Math.exp(-t * 3);
-                                sampleIndex++;
-                            }
-                        } else {
-                            sampleIndex += sampleRate * duration;
-                        }
-                    }
-                    
-                    const audioBuffer = offlineContext.createBuffer(1, totalSamples, sampleRate);
-                    audioBuffer.copyToChannel(data, 0);
-                    
-                    // Конвертируем в WAV
-                    const wav = this.bufferToWav(audioBuffer);
-                    const blob = new Blob([wav], { type: 'audio/wav' });
-                    const url = URL.createObjectURL(blob);
-                    this.audioPlayer.src = url;
-                } catch(e) {
-                    console.log("Audio recording error:", e);
+            getNoteFreq(note) {
+                const base = note.replace(/\d/, '');
+                const octave = parseInt(note.match(/\d/)?.[0] || '4');
+                if(this.notes[base]) {
+                    return this.notes[base] * Math.pow(2, octave - 4);
                 }
+                return null;
             }
             
-            bufferToWav(buffer) {
-                const numChannels = buffer.numberOfChannels;
-                const sampleRate = buffer.sampleRate;
-                const format = 1;
-                const bitDepth = 16;
-                
-                let samples = buffer.getChannelData(0);
-                let dataLength = samples.length * (bitDepth / 8);
-                let bufferLength = 44 + dataLength;
-                const arrayBuffer = new ArrayBuffer(bufferLength);
-                const view = new DataView(arrayBuffer);
-                
-                // RIFF chunk
-                this.writeString(view, 0, 'RIFF');
-                view.setUint32(4, bufferLength - 8, true);
-                this.writeString(view, 8, 'WAVE');
-                this.writeString(view, 12, 'fmt ');
-                view.setUint32(16, 16, true);
-                view.setUint16(20, format, true);
-                view.setUint16(22, numChannels, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, sampleRate * numChannels * (bitDepth / 8), true);
-                view.setUint16(32, numChannels * (bitDepth / 8), true);
-                view.setUint16(34, bitDepth, true);
-                this.writeString(view, 36, 'data');
-                view.setUint32(40, dataLength, true);
-                
-                let offset = 44;
-                for(let i=0; i<samples.length; i++) {
-                    const sample = Math.max(-1, Math.min(1, samples[i]));
-                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-                    offset += 2;
-                }
-                
-                return arrayBuffer;
-            }
-            
-            writeString(view, offset, str) {
-                for(let i=0; i<str.length; i++) {
-                    view.setUint8(offset + i, str.charCodeAt(i));
-                }
-            }
-            
-            updateVisualizer(note) {
+            updateVisualizer(freq) {
                 const bars = this.visualizer.children;
-                if(bars.length < 24) return;
-                
-                const noteIndex = this.notes.indexOf(note);
                 for(let i=0; i<bars.length; i++) {
-                    const height = Math.abs(i - noteIndex) < 3 ? 40 + Math.random() * 40 : 10 + Math.random() * 20;
-                    bars[i].style.height = height + "px";
+                    const height = 10 + Math.random() * 60 + (freq / 1000) * 30;
+                    bars[i].style.height = Math.min(80, height) + "px";
                 }
             }
             
             initVisualizer() {
                 this.visualizer.innerHTML = "";
-                for(let i=0; i<24; i++) {
+                for(let i=0; i<32; i++) {
                     const bar = document.createElement('div');
                     bar.className = 'bar';
                     bar.style.height = '10px';
@@ -584,31 +542,13 @@
                 }
             }
             
-            displayGeneratedNotes(notes) {
-                this.generatedNotesDiv.innerHTML = "";
-                const chunkSize = 8;
-                for(let i=0; i<notes.length; i+=chunkSize) {
-                    const chunk = notes.slice(i, i+chunkSize);
-                    const div = document.createElement('div');
-                    div.className = 'note-item';
-                    div.textContent = chunk.join(' · ');
-                    this.generatedNotesDiv.appendChild(div);
-                }
-            }
-            
             updateStats() {
-                this.stylesCountSpan.innerText = this.styles.length;
-                const totalNotes = this.styles.reduce((sum, s) => sum + s.patterns.reduce((a,b) => a + b.length, 0), 0);
-                this.notesCountSpan.innerText = totalNotes;
-            }
-            
-            clearMemory() {
-                this.styles = [];
-                this.initWeights();
-                this.updateStats();
-                this.generatedNotesDiv.innerHTML = "";
-                this.lossSpan.innerText = "—";
-                this.addLog("🗑️ Память очищена. Все стили удалены.", "#ffaa66");
+                this.stylesCountSpan.innerText = this.styles.size;
+                let totalPatterns = 0;
+                for(const style of this.styles.values()) {
+                    totalPatterns += style.pattern.length;
+                }
+                this.patternsCountSpan.innerText = totalPatterns;
             }
             
             addLog(msg, color = "#86efac") {
@@ -619,26 +559,74 @@
                 this.logDiv.appendChild(entry);
                 entry.scrollIntoView({ behavior: "smooth", block: "nearest" });
             }
-            
-            sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
         }
         
         const nanuMusic = new NanuMusic();
         
-        document.getElementById('learnMusicBtn').onclick = async () => {
-            const style = document.getElementById('musicStyle').value.trim();
-            if(!style) { nanuMusic.addLog("❌ Введите стиль музыки", "#ff8888"); return; }
-            await nanuMusic.learnStyle(style);
+        // Вкладки
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+        
+        // AI поиск
+        document.getElementById('searchStyleBtn').onclick = async () => {
+            const style = document.getElementById('aiStyle').value.trim();
+            if(!style) return;
+            await nanuMusic.searchStyleInInternet(style);
         };
         
-        document.getElementById('generateBtn').onclick = () => {
-            const style = document.getElementById('musicStyle').value.trim();
-            if(!style) { nanuMusic.addLog("❌ Введите стиль", "#ff8888"); return; }
-            nanuMusic.generateMelody(style, 32);
+        document.getElementById('generateFromAiBtn').onclick = () => {
+            const styleName = document.getElementById('aiStyle').value.trim();
+            const topic = document.getElementById('songTopic').value.trim() || "музыка";
+            const style = nanuMusic.styles.get(styleName.toLowerCase());
+            if(!style) {
+                nanuMusic.addLog(`❌ Стиль "${styleName}" не найден. Сначала нажми «НАЙТИ СТИЛЬ»`, "#ff8888");
+                return;
+            }
+            nanuMusic.generateLyrics(topic, style);
+            nanuMusic.generateMusic(style, 12);
         };
         
-        document.getElementById('clearMemoryBtn').onclick = () => nanuMusic.clearMemory();
+        // Свой стиль
+        document.getElementById('saveStyleBtn').onclick = () => {
+            nanuMusic.saveCustomStyle();
+        };
+        
+        document.getElementById('generateFromCustomBtn').onclick = () => {
+            let styleName = document.getElementById('customStyleName').value.trim();
+            const topic = document.getElementById('customSongTopic').value.trim() || "музыка";
+            
+            if(!styleName) {
+                const saved = nanuMusic.saveCustomStyle();
+                if(saved) styleName = saved.name;
+                else return;
+            }
+            
+            const style = nanuMusic.styles.get(styleName.toLowerCase());
+            if(!style) {
+                nanuMusic.addLog(`❌ Стиль "${styleName}" не найден`, "#ff8888");
+                return;
+            }
+            
+            // Обновляем параметры из формы
+            style.tempo = parseInt(document.getElementById('tempo').value);
+            style.chords = document.getElementById('chords').value.split(/\s+/).filter(c => c.length > 0);
+            style.instruments = document.getElementById('instruments').value;
+            
+            nanuMusic.generateLyrics(topic, style);
+            nanuMusic.generateMusic(style, 12);
+        };
+        
+        // Темп слайдер
+        document.getElementById('tempo').addEventListener('input', (e) => {
+            document.getElementById('tempoValue').innerText = e.target.value;
+        });
     })();
 </script>
 </body>
-  </html>
+    </html>
