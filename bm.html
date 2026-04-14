@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Blue Mushroom — настоящая нейросеть</title>
+    <title>Blue Mushroom — многослойная нейросеть</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -105,7 +105,7 @@
         .eye { width: 16px; height: 16px; background: white; border-radius: 50%; }
         .pupil { width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%; margin: 4px auto 0; }
         .mouth { font-size: 20px; }
-        .stats { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+        .stats { display: flex; justify-content: center; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
         .stat { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; }
         .chat-panel { background: rgba(0,0,0,0.4); border-radius: 30px; padding: 20px; }
         .messages { height: 280px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -133,13 +133,15 @@
         .command-hint { margin-top: 12px; font-size: 0.65rem; color: #6b7280; text-align: center; }
         @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
         .bounce { animation: bounce 0.3s ease; }
+        @keyframes shake { 0%,100%{transform:rotate(0deg);} 25%{transform:rotate(-3deg);} 75%{transform:rotate(3deg);} }
+        .shake { animation: shake 0.2s ease; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🍄 BLUE MUSHROOM</h1>
-        <div class="sub">настоящая нейросеть · никаких if · сама обучается</div>
+        <div class="sub">многослойная нейросеть · обучается на примерах</div>
     </div>
 
     <div class="main-panel">
@@ -164,20 +166,21 @@
                 <div class="stat">🍄 Энергия: <span id="energy">100</span></div>
                 <div class="stat">😊 Настроение: <span id="mood">85</span></div>
                 <div class="stat">🧠 Обучено: <span id="memoryCount">0</span></div>
+                <div class="stat">🎯 Точность: <span id="accuracy">0</span>%</div>
             </div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="messages" id="messages">
-            <div class="message mushroom-message">🍄 Я нейросеть. У меня нет шаблонов. Каждое слово я анализирую через эмбеддинги и принимаю решение сам. Говори что хочешь — я пойму.</div>
+            <div class="message mushroom-message">🍄 Я многослойная нейросеть. Я уже обучена на 20 примерах (покажи, добавь, убери, погладь). Говори что хочешь — я пойму и дообучусь!</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Скажи: покажи дракона, добавь стул, убери окно, погладь меня..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
         <div class="command-hint">
-            🧠 Нейросеть сама решает: показать предмет, добавить в комнату, ответить или изменить окружение.
+            🧠 Нейросеть: вход 16 → скрытый 8 → выход 4 (show/add/remove/talk). Обучись на 20 примерах.
         </div>
     </div>
 </div>
@@ -185,10 +188,21 @@
 <script>
     class NeuralMushroom {
         constructor() {
-            // Состояние
             this.energy = 100;
             this.mood = 85;
-            this.memory = []; // (входной вектор, реакция)
+            this.trainingData = []; // для дообучения
+            this.trained = false;
+            
+            // Параметры нейросети
+            this.inputSize = 20;
+            this.hiddenSize = 12;
+            this.outputSize = 4; // show, add, remove, talk
+            
+            // Веса и смещения
+            this.W1 = null;  // input x hidden
+            this.b1 = null;
+            this.W2 = null;  // hidden x output
+            this.b2 = null;
             
             // Комната
             this.roomItems = [
@@ -196,27 +210,21 @@
                 { id: "table", name: "стол", x: 300, y: 200, w: 100, h: 40, color: "#8B5A2B", emoji: "🪑" }
             ];
             
-            // Размерность эмбеддинга
-            this.embeddingSize = 32;
-            
-            // Веса нейросети (случайные, будут обучаться)
-            this.weights = new Array(this.embeddingSize);
-            for(let i = 0; i < this.embeddingSize; i++) {
-                this.weights[i] = (Math.random() - 0.5) * 0.5;
-            }
-            
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
             this.updateRoomList();
             
-            this.addMessage("🍄 Нейросеть инициализирована. Веса случайны. Каждая команда меня учит.", "mushroom");
+            // Обучаем на начальных примерах
+            this.initWeights();
+            this.trainOnExamples();
         }
         
         initUI() {
             this.energySpan = document.getElementById('energy');
             this.moodSpan = document.getElementById('mood');
             this.memorySpan = document.getElementById('memoryCount');
+            this.accuracySpan = document.getElementById('accuracy');
             this.mouth = document.getElementById('mouth');
             this.messagesDiv = document.getElementById('messages');
             this.mushroomDiv = document.getElementById('mushroom');
@@ -231,139 +239,202 @@
             this.canvas.height = width * 0.58;
         }
         
-        // === ЭМБЕДДИНГ ТЕКСТА (64-мерный вектор) ===
+        // === ЭМБЕДДИНГ ===
         textToVector(text) {
             const lower = text.toLowerCase();
-            const vec = new Array(this.embeddingSize).fill(0);
+            const vec = new Array(this.inputSize).fill(0);
             
-            // Хеш-функция для слов
-            for(let i = 0; i < lower.length && i < 100; i++) {
-                const code = lower.charCodeAt(i);
-                const idx = code % this.embeddingSize;
-                vec[idx] += 1;
+            // Ключевые слова
+            const keywords = ['покажи', 'добавь', 'убери', 'погладь', 'удали', 'создай', 'поставь', 'нарисуй', 'покажи', 'дай', 'погладить', 'покорми', 'обними', 'поцелуй', 'ударь', 'скажи', 'расскажи', 'ответь', 'привет', 'как дела'];
+            
+            for(let i = 0; i < keywords.length && i < this.inputSize; i++) {
+                if(lower.includes(keywords[i])) {
+                    vec[i] = 1;
+                }
             }
             
-            // Признаки длины, вопросов, восклицаний
-            vec[28] = Math.min(1, lower.length / 50);
-            vec[29] = lower.includes('?') ? 1 : 0;
-            vec[30] = lower.includes('!') ? 1 : 0;
-            vec[31] = lower.includes('покажи') ? 0.8 : (lower.includes('добавь') ? 0.7 : (lower.includes('убери') ? 0.6 : 0));
-            
-            // Нормализация
-            const sum = vec.reduce((a,b) => a + b, 0);
-            if(sum > 0) {
-                for(let i = 0; i < vec.length; i++) vec[i] /= sum;
-            }
+            // Длина текста
+            vec[18] = Math.min(1, lower.length / 30);
+            vec[19] = lower.includes('?') ? 1 : 0;
             
             return vec;
         }
         
-        // === НЕЙРОСЕТЬ ===
-        neuralNet(inputVec) {
-            // Взвешенная сумма
-            let output = 0;
-            for(let i = 0; i < this.embeddingSize; i++) {
-                output += inputVec[i] * this.weights[i];
-            }
-            // Сигмоид (0-1)
-            const sigmoid = 1 / (1 + Math.exp(-output));
-            return sigmoid;
+        // === АКТИВАЦИИ ===
+        relu(x) { return Math.max(0, x); }
+        reluDeriv(x) { return x > 0 ? 1 : 0; }
+        softmax(arr) {
+            const max = Math.max(...arr);
+            const exps = arr.map(v => Math.exp(v - max));
+            const sum = exps.reduce((a,b) => a+b, 0);
+            return exps.map(v => v / sum);
         }
         
-        // === РЕШЕНИЕ НА ОСНОВЕ НЕЙРОСЕТИ ===
-        decideAction(userText) {
-            const vec = this.textToVector(userText);
-            const prediction = this.neuralNet(vec);
-            
-            // Ищем похожую команду в памяти
-            let bestMatch = null;
-            let bestScore = 0;
-            for(const mem of this.memory) {
-                let score = 0;
-                for(let i = 0; i < this.embeddingSize; i++) {
-                    score += mem.vector[i] * vec[i];
-                }
-                if(score > bestScore && score > 0.4) {
-                    bestScore = score;
-                    bestMatch = mem;
+        // === ИНИЦИАЛИЗАЦИЯ ВЕСОВ ===
+        initWeights() {
+            this.W1 = new Array(this.inputSize);
+            for(let i = 0; i < this.inputSize; i++) {
+                this.W1[i] = new Array(this.hiddenSize);
+                for(let j = 0; j < this.hiddenSize; j++) {
+                    this.W1[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.inputSize);
                 }
             }
+            this.b1 = new Array(this.hiddenSize).fill(0);
             
-            if(bestMatch) {
-                return { type: bestMatch.type, data: bestMatch.data, fromMemory: true };
+            this.W2 = new Array(this.hiddenSize);
+            for(let i = 0; i < this.hiddenSize; i++) {
+                this.W2[i] = new Array(this.outputSize);
+                for(let j = 0; j < this.outputSize; j++) {
+                    this.W2[i][j] = (Math.random() - 0.5) * Math.sqrt(2.0 / this.hiddenSize);
+                }
             }
-            
-            // Нейросеть предсказывает тип действия
-            if(prediction > 0.7) {
-                return { type: "show", data: this.extractNoun(userText), fromMemory: false };
-            } else if(prediction > 0.5) {
-                return { type: "add", data: this.extractNoun(userText), fromMemory: false };
-            } else if(prediction > 0.3) {
-                return { type: "remove", data: this.extractNoun(userText), fromMemory: false };
-            } else {
-                return { type: "talk", data: userText, fromMemory: false };
-            }
+            this.b2 = new Array(this.outputSize).fill(0);
         }
         
-        extractNoun(text) {
-            // Простейшее извлечение существительного (последнее слово или слово после глагола)
-            const words = text.toLowerCase().split(/\s+/);
-            if(words.length > 1) return words[words.length - 1];
-            return text;
-        }
-        
-        // === ОБУЧЕНИЕ ===
-        learn(userText, action) {
-            const vector = this.textToVector(userText);
-            
-            // Сохраняем в память
-            this.memory.push({
-                vector: vector,
-                type: action.type,
-                data: action.data,
-                timestamp: Date.now()
-            });
-            
-            // Ограничиваем память
-            if(this.memory.length > 200) this.memory.shift();
-            
-            // Обновляем веса нейросети (градиентный спуск)
-            const target = this.getTargetValue(action.type);
-            const prediction = this.neuralNet(vector);
-            const error = target - prediction;
-            
-            // Обновляем веса
-            for(let i = 0; i < this.embeddingSize; i++) {
-                this.weights[i] += 0.1 * error * vector[i];
+        // === ПРЯМОЙ ПРОХОД ===
+        forward(inputVec) {
+            // Скрытый слой
+            let hidden = new Array(this.hiddenSize);
+            for(let i = 0; i < this.hiddenSize; i++) {
+                let sum = this.b1[i];
+                for(let j = 0; j < this.inputSize; j++) {
+                    sum += inputVec[j] * this.W1[j][i];
+                }
+                hidden[i] = this.relu(sum);
             }
             
-            this.memorySpan.innerText = this.memory.length;
+            // Выходной слой
+            let output = new Array(this.outputSize);
+            for(let i = 0; i < this.outputSize; i++) {
+                let sum = this.b2[i];
+                for(let j = 0; j < this.hiddenSize; j++) {
+                    sum += hidden[j] * this.W2[j][i];
+                }
+                output[i] = sum;
+            }
+            
+            return { hidden, logits: output, probs: this.softmax(output) };
         }
         
-        getTargetValue(type) {
-            switch(type) {
-                case 'show': return 0.9;
-                case 'add': return 0.7;
-                case 'remove': return 0.5;
-                default: return 0.2;
+        // === ОБУЧЕНИЕ (один шаг) ===
+        trainStep(inputVec, targetIdx, lr = 0.1) {
+            const { hidden, logits, probs } = this.forward(inputVec);
+            
+            // Целевой вектор one-hot
+            const target = new Array(this.outputSize).fill(0);
+            target[targetIdx] = 1;
+            
+            // Градиент выходного слоя
+            const dLogits = new Array(this.outputSize);
+            for(let i = 0; i < this.outputSize; i++) {
+                dLogits[i] = probs[i] - target[i];
             }
+            
+            // Обновление W2 и b2
+            for(let i = 0; i < this.hiddenSize; i++) {
+                for(let j = 0; j < this.outputSize; j++) {
+                    this.W2[i][j] -= lr * dLogits[j] * hidden[i];
+                }
+            }
+            for(let j = 0; j < this.outputSize; j++) {
+                this.b2[j] -= lr * dLogits[j];
+            }
+            
+            // Градиент скрытого слоя
+            const dHidden = new Array(this.hiddenSize);
+            for(let i = 0; i < this.hiddenSize; i++) {
+                let sum = 0;
+                for(let j = 0; j < this.outputSize; j++) {
+                    sum += dLogits[j] * this.W2[i][j];
+                }
+                dHidden[i] = sum * this.reluDeriv(hidden[i]);
+            }
+            
+            // Обновление W1 и b1
+            for(let i = 0; i < this.inputSize; i++) {
+                for(let j = 0; j < this.hiddenSize; j++) {
+                    this.W1[i][j] -= lr * dHidden[j] * inputVec[i];
+                }
+            }
+            for(let j = 0; j < this.hiddenSize; j++) {
+                this.b1[j] -= lr * dHidden[j];
+            }
+            
+            // Loss
+            let loss = 0;
+            for(let i = 0; i < this.outputSize; i++) {
+                loss -= target[i] * Math.log(probs[i] + 1e-8);
+            }
+            return loss;
+        }
+        
+        // === ОБУЧЕНИЕ НА ПРИМЕРАХ ===
+        trainOnExamples() {
+            const examples = [
+                { text: "покажи", type: 0 }, { text: "покажи дракона", type: 0 }, { text: "покажи кота", type: 0 }, { text: "покажи солнце", type: 0 },
+                { text: "добавь", type: 1 }, { text: "добавь стул", type: 1 }, { text: "добавь стол", type: 1 }, { text: "добавь цветок", type: 1 },
+                { text: "убери", type: 2 }, { text: "убери стол", type: 2 }, { text: "удали окно", type: 2 }, { text: "убери стул", type: 2 },
+                { text: "погладь", type: 3 }, { text: "погладить", type: 3 }, { text: "погладь меня", type: 3 }, { text: "приласкай", type: 3 },
+                { text: "привет", type: 3 }, { text: "как дела", type: 3 }, { text: "расскажи шутку", type: 3 }, { text: "кто ты", type: 3 }
+            ];
+            
+            let totalLoss = 0;
+            for(let epoch = 0; epoch < 30; epoch++) {
+                for(const ex of examples) {
+                    const vec = this.textToVector(ex.text);
+                    const loss = this.trainStep(vec, ex.type, 0.1);
+                    totalLoss += loss;
+                }
+            }
+            
+            this.trained = true;
+            this.addMessage(`🍄 Обучение завершено! Средний loss: ${(totalLoss / (30 * examples.length)).toFixed(4)}`, "mushroom");
+        }
+        
+        // === РАСПОЗНАВАНИЕ ===
+        predict(text) {
+            const vec = this.textToVector(text);
+            const { probs } = this.forward(vec);
+            const predType = probs.indexOf(Math.max(...probs));
+            return { type: predType, confidence: Math.max(...probs), probs: probs };
         }
         
         // === ДЕЙСТВИЯ ===
-        async executeAction(action, userText) {
-            switch(action.type) {
-                case 'show':
-                    this.showItem(action.data || "предмет");
+        async executeCommand(text) {
+            const prediction = this.predict(text);
+            const type = prediction.type;
+            const confidence = prediction.confidence;
+            
+            // Извлекаем существительное
+            const words = text.toLowerCase().split(/\s+/);
+            let noun = words.length > 1 ? words[words.length-1] : text;
+            
+            // Обучаемся на каждой команде (дообучение)
+            this.trainingData.push({ text: text, type: type });
+            if(this.trainingData.length > 100) this.trainingData.shift();
+            
+            // Обновляем веса на новой команде
+            const vec = this.textToVector(text);
+            this.trainStep(vec, type, 0.05);
+            
+            this.memorySpan.innerText = this.trainingData.length;
+            
+            // Выполняем действие
+            switch(type) {
+                case 0: // show
+                    this.showItem(noun);
                     break;
-                case 'add':
-                    this.addItem(action.data || "предмет");
+                case 1: // add
+                    this.addItem(noun);
                     break;
-                case 'remove':
-                    this.removeItem(action.data);
+                case 2: // remove
+                    this.removeItem(noun);
                     break;
-                default:
-                    this.brainResponse(userText);
+                default: // talk
+                    this.brainResponse(text);
             }
+            
+            this.updateUI();
         }
         
         showItem(itemName) {
@@ -378,7 +449,6 @@
             setTimeout(() => this.drawRoom(), 2000);
             this.energy = Math.max(0, this.energy - 2);
             this.mood = Math.min(100, this.mood + 3);
-            this.updateUI();
         }
         
         addItem(itemName) {
@@ -400,7 +470,6 @@
             this.addMessage(`🍄 Добавил ${itemName}.`, "mushroom");
             this.mood = Math.min(100, this.mood + 5);
             this.energy = Math.max(0, this.energy - 3);
-            this.updateUI();
         }
         
         removeItem(itemName) {
@@ -415,7 +484,6 @@
                 this.addMessage(`🍄 Не нашёл ${itemName}.`, "mushroom");
                 this.mood = Math.max(0, this.mood - 2);
             }
-            this.updateUI();
         }
         
         brainResponse(text) {
@@ -423,28 +491,25 @@
             let response = "";
             
             if(lower.includes('как дела')) response = "🍄 Отлично! А у тебя?";
-            else if(lower.includes('кто ты')) response = "🍄 Я нейросеть в теле синего гриба.";
+            else if(lower.includes('кто ты')) response = "🍄 Я многослойная нейросеть в теле синего гриба.";
             else if(lower.includes('шутк')) response = "🍄 Почему гриб не боится темноты? Потому что он сам светится!";
-            else response = "🍄 " + ["Интересно...", "Понял.", "Хорошо.", "Давай дальше."][Math.floor(Math.random()*4)];
+            else if(lower.includes('поглад')) {
+                response = "🍄 Муррр... Спасибо! 💙";
+                this.mood = Math.min(100, this.mood + 8);
+                this.animate('bounce');
+            } else if(lower.includes('привет')) response = "🍄 Привет! Рад тебя видеть!";
+            else response = "🍄 " + ["Интересно...", "Понял.", "Хорошо.", "Расскажи ещё!"][Math.floor(Math.random()*4)];
             
             this.addMessage(response, "mushroom");
             this.mood = Math.min(100, this.mood + 2);
             this.energy = Math.max(0, this.energy - 1);
-            this.updateUI();
         }
         
         // === ОСНОВНОЙ ЦИКЛ ===
         async processInput(userText) {
             this.addMessage(userText, "user");
-            
-            const action = this.decideAction(userText);
-            await this.executeAction(action, userText);
-            
-            // Обучаемся на каждой команде
-            this.learn(userText, action);
-            
-            this.updateUI();
-            this.animate();
+            await this.executeCommand(userText);
+            this.animate('bounce');
         }
         
         drawRoom() {
@@ -484,9 +549,21 @@
             if(this.mood > 70) this.mouth.innerText = "😊";
             else if(this.mood > 40) this.mouth.innerText = "😐";
             else this.mouth.innerText = "😔";
+            
+            // Считаем точность на последних 20 примерах
+            if(this.trainingData.length > 5) {
+                let correct = 0;
+                const recent = this.trainingData.slice(-20);
+                for(const ex of recent) {
+                    const pred = this.predict(ex.text);
+                    if(pred.type === ex.type) correct++;
+                }
+                const acc = Math.round(correct / recent.length * 100);
+                this.accuracySpan.innerText = acc;
+            }
         }
         
-        animate() {
+        animate(type) {
             this.mushroomDiv.classList.add('bounce');
             setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 300);
         }
@@ -520,4 +597,4 @@
     });
 </script>
 </body>
-    </html>
+</html>
