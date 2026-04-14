@@ -3,17 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Блю — нейрособака</title>
+    <title>Блю — умный питомец, которого можно научить командам</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background: linear-gradient(135deg, #1a2a1a, #0a1a2a);
+            background: linear-gradient(135deg, #0a2a1a, #0a1a2a);
             font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 20px; }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
         h1 {
             font-size: 2.8rem;
             background: linear-gradient(135deg, #6ee7ff, #3b82f6, #1e3a8a);
@@ -21,31 +35,121 @@
             -webkit-background-clip: text;
             color: transparent;
         }
-        .sub { color: #cbd5e6; font-size: 0.8rem; }
-        .main-panel { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+
+        .sub {
+            color: #cbd5e6;
+            font-size: 0.8rem;
+        }
+
+        .mic-status {
+            display: inline-block;
+            background: #f59e0b;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+            color: white;
+        }
+
+        .mic-status.active {
+            background: #10b981;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .main-panel {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
         .room-panel {
             flex: 1.2;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 30px;
             padding: 20px;
             backdrop-filter: blur(8px);
             border: 1px solid #3b82f6;
         }
+
+        .room-title {
+            font-size: 0.9rem;
+            color: #bbd7ff;
+            margin-bottom: 15px;
+        }
+
+        .room-canvas-container {
+            background: #0a0f1a;
+            border-radius: 24px;
+            padding: 10px;
+            border: 2px solid #3b82f6;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            background: #1a2a3a;
+            border-radius: 20px;
+            display: block;
+            cursor: pointer;
+        }
+
+        .hiding-spot {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 0.7rem;
+            color: #f59e0b;
+            display: none;
+        }
+
+        .room-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .room-item {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            color: #a0c0ff;
+            border: 1px solid #3b82f6;
+            cursor: pointer;
+        }
+
         .mushroom-panel {
             flex: 0.8;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 30px;
             padding: 20px;
             text-align: center;
         }
+
         .mushroom {
             position: relative;
             width: 200px;
             height: 240px;
             margin: 0 auto;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
         }
+
+        .mushroom.hidden {
+            opacity: 0;
+            transform: scale(0);
+        }
+
         .mushroom-hat {
             position: absolute;
             top: 0;
@@ -56,6 +160,7 @@
             background: radial-gradient(ellipse at 30% 30%, #3b82f6, #1e3a8a);
             border-radius: 50% 50% 45% 45%;
         }
+
         .mushroom-stem {
             position: absolute;
             bottom: 20px;
@@ -66,6 +171,7 @@
             background: linear-gradient(135deg, #e8e0c8, #c8c0a8);
             border-radius: 30px 30px 20px 20px;
         }
+
         .mushroom-face {
             position: absolute;
             bottom: 55px;
@@ -74,20 +180,106 @@
             width: 80px;
             text-align: center;
         }
-        .eyes { display: flex; gap: 15px; justify-content: center; margin-bottom: 5px; }
-        .eye { width: 16px; height: 16px; background: white; border-radius: 50%; }
-        .pupil { width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%; margin: 4px auto 0; }
-        .mouth { font-size: 20px; }
-        .stats { display: flex; justify-content: center; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
-        .stat { background: rgba(0,0,0,0.6); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; color: #cbd5e6; }
-        .stat span { color: #6ee7ff; font-weight: bold; }
-        .chat-panel { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 20px; }
-        .messages { height: 280px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .message { max-width: 85%; padding: 10px 15px; border-radius: 20px; font-size: 0.85rem; word-wrap: break-word; color: white; }
-        .user-message { align-self: flex-end; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .blue-message { align-self: flex-start; background: #1e293b; color: white; border-left: 3px solid #3b82f6; }
-        .system-message { align-self: center; background: #f59e0b; color: #1a1a2e; font-size: 0.7rem; max-width: 90%; }
-        .chat-input { display: flex; gap: 10px; margin-top: 10px; }
+
+        .eyes {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+
+        .eye {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.1s;
+        }
+
+        .pupil {
+            width: 8px;
+            height: 8px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            margin: 4px auto 0;
+        }
+
+        .mouth {
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 30px;
+            padding: 5px 15px;
+            font-size: 0.7rem;
+            color: #cbd5e6;
+        }
+
+        .stat span {
+            color: #6ee7ff;
+            font-weight: bold;
+        }
+
+        .chat-panel {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 30px;
+            padding: 20px;
+        }
+
+        .messages {
+            height: 280px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            word-wrap: break-word;
+            color: white;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .mushroom-message {
+            align-self: flex-start;
+            background: #1e293b;
+            color: white;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .system-message {
+            align-self: center;
+            background: #f59e0b;
+            color: #1a1a2e;
+            font-size: 0.7rem;
+            max-width: 95%;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
         .chat-input input {
             flex: 1;
             background: #0e1625;
@@ -97,6 +289,11 @@
             color: white;
             font-size: 0.9rem;
         }
+
+        .chat-input input::placeholder {
+            color: #8a9bbb;
+        }
+
         .chat-input button {
             background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border: none;
@@ -106,161 +303,167 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .sound-alert {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #ef4444;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            animation: bounce 0.3s ease;
-            z-index: 100;
-        }
-        .commands-list {
-            margin-top: 15px;
-            max-height: 150px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.3);
+
+        .training-panel {
+            background: #1e293b;
             border-radius: 20px;
-            padding: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
         }
-        .command-item {
-            background: #1e293b;
-            border-radius: 15px;
-            padding: 6px 10px;
-            margin: 4px 0;
+
+        .training-panel.active {
+            display: block;
+        }
+
+        .training-panel select, .training-panel input {
+            background: #0e1625;
+            border: 1px solid #3b82f6;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+            margin: 5px;
+        }
+
+        .command-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .command-badge {
+            background: #3b82f6;
+            border-radius: 20px;
+            padding: 3px 10px;
             font-size: 0.7rem;
-            display: flex;
-            justify-content: space-between;
-        }
-        .command-name { color: #6ee7ff; font-weight: bold; }
-        .command-type { color: #f59e0b; }
-        .microphone-btn {
-            background: #1e293b;
-            border: 2px solid #3b82f6;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin: 10px auto;
-            transition: 0.2s;
         }
-        .microphone-btn.active {
-            background: #ef4444;
-            border-color: #ef4444;
-            animation: pulse 1s infinite;
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-5deg); }
+            75% { transform: translateX(-50%) rotate(5deg); }
         }
-        @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
-        @keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
-        .hide { display: none; }
-        .shake { animation: bounce 0.3s ease; }
+
+        .shake {
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .bounce {
+            animation: bounce 0.4s ease;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🐕 БЛЮ</h1>
-        <div class="sub">нейрособака · реагирует на звуки · учится командам</div>
+        <h1>🍄 БЛЮ <span class="mic-status" id="micStatus">🎤 микрофон выкл</span></h1>
+        <div class="sub">виртуальный питомец · учится командам · боится громких звуков</div>
     </div>
 
     <div class="main-panel">
         <div class="room-panel">
-            <div class="room-title">🏠 ДОМ БЛЮ</div>
-            <canvas id="roomCanvas" width="600" height="350" style="width:100%; background:#1a2a3a; border-radius:20px;"></canvas>
-            <div class="microphone-btn" id="microphoneBtn">🎤</div>
-            <div class="commands-list" id="commandsList">
-                <div style="color:#aaa; font-size:0.7rem; text-align:center;">⬇️ ВЫУЧЕННЫЕ КОМАНДЫ ⬇️</div>
+            <div class="room-title">🏠 КОМНАТА БЛЮ</div>
+            <div class="room-canvas-container">
+                <canvas id="roomCanvas" width="600" height="350"></canvas>
+                <div class="hiding-spot" id="hidingSpot">🙈 Блю спрятался!</div>
             </div>
+            <div class="room-items" id="roomItemsList"></div>
+            <div class="command-list" id="commandList"></div>
         </div>
 
         <div class="mushroom-panel">
-            <div class="mushroom" id="blue">
+            <div class="mushroom" id="mushroom">
                 <div class="mushroom-hat"></div>
                 <div class="mushroom-stem"></div>
                 <div class="mushroom-face">
-                    <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
+                    <div class="eyes">
+                        <div class="eye"><div class="pupil"></div></div>
+                        <div class="eye"><div class="pupil"></div></div>
+                    </div>
                     <div class="mouth" id="mouth">😊</div>
                 </div>
             </div>
             <div class="stats">
-                <div class="stat">❤️ Здоровье: <span id="health">100</span></div>
-                <div class="stat">😊 Настроение: <span id="mood">100</span></div>
-                <div class="stat">🎓 Команд: <span id="commandsCount">0</span></div>
+                <div class="stat">🍄 Энергия: <span id="energy">100</span></div>
+                <div class="stat">😊 Настроение: <span id="mood">85</span></div>
+                <div class="stat">📚 Команд: <span id="commandsCount">0</span></div>
             </div>
         </div>
     </div>
 
     <div class="chat-panel">
-        <div class="messages" id="messages"></div>
+        <div class="messages" id="messages">
+            <div class="message mushroom-message">🍄 Привет! Я Блю. Ты можешь научить меня командам. Напиши "Запомни", а потом команду и настройки. Ещё я боюсь громких звуков — если включить микрофон, я спрячусь!</div>
+        </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Скажи: сидеть, лежать, голос, ко мне, или начни учить с 'Запомни'..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Напиши 'Запомни' чтобы научить меня новой команде..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
+    </div>
+
+    <!-- Панель обучения -->
+    <div class="training-panel" id="trainingPanel">
+        <div style="color: #a0c0ff; margin-bottom: 10px;">📝 НАСТРОЙКА КОМАНДЫ</div>
+        <div id="trainingContent"></div>
     </div>
 </div>
 
 <script>
-    class BlueDog {
+    class BlyuPet {
         constructor() {
-            // Состояние
-            this.health = 100;
-            this.mood = 100;
+            this.energy = 100;
+            this.mood = 85;
             this.isHidden = false;
-            this.isListening = false;
-            this.learningStep = null; // { command, step, tempData }
+            this.isLearning = false;
+            this.learningStep = 0;
+            this.learningData = {};
+            this.customCommands = new Map(); // команда -> объект действия
             
-            // Команды (встроенные + выученные)
-            this.commands = new Map();
-            
-            // Встроенные команды
-            this.initBuiltinCommands();
-            
-            // Реакции
-            this.reactions = [
-                'спрятаться', 'выглянуть', 'вилять хвостом', 'лечь', 'сесть', 'встать',
-                'принести мяч', 'принести палку', 'принести тапок', 'лаять', 'рычать',
-                'подойти', 'отойти', 'прыгнуть', 'перевернуться', 'почесаться',
-                'зевать', 'чихнуть', 'закрыть глаза', 'открыть глаза'
+            // Встроенные реакции
+            this.builtinReactions = [
+                'спрятаться', 'подпрыгнуть', 'поклониться', 'повернуться', 
+                'чихнуть', 'зевать', 'улыбнуться', 'надуться', 'моргнуть', 
+                'принести комок земли', 'принести камень', 'принести палку',
+                'лечь', 'сесть', 'встать на задние лапы', 'помахать',
+                'почесаться', 'фыркнуть', 'вздохнуть', 'засмеяться'
             ];
             
-            // Типы действий
-            this.actionTypes = ['текстовый ответ', 'музыкальный ответ', 'реакция', 'вопрос', 'множественное действие'];
+            // Комната
+            this.roomItems = [
+                { id: "window", name: "окно", x: 50, y: 60, w: 70, h: 55, color: "#87CEEB", emoji: "🪟" },
+                { id: "table", name: "стол", x: 300, y: 200, w: 100, h: 40, color: "#8B5A2B", emoji: "🪑" }
+            ];
             
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
-            this.updateCommandsList();
-            this.startSoundDetection();
+            this.updateRoomList();
+            this.updateCommandList();
+            this.initMicrophone();
             
-            this.addMessage("🐕 Гав! Я Блю. Я умею реагировать на звуки. Научи меня командам через 'Запомни'!", "system");
-        }
-        
-        initBuiltinCommands() {
-            this.commands.set('сидеть', { type: 'реакция', data: 'сесть', response: '🐕 Сел!' });
-            this.commands.set('лежать', { type: 'реакция', data: 'лечь', response: '🐕 Лёг!' });
-            this.commands.set('голос', { type: 'текстовый ответ', data: 'Гав-гав!', response: '🐕 Гав-гав!' });
-            this.commands.set('ко мне', { type: 'реакция', data: 'подойти', response: '🐕 Прибежал!' });
-            this.commands.set('место', { type: 'реакция', data: 'отойти', response: '🐕 Ушёл на место!' });
-            this.commands.set('умри', { type: 'реакция', data: 'лечь', response: '🐕 *умирает драматично*' });
-            this.commands.set('танцуй', { type: 'реакция', data: 'прыгнуть', response: '🐕 Танцует!' });
+            this.addMessage("🍄 Готов к обучению! Напиши 'Запомни' и следуй инструкциям.", "mushroom");
         }
         
         initUI() {
-            this.healthSpan = document.getElementById('health');
+            this.energySpan = document.getElementById('energy');
             this.moodSpan = document.getElementById('mood');
             this.commandsCountSpan = document.getElementById('commandsCount');
             this.mouth = document.getElementById('mouth');
             this.messagesDiv = document.getElementById('messages');
-            this.blueDiv = document.getElementById('blue');
+            this.mushroomDiv = document.getElementById('mushroom');
+            this.hidingSpot = document.getElementById('hidingSpot');
+            this.micStatusSpan = document.getElementById('micStatus');
+            this.trainingPanel = document.getElementById('trainingPanel');
+            this.trainingContent = document.getElementById('trainingContent');
             this.canvas = document.getElementById('roomCanvas');
             this.ctx = this.canvas.getContext('2d');
-            this.microphoneBtn = document.getElementById('microphoneBtn');
         }
         
         setupCanvas() {
@@ -270,541 +473,371 @@
             this.canvas.height = width * 0.58;
         }
         
-        drawRoom() {
-            if(!this.ctx) return;
-            this.ctx.fillStyle = "#1a2a3a";
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // Рисуем будку если спрятан
-            if(this.isHidden) {
-                this.ctx.fillStyle = "#8B5A2B";
-                this.ctx.fillRect(this.canvas.width/2-40, this.canvas.height-80, 80, 60);
-                this.ctx.fillStyle = "#5a3a1a";
-                this.ctx.fillRect(this.canvas.width/2-35, this.canvas.height-75, 70, 50);
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "14px monospace";
-                this.ctx.fillText("🐕", this.canvas.width/2-8, this.canvas.height-45);
-                this.ctx.fillStyle = "#aaa";
-                this.ctx.font = "10px monospace";
-                this.ctx.fillText("Блю спрятался", this.canvas.width/2-45, this.canvas.height-10);
-            } else {
-                this.ctx.fillStyle = "#2a3a2a";
-                this.ctx.fillRect(0, this.canvas.height-60, this.canvas.width, 60);
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "30px monospace";
-                this.ctx.fillText("🐕", this.canvas.width/2-20, this.canvas.height-30);
-            }
-        }
-        
         // === МИКРОФОН И ГРОМКИЕ ЗВУКИ ===
-        startSoundDetection() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                this.addMessage("❌ Микрофон не поддерживается в этом браузере", "system");
-                return;
+        async initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                this.micStatusSpan.innerText = "🎤 микрофон вкл";
+                this.micStatusSpan.classList.add('active');
+                
+                const checkVolume = () => {
+                    if (this.isHidden) {
+                        requestAnimationFrame(checkVolume);
+                        return;
+                    }
+                    
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i];
+                    }
+                    const avg = sum / dataArray.length;
+                    
+                    // Громкий звук > 50
+                    if (avg > 50) {
+                        this.hide();
+                    }
+                    
+                    requestAnimationFrame(checkVolume);
+                };
+                
+                checkVolume();
+                this.addMessage("🎤 Микрофон включён! Блю боится громких звуков.", "system");
+            } catch(e) {
+                this.micStatusSpan.innerText = "🎤 микрофон недоступен";
+                this.addMessage("⚠️ Микрофон не доступен. Блю не сможет слышать громкие звуки.", "system");
             }
-            
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const source = audioContext.createMediaStreamSource(stream);
-                    const analyser = audioContext.createAnalyser();
-                    analyser.fftSize = 256;
-                    source.connect(analyser);
-                    
-                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-                    
-                    const checkSound = () => {
-                        if (!this.isListening) {
-                            requestAnimationFrame(checkSound);
-                            return;
-                        }
-                        analyser.getByteFrequencyData(dataArray);
-                        let sum = 0;
-                        for(let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                        let avg = sum / dataArray.length;
-                        
-                        if (avg > 80 && !this.isHidden) {
-                            this.hideFromSound();
-                        }
-                        requestAnimationFrame(checkSound);
-                    };
-                    
-                    this.isListening = true;
-                    checkSound();
-                    this.microphoneBtn.classList.add('active');
-                    this.addMessage("🎤 Микрофон включён! Громкие звуки заставят Блю прятаться.", "system");
-                })
-                .catch(err => {
-                    this.addMessage("❌ Не удалось получить доступ к микрофону", "system");
-                });
         }
         
-        hideFromSound() {
+        hide() {
+            if (this.isHidden) return;
+            
             this.isHidden = true;
-            this.health = Math.max(0, this.health - 5);
+            this.mushroomDiv.classList.add('hidden');
+            this.hidingSpot.style.display = 'block';
+            this.addMessage("🔊 ОЙ! Громкий звук! Блю испугался и спрятался!", "mushroom");
             this.mood = Math.max(0, this.mood - 10);
             this.updateUI();
-            this.drawRoom();
-            this.addMessage("🔊 ГРОМКИЙ ЗВУК! Блю испугался и спрятался!", "system");
-            this.animateShake();
             
             setTimeout(() => {
                 this.isHidden = false;
-                this.drawRoom();
-                this.addMessage("🐕 Блю выглянул из укрытия", "system");
+                this.mushroomDiv.classList.remove('hidden');
+                this.hidingSpot.style.display = 'none';
+                this.addMessage("🍄 Блю выглянул из укрытия...", "mushroom");
+                this.mood = Math.min(100, this.mood + 5);
+                this.updateUI();
             }, 5000);
         }
         
         // === ОБУЧЕНИЕ КОМАНДАМ ===
-        async processInput(userText) {
-            this.addMessage(userText, "user");
-            const lower = userText.toLowerCase().trim();
-            
-            // Режим обучения
-            if (this.learningStep) {
-                await this.processLearning(userText);
-                return;
-            }
-            
-            // Начать обучение
-            if (lower === 'запомни') {
-                this.startLearning();
-                return;
-            }
-            
-            // Выполнить команду
-            for (const [cmd, action] of this.commands) {
-                if (lower === cmd.toLowerCase()) {
-                    await this.executeAction(action);
-                    return;
-                }
-            }
-            
-            // Если команда не найдена
-            this.addMessage("🐕 Я не знаю такой команды. Научи меня через 'Запомни'!", "blue");
-        }
-        
         startLearning() {
-            this.learningStep = { step: 'command' };
-            this.addMessage("📚 Обучаю новой команде. Напиши команду (например: 'сидеть', 'голос'):", "system");
+            this.isLearning = true;
+            this.learningStep = 1;
+            this.learningData = {};
+            this.trainingPanel.classList.add('active');
+            this.showTrainingStep();
         }
         
-        async processLearning(userText) {
-            const step = this.learningStep.step;
+        showTrainingStep() {
+            const step = this.learningStep;
             
-            if (step === 'command') {
-                const newCommand = userText.toLowerCase().trim();
-                if (this.commands.has(newCommand)) {
-                    this.addMessage(`❌ Команда "${newCommand}" уже существует! Напиши другую.`, "system");
-                    this.learningStep = null;
-                    return;
-                }
-                this.learningStep = { step: 'type', command: newCommand };
-                this.addMessage(`📚 Команда "${newCommand}" будет обучена. Выбери тип действия:\n${this.actionTypes.map((t,i) => `${i+1}. ${t}`).join('\n')}\n\nНапиши номер типа (1-5):`, "system");
-                return;
-            }
-            
-            if (step === 'type') {
-                const typeNum = parseInt(userText);
-                if (isNaN(typeNum) || typeNum < 1 || typeNum > 5) {
-                    this.addMessage("❌ Напиши номер от 1 до 5", "system");
-                    return;
-                }
-                const actionType = this.actionTypes[typeNum - 1];
-                this.learningStep.tempData = { type: actionType, command: this.learningStep.command };
+            if (step === 1) {
+                this.trainingContent.innerHTML = `
+                    <div style="margin-bottom: 10px;">🔤 Шаг 1: Введите команду (например, "сидеть", "голос", "лежать")</div>
+                    <input type="text" id="commandName" placeholder="Название команды" style="width: 200px;">
+                    <button onclick="blyu.setCommandName()">Далее</button>
+                    <div style="font-size:0.7rem; color:#f59e0b; margin-top:10px;">⚠️ Команда не должна совпадать с существующими: ${Array.from(this.customCommands.keys()).join(', ') || 'нет'}</div>
+                `;
+            } else if (step === 2) {
+                this.trainingContent.innerHTML = `
+                    <div style="margin-bottom: 10px;">🎭 Шаг 2: Выберите тип действия</div>
+                    <select id="actionType">
+                        <option value="text">📝 Текстовый ответ</option>
+                        <option value="music">🎵 Музыкальный ответ</option>
+                        <option value="reaction">🎬 Реакция</option>
+                        <option value="question">❓ Вопрос</option>
+                        <option value="multi">🔢 Множественное действие</option>
+                    </select>
+                    <button onclick="blyu.setActionType()">Далее</button>
+                `;
+            } else if (step === 3) {
+                const actionType = this.learningData.actionType;
                 
-                if (actionType === 'текстовый ответ') {
-                    this.learningStep.step = 'textResponse';
-                    this.addMessage("📚 Напиши текст ответа (например: 'Гав!'):", "system");
-                } else if (actionType === 'музыкальный ответ') {
-                    this.learningStep.step = 'musicNotes';
-                    this.addMessage("📚 Напиши ноты через пробел (например: 'C4 D4 E4'):", "system");
-                } else if (actionType === 'реакция') {
-                    this.learningStep.step = 'reaction';
-                    this.addMessage(`📚 Выбери реакцию из списка:\n${this.reactions.map((r,i) => `${i+1}. ${r}`).join('\n')}\n\nНапиши номер реакции:`, "system");
-                } else if (actionType === 'вопрос') {
-                    this.learningStep.step = 'question';
-                    this.learningStep.tempData.answers = [];
-                    this.addMessage("📚 Напиши вопрос (например: 'Как меня зовут?'):", "system");
-                } else if (actionType === 'множественное действие') {
-                    this.learningStep.step = 'multiCount';
-                    this.learningStep.tempData.actions = [];
-                    this.addMessage("📚 Сколько действий будет в этой команде? Напиши число:", "system");
+                if (actionType === 'text') {
+                    this.trainingContent.innerHTML = `
+                        <div style="margin-bottom: 10px;">📝 Введите текстовый ответ</div>
+                        <input type="text" id="textResponse" placeholder="Например: Сижу!" style="width: 250px;">
+                        <button onclick="blyu.finishLearning()">Сохранить команду</button>
+                    `;
+                } else if (actionType === 'music') {
+                    this.trainingContent.innerHTML = `
+                        <div style="margin-bottom: 10px;">🎵 Введите ноты (через пробел)</div>
+                        <input type="text" id="notes" placeholder="Например: C4 E4 G4" style="width: 250px;">
+                        <button onclick="blyu.finishLearning()">Сохранить команду</button>
+                        <div style="font-size:0.7rem; color:#8a9bbb; margin-top:5px;">Ноты: C4, D4, E4, F4, G4, A4, B4, C5...</div>
+                    `;
+                } else if (actionType === 'reaction') {
+                    this.trainingContent.innerHTML = `
+                        <div style="margin-bottom: 10px;">🎬 Выберите реакцию</div>
+                        <select id="reaction">
+                            ${this.builtinReactions.map(r => `<option value="${r}">${r}</option>`).join('')}
+                        </select>
+                        <button onclick="blyu.finishLearning()">Сохранить команду</button>
+                    `;
+                } else if (actionType === 'question') {
+                    this.trainingContent.innerHTML = `
+                        <div style="margin-bottom: 10px;">❓ Настройка вопроса</div>
+                        <input type="text" id="question" placeholder="Вопрос" style="width: 250px;"><br>
+                        <input type="number" id="answersCount" placeholder="Количество ожидаемых ответов" style="width: 150px; margin-top: 5px;"><br>
+                        <div id="answersInputs"></div>
+                        <button onclick="blyu.setupQuestion()">Далее</button>
+                    `;
+                } else if (actionType === 'multi') {
+                    this.trainingContent.innerHTML = `
+                        <div style="margin-bottom: 10px;">🔢 Количество действий</div>
+                        <input type="number" id="actionsCount" placeholder="Количество" style="width: 100px;">
+                        <button onclick="blyu.setupMulti()">Далее</button>
+                    `;
                 }
-                return;
-            }
-            
-            // Текстовый ответ
-            if (step === 'textResponse') {
-                this.commands.set(this.learningStep.command, {
-                    type: 'текстовый ответ',
-                    data: userText
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена! Ответ: "${userText}"`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            // Музыкальный ответ
-            if (step === 'musicNotes') {
-                this.commands.set(this.learningStep.command, {
-                    type: 'музыкальный ответ',
-                    data: userText
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена! Ноты: ${userText}`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            // Реакция
-            if (step === 'reaction') {
-                const reactNum = parseInt(userText);
-                if (isNaN(reactNum) || reactNum < 1 || reactNum > this.reactions.length) {
-                    this.addMessage("❌ Неверный номер реакции", "system");
-                    return;
+            } else if (step === 4) {
+                // Для вопроса — настройка ответов
+                if (this.learningData.actionType === 'question') {
+                    this.setupQuestionStep();
+                } else if (this.learningData.actionType === 'multi') {
+                    this.setupMultiStep();
                 }
-                const reaction = this.reactions[reactNum - 1];
-                this.commands.set(this.learningStep.command, {
-                    type: 'реакция',
-                    data: reaction
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена! Реакция: ${reaction}`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            // Вопрос (сложный)
-            if (step === 'question') {
-                this.learningStep.tempData.question = userText;
-                this.learningStep.step = 'answerCount';
-                this.addMessage("📚 Сколько ожидаемых ответов? Напиши число:", "system");
-                return;
-            }
-            
-            if (step === 'answerCount') {
-                const count = parseInt(userText);
-                if (isNaN(count) || count < 1) {
-                    this.addMessage("❌ Напиши число больше 0", "system");
-                    return;
-                }
-                this.learningStep.tempData.expectedCount = count;
-                this.learningStep.step = 'answerInput';
-                this.learningStep.tempData.currentAnswer = 1;
-                this.addMessage(`📚 Напиши ожидаемый ответ #1 из ${count}:`, "system");
-                return;
-            }
-            
-            if (step === 'answerInput') {
-                const current = this.learningStep.tempData.currentAnswer;
-                const count = this.learningStep.tempData.expectedCount;
-                this.learningStep.tempData.answers.push({ text: userText, actions: [] });
-                
-                if (current < count) {
-                    this.learningStep.tempData.currentAnswer = current + 1;
-                    this.addMessage(`📚 Напиши ожидаемый ответ #${current+1} из ${count}:`, "system");
-                } else {
-                    this.learningStep.step = 'actionForAnswer';
-                    this.learningStep.tempData.currentAnswer = 0;
-                    this.addMessage(`📚 Теперь настрой действия для каждого ответа.\nДля ответа "${this.learningStep.tempData.answers[0].text}" выбери тип действия (1-5):`, "system");
-                }
-                return;
-            }
-            
-            if (step === 'actionForAnswer') {
-                const answerIdx = this.learningStep.tempData.currentAnswer;
-                if (!this.learningStep.tempData.answers[answerIdx]) {
-                    // Переход к действию при неожиданном ответе
-                    this.learningStep.step = 'unexpectedAction';
-                    this.addMessage("📚 Настрой действие при НЕОЖИДАННОМ ответе. Выбери тип (1-5):", "system");
-                    return;
-                }
-                
-                // Сохраняем действие для ответа
-                const typeNum = parseInt(userText);
-                if (isNaN(typeNum) || typeNum < 1 || typeNum > 5) {
-                    this.addMessage("❌ Напиши номер от 1 до 5", "system");
-                    return;
-                }
-                const actionType = this.actionTypes[typeNum - 1];
-                this.learningStep.tempData.currentActionType = actionType;
-                this.learningStep.tempData.currentAnswerTemp = answerIdx;
-                
-                if (actionType === 'текстовый ответ') {
-                    this.learningStep.step = 'actionText';
-                    this.addMessage("📚 Напиши текст ответа:", "system");
-                } else if (actionType === 'музыкальный ответ') {
-                    this.learningStep.step = 'actionMusic';
-                    this.addMessage("📚 Напиши ноты через пробел:", "system");
-                } else if (actionType === 'реакция') {
-                    this.learningStep.step = 'actionReaction';
-                    this.addMessage(`📚 Выбери реакцию:\n${this.reactions.map((r,i) => `${i+1}. ${r}`).join('\n')}\nНапиши номер:`, "system");
-                } else {
-                    this.addMessage("❌ Для вопросов пока поддерживаются только текстовые, музыкальные и реакции", "system");
-                    this.learningStep = null;
-                }
-                return;
-            }
-            
-            if (step === 'actionText') {
-                const answerIdx = this.learningStep.tempData.currentAnswerTemp;
-                this.learningStep.tempData.answers[answerIdx].actions.push({
-                    type: 'текстовый ответ',
-                    data: userText
-                });
-                this.learningStep.tempData.currentAnswer = answerIdx + 1;
-                this.learningStep.step = 'actionForAnswer';
-                if (this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer]) {
-                    this.addMessage(`📚 Для ответа "${this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer].text}" выбери тип действия:`, "system");
-                } else {
-                    this.learningStep.step = 'unexpectedAction';
-                    this.addMessage("📚 Настрой действие при НЕОЖИДАННОМ ответе. Выбери тип (1-5):", "system");
-                }
-                return;
-            }
-            
-            if (step === 'actionMusic') {
-                const answerIdx = this.learningStep.tempData.currentAnswerTemp;
-                this.learningStep.tempData.answers[answerIdx].actions.push({
-                    type: 'музыкальный ответ',
-                    data: userText
-                });
-                this.learningStep.tempData.currentAnswer = answerIdx + 1;
-                this.learningStep.step = 'actionForAnswer';
-                if (this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer]) {
-                    this.addMessage(`📚 Для ответа "${this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer].text}" выбери тип действия:`, "system");
-                } else {
-                    this.learningStep.step = 'unexpectedAction';
-                    this.addMessage("📚 Настрой действие при НЕОЖИДАННОМ ответе. Выбери тип (1-5):", "system");
-                }
-                return;
-            }
-            
-            if (step === 'actionReaction') {
-                const reactNum = parseInt(userText);
-                const reaction = this.reactions[reactNum - 1];
-                const answerIdx = this.learningStep.tempData.currentAnswerTemp;
-                this.learningStep.tempData.answers[answerIdx].actions.push({
-                    type: 'реакция',
-                    data: reaction
-                });
-                this.learningStep.tempData.currentAnswer = answerIdx + 1;
-                this.learningStep.step = 'actionForAnswer';
-                if (this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer]) {
-                    this.addMessage(`📚 Для ответа "${this.learningStep.tempData.answers[this.learningStep.tempData.currentAnswer].text}" выбери тип действия:`, "system");
-                } else {
-                    this.learningStep.step = 'unexpectedAction';
-                    this.addMessage("📚 Настрой действие при НЕОЖИДАННОМ ответе. Выбери тип (1-5):", "system");
-                }
-                return;
-            }
-            
-            if (step === 'unexpectedAction') {
-                const typeNum = parseInt(userText);
-                if (isNaN(typeNum) || typeNum < 1 || typeNum > 5) {
-                    this.addMessage("❌ Напиши номер от 1 до 5", "system");
-                    return;
-                }
-                const actionType = this.actionTypes[typeNum - 1];
-                this.learningStep.tempData.unexpectedType = actionType;
-                
-                if (actionType === 'текстовый ответ') {
-                    this.learningStep.step = 'unexpectedText';
-                    this.addMessage("📚 Напиши текст ответа при неожиданном ответе:", "system");
-                } else if (actionType === 'музыкальный ответ') {
-                    this.learningStep.step = 'unexpectedMusic';
-                    this.addMessage("📚 Напиши ноты для неожиданного ответа:", "system");
-                } else if (actionType === 'реакция') {
-                    this.learningStep.step = 'unexpectedReaction';
-                    this.addMessage(`📚 Выбери реакцию для неожиданного ответа:\n${this.reactions.map((r,i) => `${i+1}. ${r}`).join('\n')}\nНапиши номер:`, "system");
-                }
-                return;
-            }
-            
-            if (step === 'unexpectedText') {
-                this.commands.set(this.learningStep.command, {
-                    type: 'вопрос',
-                    data: {
-                        question: this.learningStep.tempData.question,
-                        answers: this.learningStep.tempData.answers,
-                        unexpected: { type: 'текстовый ответ', data: userText }
-                    }
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с вопросом!`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            if (step === 'unexpectedMusic') {
-                this.commands.set(this.learningStep.command, {
-                    type: 'вопрос',
-                    data: {
-                        question: this.learningStep.tempData.question,
-                        answers: this.learningStep.tempData.answers,
-                        unexpected: { type: 'музыкальный ответ', data: userText }
-                    }
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с вопросом!`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            if (step === 'unexpectedReaction') {
-                const reactNum = parseInt(userText);
-                const reaction = this.reactions[reactNum - 1];
-                this.commands.set(this.learningStep.command, {
-                    type: 'вопрос',
-                    data: {
-                        question: this.learningStep.tempData.question,
-                        answers: this.learningStep.tempData.answers,
-                        unexpected: { type: 'реакция', data: reaction }
-                    }
-                });
-                this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с вопросом!`, "system");
-                this.learningStep = null;
-                this.updateCommandsList();
-                return;
-            }
-            
-            // Множественное действие
-            if (step === 'multiCount') {
-                const count = parseInt(userText);
-                if (isNaN(count) || count < 1) {
-                    this.addMessage("❌ Напиши число больше 0", "system");
-                    return;
-                }
-                this.learningStep.tempData.multiCount = count;
-                this.learningStep.tempData.multiActions = [];
-                this.learningStep.step = 'multiAction';
-                this.learningStep.tempData.currentMulti = 1;
-                this.addMessage(`📚 Настрой действие #1 из ${count}. Выбери тип (1-5):`, "system");
-                return;
-            }
-            
-            if (step === 'multiAction') {
-                const current = this.learningStep.tempData.currentMulti;
-                const typeNum = parseInt(userText);
-                if (isNaN(typeNum) || typeNum < 1 || typeNum > 5) {
-                    this.addMessage("❌ Напиши номер от 1 до 5", "system");
-                    return;
-                }
-                const actionType = this.actionTypes[typeNum - 1];
-                this.learningStep.tempData.currentActionType = actionType;
-                
-                if (actionType === 'текстовый ответ') {
-                    this.learningStep.step = 'multiText';
-                    this.addMessage(`📚 Напиши текст ответа для действия #${current}:`, "system");
-                } else if (actionType === 'музыкальный ответ') {
-                    this.learningStep.step = 'multiMusic';
-                    this.addMessage(`📚 Напиши ноты для действия #${current}:`, "system");
-                } else if (actionType === 'реакция') {
-                    this.learningStep.step = 'multiReaction';
-                    this.addMessage(`📚 Выбери реакцию для действия #${current}:\n${this.reactions.map((r,i) => `${i+1}. ${r}`).join('\n')}\nНапиши номер:`, "system");
-                }
-                return;
-            }
-            
-            if (step === 'multiText') {
-                this.learningStep.tempData.multiActions.push({ type: 'текстовый ответ', data: userText });
-                this.learningStep.tempData.currentMulti++;
-                if (this.learningStep.tempData.currentMulti <= this.learningStep.tempData.multiCount) {
-                    this.learningStep.step = 'multiAction';
-                    this.addMessage(`📚 Настрой действие #${this.learningStep.tempData.currentMulti} из ${this.learningStep.tempData.multiCount}. Выбери тип:`, "system");
-                } else {
-                    this.commands.set(this.learningStep.command, {
-                        type: 'множественное действие',
-                        data: this.learningStep.tempData.multiActions
-                    });
-                    this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с ${this.learningStep.tempData.multiCount} действиями!`, "system");
-                    this.learningStep = null;
-                    this.updateCommandsList();
-                }
-                return;
-            }
-            
-            if (step === 'multiMusic') {
-                this.learningStep.tempData.multiActions.push({ type: 'музыкальный ответ', data: userText });
-                this.learningStep.tempData.currentMulti++;
-                if (this.learningStep.tempData.currentMulti <= this.learningStep.tempData.multiCount) {
-                    this.learningStep.step = 'multiAction';
-                    this.addMessage(`📚 Настрой действие #${this.learningStep.tempData.currentMulti} из ${this.learningStep.tempData.multiCount}. Выбери тип:`, "system");
-                } else {
-                    this.commands.set(this.learningStep.command, {
-                        type: 'множественное действие',
-                        data: this.learningStep.tempData.multiActions
-                    });
-                    this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с ${this.learningStep.tempData.multiCount} действиями!`, "system");
-                    this.learningStep = null;
-                    this.updateCommandsList();
-                }
-                return;
-            }
-            
-            if (step === 'multiReaction') {
-                const reactNum = parseInt(userText);
-                const reaction = this.reactions[reactNum - 1];
-                this.learningStep.tempData.multiActions.push({ type: 'реакция', data: reaction });
-                this.learningStep.tempData.currentMulti++;
-                if (this.learningStep.tempData.currentMulti <= this.learningStep.tempData.multiCount) {
-                    this.learningStep.step = 'multiAction';
-                    this.addMessage(`📚 Настрой действие #${this.learningStep.tempData.currentMulti} из ${this.learningStep.tempData.multiCount}. Выбери тип:`, "system");
-                } else {
-                    this.commands.set(this.learningStep.command, {
-                        type: 'множественное действие',
-                        data: this.learningStep.tempData.multiActions
-                    });
-                    this.addMessage(`✅ Команда "${this.learningStep.command}" выучена с ${this.learningStep.tempData.multiCount} действиями!`, "system");
-                    this.learningStep = null;
-                    this.updateCommandsList();
-                }
-                return;
             }
         }
         
-        async executeAction(action) {
-            if (action.type === 'текстовый ответ') {
-                this.addMessage(`🐕 ${action.data}`, "blue");
-            } else if (action.type === 'музыкальный ответ') {
-                this.playMusic(action.data);
-                this.addMessage(`🐕 ${action.data}`, "blue");
-            } else if (action.type === 'реакция') {
-                this.doReaction(action.data);
-                this.addMessage(`🐕 ${action.data}!`, "blue");
-            } else if (action.type === 'вопрос') {
-                await this.askQuestion(action.data);
-            } else if (action.type === 'множественное действие') {
-                for (const subAction of action.data) {
-                    await this.executeAction(subAction);
+        setCommandName() {
+            const name = document.getElementById('commandName').value.trim().toLowerCase();
+            if (!name) {
+                this.addMessage("❌ Введите название команды", "system");
+                return;
+            }
+            if (this.customCommands.has(name)) {
+                this.addMessage("❌ Такая команда уже существует!", "system");
+                return;
+            }
+            this.learningData.command = name;
+            this.learningStep = 2;
+            this.showTrainingStep();
+        }
+        
+        setActionType() {
+            const type = document.getElementById('actionType').value;
+            this.learningData.actionType = type;
+            this.learningStep = 3;
+            this.showTrainingStep();
+        }
+        
+        setupQuestion() {
+            const question = document.getElementById('question').value;
+            const answersCount = parseInt(document.getElementById('answersCount').value);
+            
+            if (!question || !answersCount) {
+                this.addMessage("❌ Заполните все поля", "system");
+                return;
+            }
+            
+            this.learningData.question = question;
+            this.learningData.answersCount = answersCount;
+            this.learningData.answers = [];
+            this.learningData.expectedAnswerIndex = null;
+            
+            this.learningStep = 4;
+            this.showTrainingStep();
+        }
+        
+        setupQuestionStep() {
+            const answersCount = this.learningData.answersCount;
+            let html = `<div style="margin-bottom: 10px;">❓ Введите варианты ответов (${answersCount} шт.)</div>`;
+            
+            for (let i = 0; i < answersCount; i++) {
+                html += `<input type="text" id="answer_${i}" placeholder="Ответ ${i+1}" style="width: 200px; margin: 3px;"><br>`;
+            }
+            
+            html += `<div style="margin-top: 10px;">🎯 Ожидаемый ответ (номер от 1 до ${answersCount})</div>`;
+            html += `<input type="number" id="expectedAnswer" min="1" max="${answersCount}" style="width: 80px;"><br>`;
+            
+            html += `<div style="margin-top: 10px;">✅ Действие при ожидаемом ответе</div>`;
+            html += `<select id="expectedActionType">
+                        <option value="text">Текстовый ответ</option>
+                        <option value="music">Музыкальный ответ</option>
+                        <option value="reaction">Реакция</option>
+                    </select><br>`;
+            html += `<input type="text" id="expectedActionValue" placeholder="Текст/ноты/реакция" style="width: 200px; margin-top: 5px;"><br>`;
+            
+            html += `<div style="margin-top: 10px;">❌ Действие при неожиданном ответе</div>`;
+            html += `<select id="unexpectedActionType">
+                        <option value="text">Текстовый ответ</option>
+                        <option value="music">Музыкальный ответ</option>
+                        <option value="reaction">Реакция</option>
+                    </select><br>`;
+            html += `<input type="text" id="unexpectedActionValue" placeholder="Текст/ноты/реакция" style="width: 200px; margin-top: 5px;"><br>`;
+            
+            html += `<button onclick="blyu.finishQuestion()" style="margin-top: 15px;">Сохранить команду</button>`;
+            
+            this.trainingContent.innerHTML = html;
+        }
+        
+        finishQuestion() {
+            const answers = [];
+            for (let i = 0; i < this.learningData.answersCount; i++) {
+                answers.push(document.getElementById(`answer_${i}`).value.trim());
+            }
+            
+            const expectedAnswerIndex = parseInt(document.getElementById('expectedAnswer').value) - 1;
+            const expectedActionType = document.getElementById('expectedActionType').value;
+            const expectedActionValue = document.getElementById('expectedActionValue').value;
+            const unexpectedActionType = document.getElementById('unexpectedActionType').value;
+            const unexpectedActionValue = document.getElementById('unexpectedActionValue').value;
+            
+            this.learningData.answers = answers;
+            this.learningData.expectedAnswerIndex = expectedAnswerIndex;
+            this.learningData.expectedAction = { type: expectedActionType, value: expectedActionValue };
+            this.learningData.unexpectedAction = { type: unexpectedActionType, value: unexpectedActionValue };
+            
+            this.saveCommand();
+        }
+        
+        setupMulti() {
+            const count = parseInt(document.getElementById('actionsCount').value);
+            if (!count) return;
+            
+            this.learningData.multiCount = count;
+            this.learningData.multiActions = [];
+            this.learningStep = 4;
+            this.showMultiStep(0);
+        }
+        
+        showMultiStep(index) {
+            if (index >= this.learningData.multiCount) {
+                this.saveCommand();
+                return;
+            }
+            
+            this.learningData.currentMultiIndex = index;
+            this.trainingContent.innerHTML = `
+                <div style="margin-bottom: 10px;">🔢 Действие ${index + 1} из ${this.learningData.multiCount}</div>
+                <select id="multiActionType">
+                    <option value="text">Текстовый ответ</option>
+                    <option value="music">Музыкальный ответ</option>
+                    <option value="reaction">Реакция</option>
+                </select><br>
+                <input type="text" id="multiActionValue" placeholder="Текст/ноты/реакция" style="width: 250px; margin-top: 5px;"><br>
+                <button onclick="blyu.addMultiAction()">Далее</button>
+            `;
+        }
+        
+        addMultiAction() {
+            const type = document.getElementById('multiActionType').value;
+            const value = document.getElementById('multiActionValue').value;
+            
+            this.learningData.multiActions.push({ type, value });
+            this.showMultiStep(this.learningData.currentMultiIndex + 1);
+        }
+        
+        finishLearning() {
+            const actionType = this.learningData.actionType;
+            
+            if (actionType === 'text') {
+                this.learningData.textResponse = document.getElementById('textResponse').value;
+                this.saveCommand();
+            } else if (actionType === 'music') {
+                this.learningData.notes = document.getElementById('notes').value;
+                this.saveCommand();
+            } else if (actionType === 'reaction') {
+                this.learningData.reaction = document.getElementById('reaction').value;
+                this.saveCommand();
+            }
+        }
+        
+        saveCommand() {
+            const command = this.learningData.command;
+            this.customCommands.set(command, { ...this.learningData });
+            
+            this.updateCommandList();
+            this.commandsCountSpan.innerText = this.customCommands.size;
+            
+            this.isLearning = false;
+            this.trainingPanel.classList.remove('active');
+            this.addMessage(`✅ Команда "${command}" сохранена! Теперь можешь её использовать.`, "system");
+            
+            this.learningData = {};
+            this.learningStep = 0;
+        }
+        
+        // === ВЫПОЛНЕНИЕ КОМАНД ===
+        async executeCommand(command, userMessage = null) {
+            const cmd = this.customCommands.get(command);
+            if (!cmd) return false;
+            
+            const actionType = cmd.actionType;
+            
+            if (actionType === 'text') {
+                this.addMessage(`🍄 ${cmd.textResponse}`, "mushroom");
+            } else if (actionType === 'music') {
+                this.playMusic(cmd.notes);
+                this.addMessage(`🍄 Играет мелодию: ${cmd.notes}`, "mushroom");
+            } else if (actionType === 'reaction') {
+                this.doReaction(cmd.reaction);
+            } else if (actionType === 'question' && userMessage) {
+                // Обработка вопроса
+                this.handleQuestion(cmd, userMessage);
+                return true;
+            } else if (actionType === 'multi') {
+                for (const action of cmd.multiActions) {
+                    await this.executeAction(action.type, action.value);
                     await this.sleep(500);
                 }
             }
             
-            this.mood = Math.min(100, this.mood + 2);
+            this.mood = Math.min(100, this.mood + 3);
             this.updateUI();
+            return true;
         }
         
-        askQuestion(questionData) {
-            return new Promise((resolve) => {
-                this.addMessage(`🐕 ${questionData.question}`, "blue");
-                this.waitingForAnswer = true;
-                this.currentQuestionData = questionData;
-                this.questionResolve = resolve;
-            });
+        async executeAction(type, value) {
+            if (type === 'text') {
+                this.addMessage(`🍄 ${value}`, "mushroom");
+            } else if (type === 'music') {
+                this.playMusic(value);
+            } else if (type === 'reaction') {
+                this.doReaction(value);
+            }
+            await this.sleep(300);
         }
         
-        async playMusic(notes) {
+        handleQuestion(cmd, userAnswer) {
+            const answerIndex = cmd.answers.findIndex(a => a.toLowerCase() === userAnswer.toLowerCase());
+            const isExpected = answerIndex === cmd.expectedAnswerIndex;
+            
+            if (isExpected) {
+                this.executeAction(cmd.expectedAction.type, cmd.expectedAction.value);
+            } else {
+                this.executeAction(cmd.unexpectedAction.type, cmd.unexpectedAction.value);
+            }
+        }
+        
+        playMusic(notes) {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
             const noteFreqs = {
-                'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
-                'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77,
-                'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94
+                'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63,
+                'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00,
+                'A#4': 466.16, 'B4': 493.88, 'C5': 523.25, 'D5': 587.33, 'E5': 659.25,
+                'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77
             };
             
             const noteList = notes.split(/\s+/);
-            const context = new (window.AudioContext || window.webkitAudioContext)();
             let time = context.currentTime;
             
             for (const note of noteList) {
@@ -817,62 +850,152 @@
                     osc.frequency.value = freq;
                     osc.type = 'sine';
                     gain.gain.setValueAtTime(0.2, time);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.5);
                     osc.start(time);
-                    osc.stop(time + 0.3);
-                    time += 0.3;
+                    osc.stop(time + 0.5);
+                    time += 0.5;
                 }
             }
         }
         
         doReaction(reaction) {
-            const reactionsMap = {
-                'спрятаться': () => { this.isHidden = true; this.drawRoom(); setTimeout(() => { this.isHidden = false; this.drawRoom(); }, 3000); },
-                'выглянуть': () => { this.isHidden = false; this.drawRoom(); },
-                'вилять хвостом': () => { this.animateShake(); },
-                'лечь': () => { this.animateShake(); },
-                'сесть': () => { this.animateShake(); },
-                'встать': () => { this.animateShake(); },
-                'принести мяч': () => { this.addMessage("🐕 *принёс мяч*", "blue"); this.animateShake(); },
-                'принести палку': () => { this.addMessage("🐕 *принёс палку*", "blue"); this.animateShake(); },
-                'принести тапок': () => { this.addMessage("🐕 *принёс тапок*", "blue"); this.animateShake(); },
-                'лаять': () => { this.addMessage("🐕 Гав! Гав! Гав!", "blue"); this.animateShake(); },
-                'рычать': () => { this.addMessage("🐕 Р-р-р-р...", "blue"); },
-                'подойти': () => { this.animateShake(); },
-                'отойти': () => { this.animateShake(); },
-                'прыгнуть': () => { this.animateShake(); },
-                'перевернуться': () => { this.animateShake(); },
-                'почесаться': () => { this.addMessage("🐕 *чешет за ухом*", "blue"); },
-                'зевать': () => { this.mouth.innerText = "🥱"; setTimeout(() => this.updateUI(), 2000); },
-                'чихнуть': () => { this.addMessage("🐕 Апчхи!", "blue"); },
-                'закрыть глаза': () => { document.querySelectorAll('.pupil').forEach(p => p.style.opacity = '0'); },
-                'открыть глаза': () => { document.querySelectorAll('.pupil').forEach(p => p.style.opacity = '1'); }
-            };
+            this.animateReaction(reaction);
+            this.addMessage(`🍄 *${reaction}*`, "mushroom");
             
-            if (reactionsMap[reaction]) {
-                reactionsMap[reaction]();
+            if (reaction === 'спрятаться') {
+                this.hide();
             }
         }
         
-        animateShake() {
-            this.blueDiv.classList.add('shake');
-            setTimeout(() => this.blueDiv.classList.remove('shake'), 300);
+        animateReaction(reaction) {
+            if (reaction === 'подпрыгнуть') {
+                this.mushroomDiv.classList.add('bounce');
+                setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 400);
+            } else if (reaction === 'поклониться') {
+                this.mushroomDiv.style.transform = 'rotate(15deg)';
+                setTimeout(() => this.mushroomDiv.style.transform = '', 500);
+            } else if (reaction === 'чихнуть') {
+                this.mushroomDiv.classList.add('shake');
+                setTimeout(() => this.mushroomDiv.classList.remove('shake'), 300);
+            } else {
+                this.mushroomDiv.classList.add('bounce');
+                setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 300);
+            }
         }
         
-        updateCommandsList() {
-            const container = document.getElementById('commandsList');
-            container.innerHTML = '<div style="color:#aaa; font-size:0.7rem; text-align:center;">⬇️ ВЫУЧЕННЫЕ КОМАНДЫ ⬇️</div>';
-            for (const [cmd, action] of this.commands) {
-                const div = document.createElement('div');
-                div.className = 'command-item';
-                div.innerHTML = `<span class="command-name">${cmd}</span> <span class="command-type">${action.type}</span>`;
-                container.appendChild(div);
+        // === ОСНОВНАЯ ОБРАБОТКА ===
+        async processInput(userText) {
+            this.addMessage(userText, "user");
+            const lower = userText.toLowerCase().trim();
+            
+            // Режим обучения
+            if (lower === 'запомни' && !this.isLearning) {
+                this.startLearning();
+                return;
             }
-            this.commandsCountSpan.innerText = this.commands.size;
+            
+            // Если в режиме вопроса — отвечаем на вопрос
+            if (this.waitingForQuestion) {
+                const cmd = this.waitingForQuestion;
+                this.waitingForQuestion = null;
+                this.handleQuestion(cmd, userText);
+                return;
+            }
+            
+            // Проверяем пользовательские команды
+            for (const [cmdName, cmdData] of this.customCommands) {
+                if (lower === cmdName || lower.startsWith(cmdName + ' ')) {
+                    const executed = await this.executeCommand(cmdName, userText);
+                    if (executed) {
+                        this.energy = Math.max(0, this.energy - 2);
+                        this.updateUI();
+                        return;
+                    }
+                }
+            }
+            
+            // Встроенные команды
+            if (lower.includes('поглад') || lower === 'гладить') {
+                this.addMessage("🍄 Муррр... Спасибо! 💙", "mushroom");
+                this.mood = Math.min(100, this.mood + 8);
+                this.energy = Math.min(100, this.energy + 2);
+            } else if (lower.includes('покорми')) {
+                this.addMessage("🍄 Ням-ням! Вкусно!", "mushroom");
+                this.energy = Math.min(100, this.energy + 15);
+                this.mood = Math.min(100, this.mood + 5);
+            } else if (lower.includes('привет')) {
+                this.addMessage("🍄 Привет! Я Блю! Рад тебя видеть!", "mushroom");
+                this.mood = Math.min(100, this.mood + 3);
+            } else if (lower.includes('как дела')) {
+                this.addMessage(`🍄 ${this.energy > 50 ? 'Отлично!' : 'Немного устал...'} А у тебя?`, "mushroom");
+            } else if (lower.includes('список команд') || lower.includes('какие команды')) {
+                this.showCommandList();
+            } else {
+                this.addMessage("🍄 Я не понял... Напиши 'Запомни', чтобы научить меня новой команде!", "mushroom");
+                this.mood = Math.max(0, this.mood - 2);
+            }
+            
+            this.energy = Math.max(0, this.energy - 1);
+            this.updateUI();
+        }
+        
+        showCommandList() {
+            if (this.customCommands.size === 0) {
+                this.addMessage("🍄 Пока нет выученных команд. Напиши 'Запомни', чтобы научить меня!", "mushroom");
+            } else {
+                let list = "🍄 Мои команды: ";
+                for (const cmd of this.customCommands.keys()) {
+                    list += `"${cmd}" `;
+                }
+                this.addMessage(list, "mushroom");
+            }
+        }
+        
+        updateCommandList() {
+            const container = document.getElementById('commandList');
+            container.innerHTML = '<div style="font-size:0.65rem; color:#8a9bbb; margin-bottom:5px;">📚 ВЫУЧЕННЫЕ КОМАНДЫ:</div>';
+            for (const cmd of this.customCommands.keys()) {
+                const badge = document.createElement('span');
+                badge.className = 'command-badge';
+                badge.innerText = cmd;
+                badge.onclick = () => this.executeCommand(cmd);
+                container.appendChild(badge);
+            }
+        }
+        
+        drawRoom() {
+            if (!this.ctx) return;
+            this.ctx.fillStyle = "#1a2a3a";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillStyle = "#2a3a2a";
+            this.ctx.fillRect(0, this.canvas.height - 60, this.canvas.width, 60);
+            
+            for (const item of this.roomItems) {
+                this.ctx.fillStyle = item.color;
+                this.ctx.fillRect(item.x, item.y, item.w, item.h);
+                this.ctx.fillStyle = "white";
+                this.ctx.font = "12px monospace";
+                this.ctx.fillText(item.emoji, item.x + 5, item.y + 20);
+                this.ctx.fillStyle = "#a0c0ff";
+                this.ctx.font = "10px monospace";
+                this.ctx.fillText(item.name, item.x + 25, item.y + 20);
+            }
+        }
+        
+        updateRoomList() {
+            const container = document.getElementById('roomItemsList');
+            container.innerHTML = "";
+            for (const item of this.roomItems) {
+                const badge = document.createElement('span');
+                badge.className = 'room-item';
+                badge.innerHTML = `${item.emoji} ${item.name}`;
+                badge.onclick = () => this.addMessage(`🍄 Это ${item.name}.`, "mushroom");
+                container.appendChild(badge);
+            }
         }
         
         updateUI() {
-            this.healthSpan.innerText = this.health;
+            this.energySpan.innerText = this.energy;
             this.moodSpan.innerText = this.mood;
             if (this.mood > 70) this.mouth.innerText = "😊";
             else if (this.mood > 40) this.mouth.innerText = "😐";
@@ -881,50 +1004,35 @@
         
         addMessage(text, sender) {
             const msg = document.createElement('div');
-            msg.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'blue-message'}`;
+            msg.className = `message ${sender === 'user' ? 'user-message' : sender === 'system' ? 'system-message' : 'mushroom-message'}`;
             msg.innerHTML = text;
             this.messagesDiv.appendChild(msg);
             msg.scrollIntoView({ behavior: 'smooth' });
         }
         
-        sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
     }
     
-    const blue = new BlueDog();
+    const blyu = new BlyuPet();
     
-    window.send = function() {
+    function send() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if (!text) return;
-        
-        if (blue.waitingForAnswer && blue.currentQuestionData) {
-            blue.waitingForAnswer = false;
-            let found = false;
-            for (const ans of blue.currentQuestionData.answers) {
-                if (text.toLowerCase() === ans.text.toLowerCase()) {
-                    found = true;
-                    for (const action of ans.actions) {
-                        blue.executeAction(action);
-                    }
-                    break;
-                }
-            }
-            if (!found && blue.currentQuestionData.unexpected) {
-                blue.executeAction(blue.currentQuestionData.unexpected);
-            }
-            blue.currentQuestionData = null;
-            if (blue.questionResolve) blue.questionResolve();
-            input.value = '';
-            return;
-        }
-        
-        blue.processInput(text);
+        blyu.processInput(text);
         input.value = '';
-    };
+    }
     
-    document.getElementById('sendBtn').onclick = () => window.send();
-    document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') window.send(); };
-    document.getElementById('blue').onclick = () => blue.processInput('погладить');
+    document.getElementById('sendBtn').onclick = send;
+    document.getElementById('userInput').onkeypress = (e) => { if (e.key === 'Enter') send(); };
+    document.getElementById('mushroom').onclick = () => blyu.processInput('погладить');
+    
+    window.addEventListener('resize', () => {
+        blyu.setupCanvas();
+        blyu.drawRoom();
+    });
 </script>
 </body>
-    </html>
+                      </html>
