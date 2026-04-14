@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Блю — собака-нейросеть с диалогами</title>
+    <title>Блю — собака-нейросеть</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -231,6 +231,7 @@
         <label class="top-btn" style="display:inline-block; cursor:pointer;">📂 Загрузить Блю
             <input type="file" id="importFile" accept=".blmu" style="display:none;">
         </label>
+        <button class="top-btn" id="clearMemoryBtn">🗑️ ОЧИСТИТЬ ВСЕ КОМАНДЫ</button>
     </div>
 
     <div class="main-panel">
@@ -307,7 +308,7 @@
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
-            this.loadFromLocal();
+            // НЕ загружаем из localStorage — чистый лист!
             this.updateCommandsDisplay();
         }
         
@@ -666,7 +667,7 @@
         updateWrongActionConfig() {
             const container = document.getElementById('wrongActionConfig');
             container.innerHTML = `
-                <select id="wrongActionType" class="action-input" style="width:100%; margin-top:5px;" onchange="updateWrongActionValue()">
+                <select id="wrongActionType" class="action-input" style="width:100%; margin-top:5px;" onchange="blue.updateWrongActionValue()">
                     <option value="text">📝 Текстовый ответ</option>
                     <option value="music">🎵 Музыкальный ответ</option>
                     <option value="reaction">🎭 Реакция</option>
@@ -877,7 +878,12 @@
             this.updateCommandsDisplay();
             this.addMessage(`🐶 Гав! Я запомнил команду "${this.learningData.command}"!`, "blue");
             this.cancelLearning();
-            this.saveToLocal();
+        }
+        
+        clearAllCommands() {
+            this.commands = {};
+            this.updateCommandsDisplay();
+            this.addMessage(`🗑️ Все команды удалены! Блю как новенький.`, "system");
         }
         
         updateCommandsDisplay() {
@@ -907,23 +913,6 @@
             }
         }
         
-        saveToLocal() {
-            const data = { commands: this.commands, version: 1, date: new Date().toISOString() };
-            localStorage.setItem('blue_dog', JSON.stringify(data));
-        }
-        
-        loadFromLocal() {
-            const saved = localStorage.getItem('blue_dog');
-            if(saved) {
-                try {
-                    const data = JSON.parse(saved);
-                    this.commands = data.commands || {};
-                    this.updateCommandsDisplay();
-                    this.addMessage(`🐶 Загружено ${Object.keys(this.commands).length} команд из памяти!`, "system");
-                } catch(e) {}
-            }
-        }
-        
         exportToFile() {
             const data = { commands: this.commands, version: 1, exportDate: new Date().toISOString() };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -944,7 +933,6 @@
                     this.commands = data.commands || {};
                     this.updateCommandsDisplay();
                     this.addMessage(`📂 Загружено ${Object.keys(this.commands).length} команд из файла!`, "system");
-                    this.saveToLocal();
                 } catch(err) {
                     this.addMessage(`❌ Ошибка загрузки: ${err.message}`, "system");
                 }
@@ -1014,6 +1002,7 @@
     document.getElementById('startMicBtn').onclick = () => blue.startMicrophone();
     document.getElementById('stopMicBtn').onclick = () => blue.stopMicrophone();
     document.getElementById('exportBtn').onclick = () => blue.exportToFile();
+    document.getElementById('clearMemoryBtn').onclick = () => blue.clearAllCommands();
     document.getElementById('importFile').onchange = (e) => {
         if(e.target.files[0]) blue.importFromFile(e.target.files[0]);
         e.target.value = '';
@@ -1025,4 +1014,4 @@
     });
 </script>
 </body>
-</html>
+                                                                                           </html>
