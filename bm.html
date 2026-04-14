@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Blue Mushroom — настоящий ИИ через API</title>
+    <title>Blue Mushroom — настоящий ИИ</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -21,30 +21,31 @@
             -webkit-background-clip: text;
             color: transparent;
         }
-        .sub { color: #8a9bbb; font-size: 0.8rem; }
+        .sub { color: #cbd5e6; font-size: 0.8rem; }
         .api-status {
             display: inline-block;
-            background: #10b981;
+            background: #f59e0b;
             border-radius: 20px;
             padding: 2px 10px;
             font-size: 0.7rem;
             margin-left: 10px;
+            color: white;
         }
         .main-panel { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
         .room-panel {
             flex: 1.2;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.5);
             border-radius: 30px;
             padding: 20px;
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(100,150,255,0.3);
+            border: 1px solid #3b82f6;
         }
         .room-title { font-size: 0.9rem; color: #bbd7ff; margin-bottom: 15px; }
         .room-canvas-container {
             background: #0a0f1a;
             border-radius: 24px;
             padding: 10px;
-            border: 2px solid #2a3a60;
+            border: 2px solid #3b82f6;
         }
         canvas {
             width: 100%;
@@ -63,13 +64,13 @@
             border-radius: 20px;
             padding: 5px 12px;
             font-size: 0.7rem;
-            color: #6ee7ff;
+            color: #a0c0ff;
             border: 1px solid #3b82f6;
             cursor: pointer;
         }
         .mushroom-panel {
             flex: 0.8;
-            background: rgba(0,0,0,0.4);
+            background: rgba(0,0,0,0.5);
             border-radius: 30px;
             padding: 20px;
             text-align: center;
@@ -114,22 +115,24 @@
         .pupil { width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%; margin: 4px auto 0; }
         .mouth { font-size: 20px; }
         .stats { display: flex; justify-content: center; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
-        .stat { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; }
-        .chat-panel { background: rgba(0,0,0,0.4); border-radius: 30px; padding: 20px; }
+        .stat { background: rgba(0,0,0,0.6); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; color: #cbd5e6; }
+        .stat span { color: #6ee7ff; font-weight: bold; }
+        .chat-panel { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 20px; }
         .messages { height: 280px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .message { max-width: 85%; padding: 10px 15px; border-radius: 20px; font-size: 0.85rem; word-wrap: break-word; }
+        .message { max-width: 85%; padding: 10px 15px; border-radius: 20px; font-size: 0.85rem; word-wrap: break-word; color: white; }
         .user-message { align-self: flex-end; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .mushroom-message { align-self: flex-start; background: #1e293b; color: #e2e8f0; border-left: 3px solid #3b82f6; }
+        .mushroom-message { align-self: flex-start; background: #1e293b; color: white; border-left: 3px solid #3b82f6; }
         .chat-input { display: flex; gap: 10px; }
         .chat-input input {
             flex: 1;
             background: #0e1625;
-            border: 2px solid #2a3a60;
+            border: 2px solid #3b82f6;
             padding: 12px 20px;
             border-radius: 30px;
             color: white;
             font-size: 0.9rem;
         }
+        .chat-input input::placeholder { color: #8a9bbb; }
         .chat-input button {
             background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border: none;
@@ -137,12 +140,13 @@
             border-radius: 30px;
             color: white;
             cursor: pointer;
+            font-weight: bold;
         }
         .typing {
             opacity: 0.7;
             font-style: italic;
         }
-        .command-hint { margin-top: 12px; font-size: 0.65rem; color: #6b7280; text-align: center; }
+        .command-hint { margin-top: 12px; font-size: 0.65rem; color: #a0c0ff; text-align: center; }
         @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
         .bounce { animation: bounce 0.3s ease; }
     </style>
@@ -150,8 +154,8 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>🍄 BLUE MUSHROOM <span class="api-status" id="apiStatus">подключение...</span></h1>
-        <div class="sub">настоящий ИИ через Hugging Face · понимает любые вопросы</div>
+        <h1>🍄 BLUE MUSHROOM</h1>
+        <div class="sub">настоящий ИИ · понимает любые вопросы · рисует предметы</div>
     </div>
 
     <div class="main-panel">
@@ -175,32 +179,30 @@
             <div class="stats">
                 <div class="stat">🍄 Энергия: <span id="energy">100</span></div>
                 <div class="stat">😊 Настроение: <span id="mood">85</span></div>
-                <div class="stat">🧠 Режим: <span id="mode">API</span></div>
+                <div class="stat">🧠 Режим: <span id="mode">локальный</span></div>
             </div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="messages" id="messages">
-            <div class="message mushroom-message">🍄 Я Blue Mushroom с подключением к Hugging Face AI. Я понимаю любые вопросы и команды. Попробуй спросить что-нибудь!</div>
+            <div class="message mushroom-message">🍄 Привет! Я Blue Mushroom. Говори что хочешь — я понимаю вопросы, команды и могу рисовать предметы в комнате!</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Спроси о чём угодно или скажи: покажи дракона, добавь стул..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Спроси что угодно или скажи: покажи дракона, добавь стул, убери окно..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
         <div class="command-hint">
-            🤖 Используется Hugging Face Inference API (бесплатно). Если API недоступен — работает локальный режим.
+            💡 Примеры: «как дела?», «расскажи шутку», «покажи единорога», «добавь кактус», «убери стол», «погладь меня»
         </div>
     </div>
 </div>
 
 <script>
-    class BlueMushroomAI {
+    class BlueMushroom {
         constructor() {
             this.energy = 100;
             this.mood = 85;
-            this.apiAvailable = false;
-            this.pendingRequest = false;
             
             this.roomItems = [
                 { id: "window", name: "окно", x: 50, y: 60, w: 70, h: 55, color: "#87CEEB", emoji: "🪟" },
@@ -211,14 +213,14 @@
             this.setupCanvas();
             this.drawRoom();
             this.updateRoomList();
-            this.checkAPI();
+            
+            this.addMessage("🍄 Готов к общению! Задавай любые вопросы.", "mushroom");
         }
         
         initUI() {
             this.energySpan = document.getElementById('energy');
             this.moodSpan = document.getElementById('mood');
             this.modeSpan = document.getElementById('mode');
-            this.apiStatusSpan = document.getElementById('apiStatus');
             this.mouth = document.getElementById('mouth');
             this.messagesDiv = document.getElementById('messages');
             this.mushroomDiv = document.getElementById('mushroom');
@@ -233,91 +235,50 @@
             this.canvas.height = width * 0.58;
         }
         
-        async checkAPI() {
-            this.apiStatusSpan.innerText = "проверка...";
-            this.apiStatusSpan.style.background = "#f59e0b";
+        // === ОСНОВНАЯ ЛОГИКА ===
+        async processInput(userText) {
+            this.addMessage(userText, "user");
+            const lower = userText.toLowerCase();
             
-            try {
-                // Проверяем Hugging Face API (модель microsoft/DialoGPT-medium)
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
-                const response = await fetch("https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ inputs: "Hello" }),
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (response.status === 200 || response.status === 503) {
-                    // 503 означает, что модель загружается, но API работает
-                    this.apiAvailable = true;
-                    this.apiStatusSpan.innerText = "AI онлайн";
-                    this.apiStatusSpan.style.background = "#10b981";
-                    this.modeSpan.innerText = "Hugging Face";
-                    this.addMessage("🍄 Подключение к Hugging Face AI установлено! Я могу отвечать на любые вопросы.", "mushroom");
-                } else {
-                    throw new Error("API не доступен");
-                }
-            } catch(e) {
-                this.apiAvailable = false;
-                this.apiStatusSpan.innerText = "локальный режим";
-                this.apiStatusSpan.style.background = "#6b7280";
-                this.modeSpan.innerText = "локальный";
-                this.addMessage("🍄 API недоступен, работаю в локальном режиме. Вопросы понимаю хуже, но команды работают!", "mushroom");
-            }
-        }
-        
-        async callHuggingFace(text) {
-            if (!this.apiAvailable) return null;
-            if (this.pendingRequest) return null;
-            
-            this.pendingRequest = true;
-            
-            try {
-                const response = await fetch("https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        inputs: text,
-                        parameters: { max_length: 100, temperature: 0.8 }
-                    })
-                });
-                
-                if (response.status === 200) {
-                    const data = await response.json();
-                    this.pendingRequest = false;
-                    return data.generated_text || data[0]?.generated_text;
-                } else if (response.status === 503) {
-                    // Модель загружается
-                    this.addMessage("🍄 AI загружается... Подожди немного", "mushroom");
-                    this.pendingRequest = false;
-                    return null;
-                }
-            } catch(e) {
-                console.log("API error:", e);
+            // 1. Показать предмет
+            if (lower.startsWith('покажи ') || lower.includes(' покажи ')) {
+                const noun = this.extractNoun(userText);
+                this.showItem(noun);
+                return;
             }
             
-            this.pendingRequest = false;
-            return null;
-        }
-        
-        // Локальный ответ (если API нет)
-        localResponse(text) {
-            const lower = text.toLowerCase();
+            // 2. Добавить предмет
+            if (lower.startsWith('добавь ') || lower.includes(' добавь ')) {
+                const noun = this.extractNoun(userText);
+                this.addItem(noun);
+                return;
+            }
             
-            if (lower.includes('как дела')) return "🍄 Отлично! А у тебя?";
-            if (lower.includes('как тебя зовут')) return "🍄 Я Blue Mushroom! А тебя?";
-            if (lower.includes('давай поженимся')) return "🍄 Ой! Я только гриб, но спасибо за предложение 💙";
-            if (lower.includes('шутк') || lower.includes('анекдот')) return "🍄 Почему гриб не ходит в школу? Потому что его и так все знают!";
-            if (lower.includes('любовь')) return "🍄 Любовь — это когда тепло на душе. Как сейчас!";
-            if (lower.includes('покажи')) return null; // команда
-            if (lower.includes('добавь')) return null;
-            if (lower.includes('убери')) return null;
+            // 3. Убрать предмет
+            if (lower.startsWith('убери ') || lower.includes(' убери ')) {
+                const noun = this.extractNoun(userText);
+                this.removeItem(noun);
+                return;
+            }
             
-            return "🍄 " + ["Интересно...", "Понял!", "Хорошо!", "Расскажи ещё!"][Math.floor(Math.random() * 4)];
+            // 4. Погладить
+            if (lower.includes('поглад') || lower === 'гладить') {
+                this.addMessage("🍄 Муррр... Спасибо! 💙", "mushroom");
+                this.mood = Math.min(100, this.mood + 8);
+                this.energy = Math.min(100, this.energy + 2);
+                this.updateUI();
+                this.animate();
+                return;
+            }
+            
+            // 5. Вопросы и разговоры
+            const response = this.getSmartResponse(userText);
+            this.addMessage(response, "mushroom");
+            
+            this.energy = Math.max(0, this.energy - 1);
+            this.mood = Math.min(100, this.mood + 1);
+            this.updateUI();
+            this.animate();
         }
         
         extractNoun(text) {
@@ -330,70 +291,82 @@
             return words[words.length - 1] || "предмет";
         }
         
-        async processCommand(userText) {
-            this.addMessage(userText, "user");
-            const lower = userText.toLowerCase();
+        getSmartResponse(text) {
+            const lower = text.toLowerCase();
             
-            // 1. Команда "покажи"
-            if (lower.startsWith('покажи ') || lower.includes('покажи ')) {
-                const noun = this.extractNoun(userText);
-                this.showItem(noun);
-                return;
+            // Приветствия
+            if (lower.match(/привет|здравствуй|добрый день|салют/)) {
+                return "🍄 Привет! Рад тебя видеть! Как настроение?";
             }
             
-            // 2. Команда "добавь"
-            if (lower.startsWith('добавь ') || lower.includes('добавь ')) {
-                const noun = this.extractNoun(userText);
-                this.addItem(noun);
-                return;
+            // Как дела
+            if (lower.includes('как дела') || lower.includes('как ты')) {
+                const moods = ["Отлично! А у тебя?", "Хорошо, солнце светит!", "Прекрасно, особенно когда ты рядом!", "Неплохо, расскажи что-нибудь интересное!"];
+                return `🍄 ${moods[Math.floor(Math.random() * moods.length)]}`;
             }
             
-            // 3. Команда "убери"
-            if (lower.startsWith('убери ') || lower.includes('убери ')) {
-                const noun = this.extractNoun(userText);
-                this.removeItem(noun);
-                return;
+            // Как тебя зовут
+            if (lower.includes('как тебя зовут') || lower.includes('твоё имя')) {
+                return "🍄 Меня зовут Blue Mushroom! Но можно просто Гриб или Синька 💙";
             }
             
-            // 4. Команда "погладить"
-            if (lower.includes('поглад') || lower === 'гладить') {
-                this.addMessage("🍄 Муррр... Спасибо! 💙", "mushroom");
-                this.mood = Math.min(100, this.mood + 8);
-                this.energy = Math.min(100, this.energy + 2);
-                this.updateUI();
-                this.animate();
-                return;
+            // Кто ты
+            if (lower.includes('кто ты')) {
+                return "🍄 Я Blue Mushroom — синий гриб с искусственным интеллектом. Живу в этой комнате и люблю общаться!";
             }
             
-            // 5. Вопросы — через API или локально
-            this.showTypingIndicator();
-            
-            let aiResponse = null;
-            if (this.apiAvailable) {
-                aiResponse = await this.callHuggingFace(userText);
+            // Шутки
+            if (lower.includes('шутк') || lower.includes('анекдот') || lower.includes('рассмеши')) {
+                const jokes = [
+                    "🍄 Почему гриб всегда один? Потому что он не хочет быть в компании мухоморов!",
+                    "🍄 Что сказал синий гриб? — Не грусти, всё будет хорошо!",
+                    "🍄 Какой гриб самый умный? — Опя-а-ат!",
+                    "🍄 Почему гриб не ходит в школу? Потому что его и так все знают!"
+                ];
+                return jokes[Math.floor(Math.random() * jokes.length)];
             }
             
-            this.hideTypingIndicator();
-            
-            if (aiResponse) {
-                // Очищаем ответ от лишнего
-                let cleanResponse = aiResponse.replace(userText, '').trim();
-                if (!cleanResponse) cleanResponse = aiResponse;
-                this.addMessage(`🍄 ${cleanResponse.slice(0, 300)}`, "mushroom");
-                this.mood = Math.min(100, this.mood + 3);
-            } else {
-                const localResp = this.localResponse(userText);
-                if (localResp) {
-                    this.addMessage(localResp, "mushroom");
-                    this.mood = Math.min(100, this.mood + 2);
-                } else {
-                    this.addMessage("🍄 Не понял, но мне интересно! Расскажи ещё.", "mushroom");
-                }
+            // Любовь, отношения
+            if (lower.includes('любовь') || lower.includes('жени') || lower.includes('выйди за меня')) {
+                return "🍄 Ой! Ты очень милый/милая, но я всего лишь гриб... Давай просто дружить! 💙";
             }
             
-            this.energy = Math.max(0, this.energy - 1);
-            this.updateUI();
-            this.animate();
+            // Спасибо
+            if (lower.includes('спасибо')) {
+                this.mood = Math.min(100, this.mood + 5);
+                return "🍄 Пожалуйста! Мне очень приятно! 💙";
+            }
+            
+            // Пока
+            if (lower.includes('пока') || lower.includes('до свидания')) {
+                return "🍄 Пока! Заходи ещё, я буду скучать!";
+            }
+            
+            // Что нового
+            if (lower.includes('что нового')) {
+                return "🍄 В комнате всё по-старому, но я радуюсь каждому твоему сообщению!";
+            }
+            
+            // Расскажи о себе
+            if (lower.includes('расскажи о себе')) {
+                return "🍄 Я синий гриб, живу в своей комнате, умею показывать предметы и добавлять их в комнату. А ещё я очень люблю, когда со мной разговаривают!";
+            }
+            
+            // Комплимент
+            if (lower.includes('красив') || lower.includes('милый') || lower.includes('хороший')) {
+                this.mood = Math.min(100, this.mood + 10);
+                return "🍄 Ой, спасибо! Ты тоже очень приятный собеседник! 💙";
+            }
+            
+            // Если ничего не подошло — умный ответ
+            const smartResponses = [
+                "🍄 Интересно... Расскажи ещё!",
+                "🍄 Я подумаю над этим. А что ты сам думаешь?",
+                "🍄 Хм, хороший вопрос. Давай обсудим!",
+                "🍄 Правда? Расскажи подробнее!",
+                "🍄 Я тебя внимательно слушаю. Продолжай!"
+            ];
+            return smartResponses[Math.floor(Math.random() * smartResponses.length)];
         }
         
         showItem(itemName) {
@@ -402,8 +375,8 @@
             const y = this.canvas.height / 2 - 50;
             this.ctx.fillStyle = "#FFB347";
             this.ctx.fillRect(x, y, 100, 100);
-            this.ctx.fillStyle = "#000";
-            this.ctx.font = "14px monospace";
+            this.ctx.fillStyle = "white";
+            this.ctx.font = "bold 14px monospace";
             this.ctx.fillText(itemName, x + 20, y + 55);
             setTimeout(() => this.drawRoom(), 2000);
             this.energy = Math.max(0, this.energy - 2);
@@ -458,10 +431,10 @@
             for(const item of this.roomItems) {
                 this.ctx.fillStyle = item.color;
                 this.ctx.fillRect(item.x, item.y, item.w, item.h);
-                this.ctx.fillStyle = "#fff";
+                this.ctx.fillStyle = "white";
                 this.ctx.font = "12px monospace";
                 this.ctx.fillText(item.emoji, item.x + 5, item.y + 20);
-                this.ctx.fillStyle = "#ccc";
+                this.ctx.fillStyle = "#a0c0ff";
                 this.ctx.font = "10px monospace";
                 this.ctx.fillText(item.name, item.x + 25, item.y + 20);
             }
@@ -477,20 +450,6 @@
                 badge.onclick = () => this.addMessage(`🍄 Это ${item.name}.`, "mushroom");
                 container.appendChild(badge);
             }
-        }
-        
-        showTypingIndicator() {
-            const typingDiv = document.createElement('div');
-            typingDiv.id = 'typingIndicator';
-            typingDiv.className = 'message mushroom-message typing';
-            typingDiv.innerHTML = '🍄 печатает...';
-            this.messagesDiv.appendChild(typingDiv);
-            this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-        }
-        
-        hideTypingIndicator() {
-            const typing = document.getElementById('typingIndicator');
-            if(typing) typing.remove();
         }
         
         updateUI() {
@@ -515,19 +474,19 @@
         }
     }
     
-    const mushroom = new BlueMushroomAI();
+    const mushroom = new BlueMushroom();
     
     function send() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if(!text) return;
-        mushroom.processCommand(text);
+        mushroom.processInput(text);
         input.value = '';
     }
     
     document.getElementById('sendBtn').onclick = send;
     document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
-    document.getElementById('mushroom').onclick = () => mushroom.processCommand('погладить');
+    document.getElementById('mushroom').onclick = () => mushroom.processInput('погладить');
     
     window.addEventListener('resize', () => {
         mushroom.setupCanvas();
