@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Блю — собака-нейросеть</title>
+    <title>Блю — собака-нейросеть с диалогами</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -201,6 +201,16 @@
             cursor: pointer;
             margin-top: 10px;
         }
+        .delete-btn {
+            background: #ef4444;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
         @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
         .bounce { animation: bounce 0.3s ease; }
         @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
@@ -211,13 +221,13 @@
 <div class="container">
     <div class="header">
         <h1>🐶 БЛЮ <span class="microphone-status" id="micStatus">🎤 микрофон выкл</span></h1>
-        <div class="sub">собака-нейросеть · учится командам · боится громких звуков</div>
+        <div class="sub">собака-нейросеть · учится командам · диалоги с ветвлением</div>
     </div>
 
     <div class="top-bar">
         <button class="top-btn" id="startMicBtn">🎤 Включить микрофон</button>
         <button class="top-btn" id="stopMicBtn">⏹️ Выключить микрофон</button>
-        <button class="top-btn" id="exportBtn">💾 Сохранить Блю в файл</button>
+        <button class="top-btn" id="exportBtn">💾 Сохранить Блю</button>
         <label class="top-btn" style="display:inline-block; cursor:pointer;">📂 Загрузить Блю
             <input type="file" id="importFile" accept=".blmu" style="display:none;">
         </label>
@@ -264,25 +274,41 @@
 </div>
 
 <script>
+    // Реакции Блю
+    const REACTIONS = {
+        'спрятаться': () => {},
+        'сесть': 'bounce',
+        'лечь': 'lie',
+        'прыгнуть': 'bounce',
+        'вилять хвостом': 'shake',
+        'лаять': 'bark',
+        'принести': 'bounce',
+        'крутиться': 'spin',
+        'лежать': 'lie',
+        'спать': 'sleep',
+        'чесаться': 'shake',
+        'улыбнуться': 'smile'
+    };
+    
     class BlueDog {
         constructor() {
-            this.commands = {};  // команда -> действие
-            this.builtinCommands = ['запомни', 'привет', 'как дела', 'спасибо', 'пока'];
+            this.commands = {};
+            this.builtinCommands = ['запомни', 'привет', 'как дела', 'спасибо', 'пока', 'отмена'];
             this.isLearning = false;
             this.learningStep = 0;
-            this.learningData = {};
+            this.learningData = { actions: [] };
             this.isHidden = false;
             this.hideTimeout = null;
             this.mediaStream = null;
             this.audioContext = null;
             this.microphoneEnabled = false;
+            this.waitingForQuestion = null;
             
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
             this.loadFromLocal();
             this.updateCommandsDisplay();
-            this.addMessage("🐶 Гав! Мои встроенные команды: 'привет', 'как дела', 'спасибо', 'пока'. Остальному научишь сам!", "blue");
         }
         
         initUI() {
@@ -328,21 +354,17 @@
                 const analyser = this.audioContext.createAnalyser();
                 analyser.fftSize = 256;
                 source.connect(analyser);
-                
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 this.microphoneEnabled = true;
                 this.micStatusSpan.innerText = "🎤 слушаю";
                 this.micStatusSpan.style.background = "#10b981";
-                
                 const checkVolume = () => {
                     if (!this.microphoneEnabled) return;
                     analyser.getByteFrequencyData(dataArray);
                     let sum = 0;
                     for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
                     let avg = sum / dataArray.length;
-                    if (avg > 50) {
-                        this.hide();
-                    }
+                    if (avg > 50) this.hide();
                     requestAnimationFrame(checkVolume);
                 };
                 checkVolume();
@@ -380,40 +402,9 @@
             }, 3000);
         }
         
-        // === КОМАНДЫ ===
-        executeCommand(command, originalText) {
-            const lower = command.toLowerCase();
-            
-            // Встроенные команды
-            if (lower === 'привет') {
-                this.addMessage("🐶 Гав! Привет!", "blue");
-                return true;
-            }
-            if (lower === 'как дела') {
-                this.addMessage("🐶 Гав-гав! У меня всё отлично! А у тебя?", "blue");
-                return true;
-            }
-            if (lower === 'спасибо') {
-                this.addMessage("🐶 *виляет хвостом* Гав! Пожалуйста!", "blue");
-                return true;
-            }
-            if (lower === 'пока') {
-                this.addMessage("🐶 Гав! Пока, заходи ещё!", "blue");
-                return true;
-            }
-            
-            // Пользовательские команды
-            for (const [cmd, action] of Object.entries(this.commands)) {
-                if (lower === cmd.toLowerCase()) {
-                    this.performAction(action, originalText);
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-        
-        performAction(action, context) {
+        // === ДЕЙСТВИЯ ===
+        performAction(action) {
+            if(!action) return;
             switch(action.type) {
                 case 'text':
                     this.addMessage(`🐶 ${action.text}`, "blue");
@@ -461,38 +452,74 @@
         }
         
         doReaction(reaction) {
-            const reactions = {
-                'спрятаться': () => this.hide(),
-                'сесть': () => { this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
-                'лечь': () => { this.mushroomDiv.style.transform = 'scaleX(0.8)'; setTimeout(() => this.mushroomDiv.style.transform = '', 1000); },
-                'прыгнуть': () => { this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
-                'вилять хвостом': () => { this.mushroomDiv.classList.add('shake'); setTimeout(() => this.mushroomDiv.classList.remove('shake'), 800); },
-                'лаять': () => { this.addMessage("🐶 ГАВ-ГАВ-ГАВ!", "blue"); },
-                'принести': () => { this.addMessage("🐶 *приносит палку* Гав! Держи!", "blue"); this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
-                'крутиться': () => { this.mushroomDiv.style.transform = 'rotate(360deg)'; setTimeout(() => this.mushroomDiv.style.transform = '', 500); },
-                'лежать': () => { this.addMessage("🐶 *ложится на пол*", "blue"); },
-                'спать': () => { this.mouth.innerText = "💤"; setTimeout(() => this.mouth.innerText = "😊", 2000); },
-                'чесаться': () => { this.mushroomDiv.classList.add('shake'); setTimeout(() => this.mushroomDiv.classList.remove('shake'), 500); },
-                'улыбнуться': () => { this.mouth.innerText = "😁"; setTimeout(() => this.mouth.innerText = "😊", 1500); }
-            };
-            if(reactions[reaction]) reactions[reaction]();
-            else this.addMessage(`🐶 *${reaction}*`, "blue");
+            switch(reaction) {
+                case 'спрятаться': this.hide(); break;
+                case 'сесть': this.animate('bounce'); break;
+                case 'лечь': this.animate('lie'); break;
+                case 'прыгнуть': this.animate('bounce'); break;
+                case 'вилять хвостом': this.animate('shake'); break;
+                case 'лаять': this.addMessage("🐶 ГАВ-ГАВ-ГАВ!", "blue"); break;
+                case 'принести': this.addMessage("🐶 *приносит палку* Гав! Держи!", "blue"); this.animate('bounce'); break;
+                case 'крутиться': this.animate('spin'); break;
+                case 'лежать': this.animate('lie'); break;
+                case 'спать': this.mouth.innerText = "💤"; setTimeout(() => this.mouth.innerText = "😊", 2000); break;
+                case 'чесаться': this.animate('shake'); break;
+                case 'улыбнуться': this.mouth.innerText = "😁"; setTimeout(() => this.mouth.innerText = "😊", 1500); break;
+                default: this.addMessage(`🐶 *${reaction}*`, "blue");
+            }
         }
         
         executeMultiAction(actions) {
             let i = 0;
             const next = () => {
                 if(i >= actions.length) return;
-                this.performAction(actions[i], null);
+                this.performAction(actions[i]);
                 i++;
                 setTimeout(next, 1500);
             };
             next();
         }
         
-        startQuestion(action) {
-            this.addMessage(`🐶 ${action.question}`, "blue");
-            this.waitingForQuestion = action;
+        startQuestion(questionAction) {
+            this.addMessage(`🐶 ${questionAction.question}`, "blue");
+            this.waitingForQuestion = questionAction;
+        }
+        
+        answerQuestion(userAnswer) {
+            if(!this.waitingForQuestion) return false;
+            const q = this.waitingForQuestion;
+            const lowerAnswer = userAnswer.toLowerCase();
+            let matched = false;
+            for(const ans of q.answers) {
+                if(lowerAnswer === ans.text.toLowerCase()) {
+                    this.performAction(ans.action);
+                    matched = true;
+                    break;
+                }
+            }
+            if(!matched && q.wrongAction) {
+                this.performAction(q.wrongAction);
+            }
+            this.waitingForQuestion = null;
+            return true;
+        }
+        
+        // === КОМАНДЫ ===
+        executeCommand(command, originalText) {
+            const lower = command.toLowerCase();
+            
+            if(lower === 'привет') { this.addMessage("🐶 Гав! Привет!", "blue"); return true; }
+            if(lower === 'как дела') { this.addMessage("🐶 Гав-гав! У меня всё отлично! А у тебя?", "blue"); return true; }
+            if(lower === 'спасибо') { this.addMessage("🐶 *виляет хвостом* Гав! Пожалуйста!", "blue"); return true; }
+            if(lower === 'пока') { this.addMessage("🐶 Гав! Пока, заходи ещё!", "blue"); return true; }
+            
+            for(const [cmd, action] of Object.entries(this.commands)) {
+                if(lower === cmd.toLowerCase()) {
+                    this.performAction(action);
+                    return true;
+                }
+            }
+            return false;
         }
         
         // === ОБУЧЕНИЕ ===
@@ -506,22 +533,19 @@
         
         showLearningStep() {
             if(!this.isLearning) return;
-            const step = this.learningStep;
-            const data = this.learningData;
-            
-            if(step === 1) {
+            if(this.learningStep === 1) {
                 this.stepNumSpan.innerText = "1";
                 this.stepTotalSpan.innerText = "2";
                 this.learningContent.innerHTML = `
-                    <div>Введи команду (например: "сидеть", "голос", "ко мне"):</div>
+                    <div>Введи команду (например: "сидеть", "голос", "диалог"):</div>
                     <input type="text" id="newCommand" class="action-input" style="width:100%; margin-top:10px;" placeholder="команда">
                     <button class="save-btn" onclick="blue.setCommand()">Далее</button>
                 `;
-            } else if(step === 2) {
+            } else if(this.learningStep === 2) {
                 this.stepNumSpan.innerText = "2";
                 this.stepTotalSpan.innerText = "2";
                 this.learningContent.innerHTML = `
-                    <div>Выбери тип действия для команды "${data.command}":</div>
+                    <div>Выбери тип действия для команды "${this.learningData.command}":</div>
                     <select id="actionType" class="action-input">
                         <option value="text">📝 Текстовый ответ</option>
                         <option value="music">🎵 Музыкальный ответ</option>
@@ -563,58 +587,212 @@
                 `;
             } else if(type === 'question') {
                 configDiv.innerHTML = `
-                    <input type="text" id="questionText" class="action-input" style="width:100%" placeholder="Вопрос (например: Как тебя зовут?)"><br>
-                    <input type="number" id="answersCount" class="action-input" placeholder="Количество ожидаемых ответов" style="width:100px"><br>
-                    <div id="answersConfig"></div>
-                    <input type="text" id="wrongAnswer" class="action-input" style="width:100%" placeholder="Действие при неожиданном ответе (текст)">
+                    <input type="text" id="questionText" class="action-input" style="width:100%" placeholder="Вопрос (например: ты гей?)"><br>
+                    <div id="answersList"></div>
+                    <button class="save-btn" style="background:#3b82f6;" onclick="blue.addAnswerField()">➕ Добавить ожидаемый ответ</button><br>
+                    <div style="margin-top:15px;"><b>Действие при неожиданном ответе:</b></div>
+                    <div id="wrongActionConfig"></div>
                 `;
-                document.getElementById('answersCount').addEventListener('input', () => this.updateAnswersConfig());
+                this.addAnswerField();
+                this.updateWrongActionConfig();
             } else if(type === 'multi') {
                 configDiv.innerHTML = `
-                    <input type="number" id="actionsCount" class="action-input" placeholder="Количество действий" style="width:100px"><br>
-                    <div id="multiActionsConfig"></div>
+                    <div id="multiActionsList"></div>
+                    <button class="save-btn" style="background:#3b82f6;" onclick="blue.addMultiActionField()">➕ Добавить действие</button>
                 `;
-                document.getElementById('actionsCount').addEventListener('input', () => this.updateMultiActionsConfig());
+                this.addMultiActionField();
             }
         }
         
-        updateAnswersConfig() {
-            const count = parseInt(document.getElementById('answersCount').value) || 0;
-            const container = document.getElementById('answersConfig');
-            container.innerHTML = '';
-            for(let i=1; i<=count; i++) {
-                container.innerHTML += `
-                    <div style="margin-top:10px; border-top:1px solid #3b82f6; padding-top:5px;">
-                        <b>Ответ ${i}:</b><br>
-                        <input type="text" id="answer${i}" class="action-input" placeholder="Текст ответа" style="width:100%"><br>
-                        <select id="answerActionType${i}" class="action-input" style="width:100%; margin-top:5px;">
-                            <option value="text">Текстовый ответ</option>
-                            <option value="music">Музыкальный ответ</option>
-                            <option value="reaction">Реакция</option>
-                        </select>
-                        <input type="text" id="answerActionValue${i}" class="action-input" placeholder="Значение (текст/ноты/реакция)" style="width:100%">
-                    </div>
+        addAnswerField() {
+            const container = document.getElementById('answersList');
+            const idx = container.children.length + 1;
+            const div = document.createElement('div');
+            div.id = `answerDiv${idx}`;
+            div.style.marginTop = "10px";
+            div.style.borderTop = "1px solid #3b82f6";
+            div.style.paddingTop = "10px";
+            div.innerHTML = `
+                <b>Ожидаемый ответ ${idx}:</b>
+                <input type="text" id="answerText${idx}" class="action-input" style="width:100%" placeholder="Текст ответа (например: да)">
+                <select id="answerActionType${idx}" class="action-input" style="width:100%; margin-top:5px;" onchange="blue.updateAnswerActionConfig(${idx})">
+                    <option value="text">📝 Текстовый ответ</option>
+                    <option value="music">🎵 Музыкальный ответ</option>
+                    <option value="reaction">🎭 Реакция</option>
+                    <option value="question">❓ Вопрос</option>
+                </select>
+                <div id="answerActionConfig${idx}" class="action-config"></div>
+                <button class="delete-btn" onclick="blue.removeAnswerField(${idx})">Удалить</button>
+            `;
+            container.appendChild(div);
+            this.updateAnswerActionConfig(idx);
+        }
+        
+        removeAnswerField(idx) {
+            const div = document.getElementById(`answerDiv${idx}`);
+            if(div) div.remove();
+        }
+        
+        updateAnswerActionConfig(idx) {
+            const type = document.getElementById(`answerActionType${idx}`).value;
+            const configDiv = document.getElementById(`answerActionConfig${idx}`);
+            if(type === 'text') {
+                configDiv.innerHTML = `<input type="text" id="answerActionValue${idx}" class="action-input" style="width:100%" placeholder="Текст ответа">`;
+            } else if(type === 'music') {
+                configDiv.innerHTML = `<input type="text" id="answerActionValue${idx}" class="action-input" style="width:100%" placeholder="Ноты (F5 G3 D6)">`;
+            } else if(type === 'reaction') {
+                configDiv.innerHTML = `
+                    <select id="answerActionValue${idx}" class="action-input">
+                        <option value="спрятаться">🙈 спрятаться</option>
+                        <option value="сесть">🪑 сесть</option>
+                        <option value="лечь">😴 лечь</option>
+                        <option value="прыгнуть">🦘 прыгнуть</option>
+                        <option value="вилять хвостом">🐕 вилять хвостом</option>
+                        <option value="лаять">🔊 лаять</option>
+                        <option value="принести">🎾 принести</option>
+                        <option value="крутиться">🔄 крутиться</option>
+                        <option value="лежать">🛌 лежать</option>
+                        <option value="спать">💤 спать</option>
+                        <option value="чесаться">🐾 чесаться</option>
+                        <option value="улыбнуться">😁 улыбнуться</option>
+                    </select>
+                `;
+            } else if(type === 'question') {
+                configDiv.innerHTML = `<div style="color:#f59e0b; font-size:0.7rem;">Вопрос можно будет настроить позже в редакторе</div>
+                    <input type="hidden" id="answerActionValue${idx}" value="__QUESTION_TO_CONFIGURE__">`;
+            }
+        }
+        
+        updateWrongActionConfig() {
+            const container = document.getElementById('wrongActionConfig');
+            container.innerHTML = `
+                <select id="wrongActionType" class="action-input" style="width:100%; margin-top:5px;" onchange="updateWrongActionValue()">
+                    <option value="text">📝 Текстовый ответ</option>
+                    <option value="music">🎵 Музыкальный ответ</option>
+                    <option value="reaction">🎭 Реакция</option>
+                    <option value="question">❓ Вопрос</option>
+                </select>
+                <div id="wrongActionValueConfig"></div>
+            `;
+            this.updateWrongActionValue();
+        }
+        
+        updateWrongActionValue() {
+            const type = document.getElementById('wrongActionType').value;
+            const configDiv = document.getElementById('wrongActionValueConfig');
+            if(type === 'text') {
+                configDiv.innerHTML = `<input type="text" id="wrongActionValue" class="action-input" style="width:100%" placeholder="Текст ответа">`;
+            } else if(type === 'music') {
+                configDiv.innerHTML = `<input type="text" id="wrongActionValue" class="action-input" style="width:100%" placeholder="Ноты (F5 G3 D6)">`;
+            } else if(type === 'reaction') {
+                configDiv.innerHTML = `
+                    <select id="wrongActionValue" class="action-input">
+                        <option value="спрятаться">🙈 спрятаться</option>
+                        <option value="сесть">🪑 сесть</option>
+                        <option value="лечь">😴 лечь</option>
+                        <option value="прыгнуть">🦘 прыгнуть</option>
+                        <option value="вилять хвостом">🐕 вилять хвостом</option>
+                        <option value="лаять">🔊 лаять</option>
+                        <option value="принести">🎾 принести</option>
+                        <option value="крутиться">🔄 крутиться</option>
+                        <option value="лежать">🛌 лежать</option>
+                        <option value="спать">💤 спать</option>
+                        <option value="чесаться">🐾 чесаться</option>
+                        <option value="улыбнуться">😁 улыбнуться</option>
+                    </select>
+                `;
+            } else if(type === 'question') {
+                configDiv.innerHTML = `<div style="color:#f59e0b; font-size:0.7rem;">Вопрос можно будет настроить позже в редакторе</div>
+                    <input type="hidden" id="wrongActionValue" value="__QUESTION_TO_CONFIGURE__">`;
+            }
+        }
+        
+        addMultiActionField() {
+            const container = document.getElementById('multiActionsList');
+            const idx = container.children.length + 1;
+            const div = document.createElement('div');
+            div.id = `multiDiv${idx}`;
+            div.style.marginTop = "10px";
+            div.style.borderTop = "1px solid #3b82f6";
+            div.style.paddingTop = "10px";
+            div.innerHTML = `
+                <b>Действие ${idx}:</b>
+                <select id="multiActionType${idx}" class="action-input" style="width:100%; margin-top:5px;" onchange="blue.updateMultiActionConfig(${idx})">
+                    <option value="text">📝 Текстовый ответ</option>
+                    <option value="music">🎵 Музыкальный ответ</option>
+                    <option value="reaction">🎭 Реакция</option>
+                    <option value="question">❓ Вопрос</option>
+                </select>
+                <div id="multiActionConfig${idx}" class="action-config"></div>
+                <button class="delete-btn" onclick="blue.removeMultiActionField(${idx})">Удалить</button>
+            `;
+            container.appendChild(div);
+            this.updateMultiActionConfig(idx);
+        }
+        
+        removeMultiActionField(idx) {
+            const div = document.getElementById(`multiDiv${idx}`);
+            if(div) div.remove();
+        }
+        
+        updateMultiActionConfig(idx) {
+            const type = document.getElementById(`multiActionType${idx}`).value;
+            const configDiv = document.getElementById(`multiActionConfig${idx}`);
+            if(type === 'text') {
+                configDiv.innerHTML = `<input type="text" id="multiActionValue${idx}" class="action-input" style="width:100%" placeholder="Текст ответа">`;
+            } else if(type === 'music') {
+                configDiv.innerHTML = `<input type="text" id="multiActionValue${idx}" class="action-input" style="width:100%" placeholder="Ноты (F5 G3 D6)">`;
+            } else if(type === 'reaction') {
+                configDiv.innerHTML = `
+                    <select id="multiActionValue${idx}" class="action-input">
+                        <option value="спрятаться">🙈 спрятаться</option>
+                        <option value="сесть">🪑 сесть</option>
+                        <option value="лечь">😴 лечь</option>
+                        <option value="прыгнуть">🦘 прыгнуть</option>
+                        <option value="вилять хвостом">🐕 вилять хвостом</option>
+                        <option value="лаять">🔊 лаять</option>
+                        <option value="принести">🎾 принести</option>
+                        <option value="крутиться">🔄 крутиться</option>
+                        <option value="лежать">🛌 лежать</option>
+                        <option value="спать">💤 спать</option>
+                        <option value="чесаться">🐾 чесаться</option>
+                        <option value="улыбнуться">😁 улыбнуться</option>
+                    </select>
+                `;
+            } else if(type === 'question') {
+                configDiv.innerHTML = `
+                    <input type="text" id="multiActionValue${idx}" class="action-input" style="width:100%" placeholder="Вопрос">
+                    <div id="multiQuestionAnswers${idx}" style="margin-top:10px;"></div>
+                    <button class="save-btn" style="background:#3b82f6; font-size:0.7rem;" onclick="blue.addMultiQuestionAnswer(${idx})">➕ Добавить ответ</button>
                 `;
             }
         }
         
-        updateMultiActionsConfig() {
-            const count = parseInt(document.getElementById('actionsCount').value) || 0;
-            const container = document.getElementById('multiActionsConfig');
-            container.innerHTML = '';
-            for(let i=1; i<=count; i++) {
-                container.innerHTML += `
-                    <div style="margin-top:10px; border-top:1px solid #3b82f6; padding-top:5px;">
-                        <b>Действие ${i}:</b><br>
-                        <select id="multiActionType${i}" class="action-input" style="width:100%">
-                            <option value="text">Текстовый ответ</option>
-                            <option value="music">Музыкальный ответ</option>
-                            <option value="reaction">Реакция</option>
-                        </select>
-                        <input type="text" id="multiActionValue${i}" class="action-input" placeholder="Значение" style="width:100%">
-                    </div>
-                `;
-            }
+        addMultiQuestionAnswer(multiIdx) {
+            const container = document.getElementById(`multiQuestionAnswers${multiIdx}`);
+            const ansIdx = container.children.length + 1;
+            const div = document.createElement('div');
+            div.id = `multiQAns${multiIdx}_${ansIdx}`;
+            div.style.marginTop = "10px";
+            div.style.borderTop = "1px solid #3b82f6";
+            div.style.paddingTop = "10px";
+            div.innerHTML = `
+                <b>Ответ ${ansIdx}:</b>
+                <input type="text" id="multiQAnsText${multiIdx}_${ansIdx}" class="action-input" style="width:100%" placeholder="Текст ответа (например: да)">
+                <select id="multiQAnsType${multiIdx}_${ansIdx}" class="action-input" style="width:100%; margin-top:5px;">
+                    <option value="text">📝 Текстовый ответ</option>
+                    <option value="music">🎵 Музыкальный ответ</option>
+                    <option value="reaction">🎭 Реакция</option>
+                </select>
+                <input type="text" id="multiQAnsValue${multiIdx}_${ansIdx}" class="action-input" style="width:100%" placeholder="Значение">
+                <button class="delete-btn" onclick="blue.removeMultiQuestionAnswer(${multiIdx}, ${ansIdx})">Удалить</button>
+            `;
+            container.appendChild(div);
+        }
+        
+        removeMultiQuestionAnswer(multiIdx, ansIdx) {
+            const div = document.getElementById(`multiQAns${multiIdx}_${ansIdx}`);
+            if(div) div.remove();
         }
         
         setCommand() {
@@ -647,26 +825,51 @@
                 action.reaction = document.getElementById('reactionType').value;
             } else if(type === 'question') {
                 action.question = document.getElementById('questionText').value;
-                const answersCount = parseInt(document.getElementById('answersCount').value) || 0;
                 action.answers = [];
-                for(let i=1; i<=answersCount; i++) {
-                    const answerText = document.getElementById(`answer${i}`).value;
-                    const ansType = document.getElementById(`answerActionType${i}`).value;
-                    const ansValue = document.getElementById(`answerActionValue${i}`).value;
-                    if(answerText && ansValue) {
-                        action.answers.push({ text: answerText, action: { type: ansType, value: ansValue } });
+                const answerDivs = document.querySelectorAll('#answersList > div');
+                for(const div of answerDivs) {
+                    const id = div.id.replace('answerDiv', '');
+                    const ansText = document.getElementById(`answerText${id}`)?.value;
+                    if(ansText) {
+                        const ansType = document.getElementById(`answerActionType${id}`).value;
+                        let ansValue = document.getElementById(`answerActionValue${id}`)?.value;
+                        if(ansType === 'question') ansValue = { type: 'question', question: 'Вопрос', answers: [], wrongAction: null };
+                        action.answers.push({ text: ansText, action: { type: ansType, [ansType === 'text' ? 'text' : (ansType === 'music' ? 'notes' : 'reaction')]: ansValue } });
                     }
                 }
-                action.wrongAnswer = document.getElementById('wrongAnswer').value || "Не понял...";
+                const wrongType = document.getElementById('wrongActionType').value;
+                const wrongValue = document.getElementById('wrongActionValue').value;
+                if(wrongValue) {
+                    action.wrongAction = { type: wrongType, [wrongType === 'text' ? 'text' : (wrongType === 'music' ? 'notes' : 'reaction')]: wrongValue };
+                }
             } else if(type === 'multi') {
-                const actionsCount = parseInt(document.getElementById('actionsCount').value) || 0;
                 action.actions = [];
-                for(let i=1; i<=actionsCount; i++) {
-                    const actType = document.getElementById(`multiActionType${i}`).value;
-                    const actValue = document.getElementById(`multiActionValue${i}`).value;
-                    if(actValue) {
-                        action.actions.push({ type: actType, [actType === 'text' ? 'text' : (actType === 'music' ? 'notes' : 'reaction')]: actValue });
+                const multiDivs = document.querySelectorAll('#multiActionsList > div');
+                for(const div of multiDivs) {
+                    const id = div.id.replace('multiDiv', '');
+                    const actType = document.getElementById(`multiActionType${id}`).value;
+                    let actValue = document.getElementById(`multiActionValue${id}`)?.value;
+                    if(actType === 'question') {
+                        const answers = [];
+                        const ansContainer = document.getElementById(`multiQuestionAnswers${id}`);
+                        if(ansContainer) {
+                            const ansDivs = ansContainer.querySelectorAll('div');
+                            for(const ansDiv of ansDivs) {
+                                const ansIdMatch = ansDiv.id.match(/multiQAns(\d+)_(\d+)/);
+                                if(ansIdMatch) {
+                                    const aId = ansIdMatch[2];
+                                    const ansText = document.getElementById(`multiQAnsText${id}_${aId}`)?.value;
+                                    const ansType = document.getElementById(`multiQAnsType${id}_${aId}`).value;
+                                    const ansValue = document.getElementById(`multiQAnsValue${id}_${aId}`)?.value;
+                                    if(ansText && ansValue) {
+                                        answers.push({ text: ansText, action: { type: ansType, [ansType === 'text' ? 'text' : (ansType === 'music' ? 'notes' : 'reaction')]: ansValue } });
+                                    }
+                                }
+                            }
+                        }
+                        actValue = { type: 'question', question: actValue, answers: answers, wrongAction: null };
                     }
+                    if(actValue) action.actions.push(actValue);
                 }
             }
             
@@ -678,23 +881,34 @@
         }
         
         updateCommandsDisplay() {
-            const count = Object.keys(this.commands).length;
-            this.commandsCountSpan.innerText = count;
+            this.commandsCountSpan.innerText = Object.keys(this.commands).length;
         }
         
         cancelLearning() {
             this.isLearning = false;
             this.learningPanel.style.display = "none";
             this.learningData = {};
+            this.waitingForQuestion = null;
         }
         
-        // === СОХРАНЕНИЕ/ЗАГРУЗКА ===
+        animate(anim) {
+            if(anim === 'bounce') {
+                this.mushroomDiv.classList.add('bounce');
+                setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500);
+            } else if(anim === 'shake') {
+                this.mushroomDiv.classList.add('shake');
+                setTimeout(() => this.mushroomDiv.classList.remove('shake'), 500);
+            } else if(anim === 'lie') {
+                this.mushroomDiv.style.transform = 'scaleX(0.8)';
+                setTimeout(() => this.mushroomDiv.style.transform = '', 1000);
+            } else if(anim === 'spin') {
+                this.mushroomDiv.style.transform = 'rotate(360deg)';
+                setTimeout(() => this.mushroomDiv.style.transform = '', 500);
+            }
+        }
+        
         saveToLocal() {
-            const data = {
-                commands: this.commands,
-                version: 1,
-                date: new Date().toISOString()
-            };
+            const data = { commands: this.commands, version: 1, date: new Date().toISOString() };
             localStorage.setItem('blue_dog', JSON.stringify(data));
         }
         
@@ -711,11 +925,7 @@
         }
         
         exportToFile() {
-            const data = {
-                commands: this.commands,
-                version: 1,
-                exportDate: new Date().toISOString()
-            };
+            const data = { commands: this.commands, version: 1, exportDate: new Date().toISOString() };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -736,27 +946,31 @@
                     this.addMessage(`📂 Загружено ${Object.keys(this.commands).length} команд из файла!`, "system");
                     this.saveToLocal();
                 } catch(err) {
-                    this.addMessage(`❌ Ошибка загрузки файла: ${err.message}`, "system");
+                    this.addMessage(`❌ Ошибка загрузки: ${err.message}`, "system");
                 }
             };
             reader.readAsText(file);
         }
         
-        // === ОБЩЕЕ ===
         async processInput(text) {
             if(this.isLearning) {
+                if(text.toLowerCase() === 'отмена') {
+                    this.cancelLearning();
+                    this.addMessage("🐶 Обучение отменено.", "blue");
+                    return;
+                }
                 this.addMessage("❌ Сначала закончи обучение команде! Напиши 'отмена'", "system");
+                return;
+            }
+            
+            if(this.waitingForQuestion) {
+                this.addMessage(text, "user");
+                this.answerQuestion(text);
                 return;
             }
             
             if(text.toLowerCase() === 'запомни') {
                 this.startLearning();
-                return;
-            }
-            
-            if(text.toLowerCase() === 'отмена' && this.isLearning) {
-                this.cancelLearning();
-                this.addMessage("🐶 Обучение отменено.", "blue");
                 return;
             }
             
@@ -778,6 +992,14 @@
     
     const blue = new BlueDog();
     window.blue = blue;
+    window.updateAnswerActionConfig = (idx) => blue.updateAnswerActionConfig(idx);
+    window.updateWrongActionValue = () => blue.updateWrongActionValue();
+    window.removeAnswerField = (idx) => blue.removeAnswerField(idx);
+    window.removeMultiActionField = (idx) => blue.removeMultiActionField(idx);
+    window.addMultiActionField = () => blue.addMultiActionField();
+    window.updateMultiActionConfig = (idx) => blue.updateMultiActionConfig(idx);
+    window.addMultiQuestionAnswer = (idx) => blue.addMultiQuestionAnswer(idx);
+    window.removeMultiQuestionAnswer = (midx, aidx) => blue.removeMultiQuestionAnswer(midx, aidx);
     
     function send() {
         const input = document.getElementById('userInput');
@@ -796,7 +1018,6 @@
         if(e.target.files[0]) blue.importFromFile(e.target.files[0]);
         e.target.value = '';
     };
-    document.querySelector('label[for="importFile"]').onclick = () => document.getElementById('importFile').click();
     
     window.addEventListener('resize', () => {
         blue.setupCanvas();
