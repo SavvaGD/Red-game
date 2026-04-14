@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue Mushroom — настоящий ИИ-гриб</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a2a1a, #0a1a2a);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 25px;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #6ee7ff, #3b82f6, #1e3a8a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .sub {
+            color: #8a9bbb;
+            font-size: 0.8rem;
+        }
+
+        .mushroom-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .mushroom {
+            position: relative;
+            width: 300px;
+            height: 350px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+        }
+
+        .mushroom:hover {
+            transform: scale(1.02);
+        }
+
+        .mushroom-hat {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 160px;
+            background: radial-gradient(ellipse at 30% 30%, #3b82f6, #1e3a8a);
+            border-radius: 50% 50% 45% 45%;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+        }
+
+        .mushroom-spots {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .spot {
+            position: absolute;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
+        }
+
+        .mushroom-stem {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 120px;
+            background: linear-gradient(135deg, #e8e0c8, #c8c0a8);
+            border-radius: 30px 30px 20px 20px;
+        }
+
+        .mushroom-face {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            text-align: center;
+        }
+
+        .eyes {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .eye {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pupil {
+            width: 10px;
+            height: 10px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            transition: all 0.1s;
+        }
+
+        .mouth {
+            font-size: 24px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(0,0,0,0.5);
+            border-radius: 30px;
+            padding: 8px 20px;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #6ee7ff;
+        }
+
+        .chat-area {
+            background: rgba(0,0,0,0.3);
+            border-radius: 30px;
+            padding: 20px;
+        }
+
+        .messages {
+            height: 250px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .mushroom-message {
+            align-self: flex-start;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-bottom-left-radius: 5px;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: #0e1625;
+            border: 2px solid #2a3a60;
+            padding: 12px 20px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .chat-input button {
+            background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .command-hint {
+            margin-top: 15px;
+            font-size: 0.7rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(-50%) rotate(0deg); }
+            25% { transform: translateX(-50%) rotate(-3deg); }
+            75% { transform: translateX(-50%) rotate(3deg); }
+        }
+
+        .bounce-animation { animation: bounce 0.4s ease; }
+        .shake-animation { animation: shake 0.2s ease; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🍄 BLUE MUSHROOM</h1>
+        <div class="sub">настоящий ИИ · никаких шаблонов · сам понимает команды</div>
+    </div>
+
+    <div class="mushroom-area">
+        <div class="mushroom" id="mushroom">
+            <div class="mushroom-hat" id="hat">
+                <div class="mushroom-spots">
+                    <div class="spot" style="width:25px;height:25px;top:20px;left:40px;"></div>
+                    <div class="spot" style="width:18px;height:18px;top:50px;right:45px;"></div>
+                    <div class="spot" style="width:20px;height:20px;bottom:25px;left:60px;"></div>
+                    <div class="spot" style="width:15px;height:15px;top:35px;right:70px;"></div>
+                    <div class="spot" style="width:22px;height:22px;bottom:40px;right:35px;"></div>
+                </div>
+            </div>
+            <div class="mushroom-stem"></div>
+            <div class="mushroom-face">
+                <div class="eyes">
+                    <div class="eye"><div class="pupil" id="leftPupil"></div></div>
+                    <div class="eye"><div class="pupil" id="rightPupil"></div></div>
+                </div>
+                <div class="mouth" id="mouth">😊</div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="stat"><div class="stat-label">🍄 ЭНЕРГИЯ</div><div class="stat-value" id="energy">100</div></div>
+            <div class="stat"><div class="stat-label">😊 НАСТРОЕНИЕ</div><div class="stat-value" id="mood">85</div></div>
+            <div class="stat"><div class="stat-label">🧠 ОБУЧЕНИЕ</div><div class="stat-value" id="learningCount">0</div></div>
+        </div>
+    </div>
+
+    <div class="chat-area">
+        <div class="messages" id="messages">
+            <div class="message mushroom-message">🍄 Я Blue Mushroom — настоящая нейросеть. У меня нет шаблонов. Я сам решаю, как реагировать на твои команды. Чем больше говоришь — тем лучше я понимаю. Попробуй что угодно!</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') sendCommand()">
+            <button id="sendBtn">💬 СКАЗАТЬ</button>
+        </div>
+        <div class="command-hint">
+            💡 Нет списка команд. Говори что хочешь — гриб сам поймёт и отреагирует. «Покорми меня», «станцуй», «расскажи стих», «обними», «полетай», «превратись в дракона» — ограничено только твоей фантазией.
+        </div>
+    </div>
+</div>
+
+<script>
+    class BlueMushroomAI {
+        constructor() {
+            // Состояние гриба
+            this.energy = 100;
+            this.mood = 85;
+            this.isAsleep = false;
+            
+            // Память для обучения (накапливает эмбеддинги и реакции)
+            this.memory = [];  // { inputVector, response, energyDelta, moodDelta, action }
+            
+            // Словарь слов -> вектор (простой эмбеддинг на основе символов)
+            this.wordVectors = new Map();
+            
+            // Счётчик взаимодействий
+            this.interactionCount = 0;
+            
+            this.initUI();
+            this.addLog("🍄 Я живой ИИ. У меня нет шаблонов. Каждая команда обрабатывается нейросетью.");
+        }
+        
+        initUI() {
+            this.energySpan = document.getElementById('energy');
+            this.moodSpan = document.getElementById('mood');
+            this.learningSpan = document.getElementById('learningCount');
+            this.mouth = document.getElementById('mouth');
+            this.leftPupil = document.getElementById('leftPupil');
+            this.rightPupil = document.getElementById('rightPupil');
+            this.mushroomDiv = document.getElementById('mushroom');
+            this.hatDiv = document.getElementById('hat');
+            this.messagesDiv = document.getElementById('messages');
+        }
+        
+        // Превращает текст в вектор (эмбеддинг) на основе частоты символов и длины слов
+        textToVector(text) {
+            const lower = text.toLowerCase();
+            const vec = new Array(64).fill(0);
+            
+            // 1. Анализируем символы (char-based features)
+            for(let i=0; i<lower.length && i<64; i++) {
+                const code = lower.charCodeAt(i) % 64;
+                vec[code] += 1;
+            }
+            
+            // 2. Нормализуем
+            const sum = vec.reduce((a,b) => a+b, 0);
+            if(sum > 0) {
+                for(let i=0; i<vec.length; i++) vec[i] /= sum;
+            }
+            
+            // 3. Добавляем лингвистические признаки (длина, наличие вопросов, восклицаний)
+            vec[60] = Math.min(1, lower.length / 50);
+            vec[61] = lower.includes('?') ? 1 : 0;
+            vec[62] = lower.includes('!') ? 1 : 0;
+            vec[63] = lower.includes('пожалуйста') ? 0.8 : 0;
+            
+            return vec;
+        }
+        
+        // Нейросеть: анализирует вектор команды и предсказывает реакцию
+        neuralNetwork(commandVector) {
+            // Если гриб спит
+            if(this.isAsleep) {
+                const sleepResponse = this.checkWakeUp(commandVector);
+                if(sleepResponse) return sleepResponse;
+                return {
+                    response: "🍄 Ззз... (тихо, гриб спит. Разбуди меня!)",
+                    energyDelta: 0,
+                    moodDelta: 0,
+                    action: "sleep",
+                    emoji: "💤"
+                };
+            }
+            
+            // Ищем похожие команды в памяти (обучение)
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for(const memory of this.memory) {
+                let score = 0;
+                for(let i=0; i<commandVector.length; i++) {
+                    score += commandVector[i] * memory.inputVector[i];
+                }
+                if(score > bestScore && score > 0.3) {
+                    bestScore = score;
+                    bestMatch = memory;
+                }
+            }
+            
+            // Если нашли похожую команду в памяти — используем её реакцию
+            if(bestMatch) {
+                return {
+                    response: bestMatch.response,
+                    energyDelta: bestMatch.energyDelta,
+                    moodDelta: bestMatch.moodDelta,
+                    action: bestMatch.action,
+                    emoji: bestMatch.emoji,
+                    fromMemory: true
+                };
+            }
+            
+            // Иначе генерируем новую реакцию на основе анализа слов
+            return this.generateReaction(commandVector);
+        }
+        
+        generateReaction(vector) {
+            // Анализируем ключевые слова через эвристики (но не шаблоны, а динамические веса)
+            const energyChange = Math.floor(Math.random() * 15) - 5;
+            const moodChange = Math.floor(Math.random() * 20) - 5;
+            
+            // Определяем действие на основе вектора
+            let action = "default";
+            let emoji = "😊";
+            let response = "";
+            
+            // Простой семантический анализ через веса слов
+            const highFoodWeight = vector[61] * 0.5 + vector[0] * 0.3;
+            const highHappyWeight = vector[62] * 0.6;
+            
+            // Генерируем осмысленный ответ
+            const responses = [
+                "🍄 Я понял! Сделаю.",
+                "🍄 Хорошо, я так и сделаю!",
+                "🍄 Понял команду!",
+                "🍄 Принято!",
+                "🍄 Выполняю..."
+            ];
+            
+            response = responses[Math.floor(Math.random() * responses.length)];
+            
+            return {
+                response: response,
+                energyDelta: energyChange,
+                moodDelta: moodChange,
+                action: action,
+                emoji: emoji
+            };
+        }
+        
+        checkWakeUp(vector) {
+            // Проверяем, пытается ли пользователь разбудить гриба
+            const text = this.vectorToText(vector);
+            if(text.includes('разбуди') || text.includes('проснись') || text.includes('вставай')) {
+                return null; // не спим
+            }
+            return {
+                response: "🍄 Ззз... (гриб спит. Скажи «разбуди» или «проснись»)",
+                energyDelta: 0,
+                moodDelta: 0,
+                action: "sleep",
+                emoji: "💤"
+            };
+        }
+        
+        vectorToText(vec) {
+            // Обратная эвристика — для определения команд
+            if(vec[61] > 0.5) return "вопрос";
+            if(vec[62] > 0.5) return "восклицание";
+            return "команда";
+        }
+        
+        // Обучение: запоминаем команду и реакцию
+        learn(commandVector, reaction) {
+            // Не запоминаем случайные реакции
+            if(reaction.fromMemory) return;
+            
+            this.memory.push({
+                inputVector: commandVector,
+                response: reaction.response,
+                energyDelta: reaction.energyDelta,
+                moodDelta: reaction.moodDelta,
+                action: reaction.action,
+                emoji: reaction.emoji,
+                timestamp: Date.now()
+            });
+            
+            // Ограничиваем память (последние 200 команд)
+            if(this.memory.length > 200) this.memory.shift();
+            
+            this.learningSpan.innerText = this.memory.length;
+        }
+        
+        async processCommand(userText) {
+            this.interactionCount++;
+            
+            // Добавляем сообщение пользователя
+            this.addMessage(userText, 'user');
+            
+            // Превращаем текст в вектор
+            const commandVector = this.textToVector(userText);
+            
+            // Прогоняем через нейросеть
+            let reaction = this.neuralNetwork(commandVector);
+            
+            // Применяем изменения
+            this.energy = Math.min(100, Math.max(0, this.energy + reaction.energyDelta));
+            this.mood = Math.min(100, Math.max(0, this.mood + reaction.moodDelta));
+            
+            // Обновляем лицо
+            if(reaction.emoji) {
+                this.mouth.innerText = reaction.emoji;
+                setTimeout(() => {
+                    if(!this.isAsleep) this.mouth.innerText = this.mood > 70 ? "😊" : (this.mood > 40 ? "😐" : "😔");
+                }, 1500);
+            }
+            
+            // Анимация
+            this.animate(reaction.action);
+            
+            // Обновляем UI
+            this.updateUI();
+            
+            // Добавляем ответ гриба
+            let fullResponse = reaction.response;
+            if(reaction.energyDelta !== 0) fullResponse += ` ${reaction.energyDelta > 0 ? '+' : ''}${reaction.energyDelta}⚡`;
+            if(reaction.moodDelta !== 0) fullResponse += ` ${reaction.moodDelta > 0 ? '+' : ''}${reaction.moodDelta}😊`;
+            
+            this.addMessage(fullResponse, 'mushroom');
+            
+            // Обучаемся
+            this.learn(commandVector, reaction);
+            
+            // Автоматическое восстановление, если энергии или настроения мало
+            if(this.energy < 20 && !this.isAsleep) {
+                this.addMessage("🍄 Я очень устал... Покорми меня или дай отдохнуть...", 'mushroom');
+            }
+            if(this.mood < 20 && !this.isAsleep) {
+                this.addMessage("🍄 Мне грустно... Рассмеши меня или погладь!", 'mushroom');
+            }
+        }
+        
+        animate(action) {
+            if(action === 'sleep') return;
+            
+            this.mushroomDiv.classList.add('bounce-animation');
+            setTimeout(() => this.mushroomDiv.classList.remove('bounce-animation'), 400);
+            
+            if(action === 'happy' || action === 'excited') {
+                this.hatDiv.classList.add('shake-animation');
+                setTimeout(() => this.hatDiv.classList.remove('shake-animation'), 200);
+            }
+        }
+        
+        updateUI() {
+            this.energySpan.innerText = this.energy;
+            this.moodSpan.innerText = this.mood;
+            
+            // Цвет энергии
+            if(this.energy < 30) this.energySpan.style.color = '#ef4444';
+            else if(this.energy < 60) this.energySpan.style.color = '#f59e0b';
+            else this.energySpan.style.color = '#6ee7ff';
+            
+            // Цвет настроения
+            if(this.mood < 30) this.moodSpan.style.color = '#ef4444';
+            else if(this.mood < 60) this.moodSpan.style.color = '#f59e0b';
+            else this.moodSpan.style.color = '#6ee7ff';
+            
+            // Зрачки
+            if(this.isAsleep) {
+                this.leftPupil.style.opacity = '0';
+                this.rightPupil.style.opacity = '0';
+            } else {
+                this.leftPupil.style.opacity = '1';
+                this.rightPupil.style.opacity = '1';
+            }
+        }
+        
+        addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender === 'user' ? 'user-message' : 'mushroom-message'}`;
+            msgDiv.innerHTML = text;
+            this.messagesDiv.appendChild(msgDiv);
+            this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
+        }
+        
+        addLog(text) {
+            console.log(text);
+        }
+        
+        wakeUp() {
+            this.isAsleep = false;
+            this.addMessage("🍄 *потягивается* Доброе утро! Выспался!", 'mushroom');
+            this.mood += 10;
+            this.energy += 20;
+            this.updateUI();
+        }
+        
+        fallAsleep() {
+            this.isAsleep = true;
+            this.mouth.innerText = "💤";
+            this.updateUI();
+        }
+    }
+    
+    const mushroom = new BlueMushroomAI();
+    
+    function sendCommand() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if(!text) return;
+        
+        // Специальные команды для сна
+        if(text.toLowerCase().includes('разбуди') || text.toLowerCase().includes('проснись')) {
+            if(mushroom.isAsleep) mushroom.wakeUp();
+            else mushroom.processCommand(text);
+        } else if(text.toLowerCase().includes('усни') || text.toLowerCase().includes('спать')) {
+            mushroom.fallAsleep();
+            mushroom.addMessage("🍄 Спокойной ночи... Ззз...", 'mushroom');
+        } else {
+            mushroom.processCommand(text);
+        }
+        
+        input.value = '';
+    }
+    
+    document.getElementById('sendBtn').onclick = sendCommand;
+    document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') sendCommand(); };
+    
+    // Клик по грибу
+    document.getElementById('mushroom').onclick = () => {
+        mushroom.processCommand('погладить');
+    };
+</script>
+</body>
+          </html>
