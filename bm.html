@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Blue Mushroom — настоящая нейросеть brain.js</title>
-    <script src="https://cdn.jsdelivr.net/npm/brain.js@2.0.0-beta.23/dist/browser.js"></script>
+    <title>Блю — собака-нейросеть</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -23,9 +22,27 @@
             color: transparent;
         }
         .sub { color: #cbd5e6; font-size: 0.8rem; }
-        .api-status {
+        .top-bar {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .top-btn {
+            background: #1e293b;
+            border: 1px solid #3b82f6;
+            border-radius: 40px;
+            padding: 8px 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .top-btn:hover { background: #3b82f6; }
+        .microphone-status {
             display: inline-block;
-            background: #10b981;
+            background: #f59e0b;
             border-radius: 20px;
             padding: 2px 10px;
             font-size: 0.7rem;
@@ -54,21 +71,6 @@
             border-radius: 20px;
             display: block;
         }
-        .room-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        .room-item {
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-size: 0.7rem;
-            color: #a0c0ff;
-            border: 1px solid #3b82f6;
-            cursor: pointer;
-        }
         .mushroom-panel {
             flex: 0.8;
             background: rgba(0,0,0,0.5);
@@ -82,6 +84,11 @@
             height: 240px;
             margin: 0 auto;
             cursor: pointer;
+            transition: all 0.3s;
+        }
+        .mushroom.hidden {
+            opacity: 0;
+            transform: scale(0.8);
         }
         .mushroom-hat {
             position: absolute;
@@ -122,8 +129,36 @@
         .messages { height: 280px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
         .message { max-width: 85%; padding: 10px 15px; border-radius: 20px; font-size: 0.85rem; word-wrap: break-word; color: white; }
         .user-message { align-self: flex-end; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
-        .mushroom-message { align-self: flex-start; background: #1e293b; color: white; border-left: 3px solid #3b82f6; }
-        .chat-input { display: flex; gap: 10px; }
+        .blue-message { align-self: flex-start; background: #1e293b; color: white; border-left: 3px solid #3b82f6; }
+        .system-message { align-self: center; background: #4a2a0a; color: #ffd700; font-size: 0.7rem; text-align: center; max-width: 95%; }
+        .learning-panel {
+            background: #0a0f1a;
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px solid #f59e0b;
+        }
+        .learning-title { color: #f59e0b; font-size: 0.8rem; margin-bottom: 10px; }
+        .command-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .command-badge {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            color: #6ee7ff;
+            border: 1px solid #3b82f6;
+            cursor: pointer;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
         .chat-input input {
             flex: 1;
             background: #0e1625;
@@ -133,7 +168,7 @@
             color: white;
             font-size: 0.9rem;
         }
-        .chat-input input::placeholder { color: #8a9bbb; }
+        .chat-input input:focus { outline: none; border-color: #f59e0b; }
         .chat-input button {
             background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border: none;
@@ -143,30 +178,57 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .training-status {
-            font-size: 0.65rem;
-            color: #f59e0b;
-            margin-top: 5px;
+        select, .action-input {
+            background: #0e1625;
+            border: 1px solid #3b82f6;
+            border-radius: 20px;
+            padding: 8px 12px;
+            color: white;
+            margin: 5px;
         }
-        .command-hint { margin-top: 12px; font-size: 0.65rem; color: #a0c0ff; text-align: center; }
+        .action-config {
+            background: #0a0f1a;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+        .save-btn {
+            background: #10b981;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            margin-top: 10px;
+        }
         @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
         .bounce { animation: bounce 0.3s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+        .shake { animation: shake 0.2s ease; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🍄 BLUE MUSHROOM <span class="api-status">нейросеть brain.js</span></h1>
-        <div class="sub">настоящая нейросеть · обучается на твоих сообщениях</div>
+        <h1>🐶 БЛЮ <span class="microphone-status" id="micStatus">🎤 микрофон выкл</span></h1>
+        <div class="sub">собака-нейросеть · учится командам · боится громких звуков</div>
+    </div>
+
+    <div class="top-bar">
+        <button class="top-btn" id="startMicBtn">🎤 Включить микрофон</button>
+        <button class="top-btn" id="stopMicBtn">⏹️ Выключить микрофон</button>
+        <button class="top-btn" id="exportBtn">💾 Сохранить Блю в файл</button>
+        <label class="top-btn" style="display:inline-block; cursor:pointer;">📂 Загрузить Блю
+            <input type="file" id="importFile" accept=".blmu" style="display:none;">
+        </label>
     </div>
 
     <div class="main-panel">
         <div class="room-panel">
-            <div class="room-title">🏠 КОМНАТА ГРИБА</div>
+            <div class="room-title">🏠 КОМНАТА БЛЮ</div>
             <div class="room-canvas-container">
                 <canvas id="roomCanvas" width="600" height="350"></canvas>
             </div>
-            <div class="room-items" id="roomItemsList"></div>
         </div>
 
         <div class="mushroom-panel">
@@ -179,430 +241,567 @@
                 </div>
             </div>
             <div class="stats">
-                <div class="stat">🍄 Энергия: <span id="energy">100</span></div>
-                <div class="stat">😊 Настроение: <span id="mood">85</span></div>
-                <div class="stat">🧠 Обучено: <span id="trainedCount">0</span></div>
+                <div class="stat">🐶 Команд: <span id="commandsCount">0</span></div>
+                <div class="stat">😊 Настроение: <span id="mood">100</span></div>
             </div>
-            <div class="training-status" id="trainingStatus">⚡ Нейросеть готова</div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="messages" id="messages">
-            <div class="message mushroom-message">🍄 Я настоящая нейросеть на brain.js! Я обучена распознавать команды. Говори что хочешь — я буду учиться на каждом сообщении!</div>
+            <div class="message blue-message">🐶 Гав! Я Блю. Научи меня командам! Напиши "Запомни" и следуй инструкциям. Ещё я боюсь громких звуков — микрофон слушает!</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Скажи что-нибудь Блю или напиши 'Запомни'..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
-        <div class="command-hint">
-            🧠 Нейросеть обучена на 40+ примерах. Каждое твоё сообщение дообучает её!
-        </div>
+    </div>
+
+    <div class="learning-panel" id="learningPanel" style="display:none;">
+        <div class="learning-title">📚 ОБУЧЕНИЕ БЛЮ — шаг <span id="stepNum">1</span>/<span id="stepTotal">1</span></div>
+        <div id="learningContent"></div>
     </div>
 </div>
 
 <script>
-    class NeuralMushroom {
+    class BlueDog {
         constructor() {
-            this.energy = 100;
-            this.mood = 85;
-            this.trainingCount = 0;
-            
-            this.roomItems = [
-                { id: "window", name: "окно", x: 50, y: 60, w: 70, h: 55, color: "#87CEEB", emoji: "🪟" },
-                { id: "table", name: "стол", x: 300, y: 200, w: 100, h: 40, color: "#8B5A2B", emoji: "🪑" }
-            ];
-            
-            // Типы действий
-            this.actions = ['show', 'add', 'remove', 'pet', 'talk'];
-            
-            // Создаём нейросеть
-            this.net = new brain.NeuralNetwork({
-                activation: 'sigmoid',
-                hiddenLayers: [8, 6],
-                learningRate: 0.3
-            });
+            this.commands = {};  // команда -> действие
+            this.builtinCommands = ['запомни', 'привет', 'как дела', 'спасибо', 'пока'];
+            this.isLearning = false;
+            this.learningStep = 0;
+            this.learningData = {};
+            this.isHidden = false;
+            this.hideTimeout = null;
+            this.mediaStream = null;
+            this.audioContext = null;
+            this.microphoneEnabled = false;
             
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
-            this.updateRoomList();
-            this.trainNetwork();
+            this.loadFromLocal();
+            this.updateCommandsDisplay();
+            this.addMessage("🐶 Гав! Мои встроенные команды: 'привет', 'как дела', 'спасибо', 'пока'. Остальному научишь сам!", "blue");
         }
         
         initUI() {
-            this.energySpan = document.getElementById('energy');
-            this.moodSpan = document.getElementById('mood');
-            this.trainedCountSpan = document.getElementById('trainedCount');
-            this.trainingStatusSpan = document.getElementById('trainingStatus');
-            this.mouth = document.getElementById('mouth');
+            this.roomCanvas = document.getElementById('roomCanvas');
+            this.ctx = this.roomCanvas.getContext('2d');
             this.messagesDiv = document.getElementById('messages');
+            this.userInput = document.getElementById('userInput');
+            this.commandsCountSpan = document.getElementById('commandsCount');
+            this.moodSpan = document.getElementById('mood');
+            this.mouth = document.getElementById('mouth');
             this.mushroomDiv = document.getElementById('mushroom');
-            this.canvas = document.getElementById('roomCanvas');
-            this.ctx = this.canvas.getContext('2d');
+            this.learningPanel = document.getElementById('learningPanel');
+            this.learningContent = document.getElementById('learningContent');
+            this.stepNumSpan = document.getElementById('stepNum');
+            this.stepTotalSpan = document.getElementById('stepTotal');
+            this.micStatusSpan = document.getElementById('micStatus');
         }
         
         setupCanvas() {
-            const container = this.canvas.parentElement;
-            const width = Math.min(600, container.clientWidth - 20);
-            this.canvas.width = width;
-            this.canvas.height = width * 0.58;
-        }
-        
-        // === ПРЕОБРАЗОВАНИЕ ТЕКСТА В ВЕКТОР ДЛЯ НЕЙРОСЕТИ ===
-        textToVector(text) {
-            const lower = text.toLowerCase();
-            const vec = new Array(20).fill(0);
-            
-            // Ключевые признаки
-            const features = {
-                'покажи': 0, 'добавь': 1, 'убери': 2, 'поглад': 3,
-                'привет': 4, 'как дела': 5, 'кто ты': 6, 'шутк': 7,
-                'спасибо': 8, 'пока': 9, 'любов': 10, 'плохо': 11,
-                'хорошо': 12, 'да': 13, 'нет': 14, 'есть': 15,
-                'создай': 16, 'удали': 17, 'поставь': 18, 'нарисуй': 19
-            };
-            
-            for (const [word, idx] of Object.entries(features)) {
-                if (lower.includes(word)) {
-                    vec[idx] = 1;
-                }
-            }
-            
-            // Дополнительные признаки
-            vec[15] = Math.min(1, lower.length / 30);
-            vec[16] = lower.includes('?') ? 1 : 0;
-            vec[17] = lower.includes('!') ? 1 : 0;
-            
-            return vec;
-        }
-        
-        // === ОБУЧЕНИЕ НЕЙРОСЕТИ ===
-        trainNetwork() {
-            const trainingData = [
-                // show — показать
-                { input: this.textToVector("покажи дракона"), output: { show: 1, add: 0, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("покажи кота"), output: { show: 1, add: 0, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("покажи солнце"), output: { show: 1, add: 0, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("покажи цветок"), output: { show: 1, add: 0, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("нарисуй что-то"), output: { show: 1, add: 0, remove: 0, pet: 0, talk: 0 } },
-                
-                // add — добавить
-                { input: this.textToVector("добавь стул"), output: { show: 0, add: 1, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("добавь стол"), output: { show: 0, add: 1, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("создай предмет"), output: { show: 0, add: 1, remove: 0, pet: 0, talk: 0 } },
-                { input: this.textToVector("поставь вазу"), output: { show: 0, add: 1, remove: 0, pet: 0, talk: 0 } },
-                
-                // remove — убрать
-                { input: this.textToVector("убери стол"), output: { show: 0, add: 0, remove: 1, pet: 0, talk: 0 } },
-                { input: this.textToVector("удали окно"), output: { show: 0, add: 0, remove: 1, pet: 0, talk: 0 } },
-                { input: this.textToVector("убери стул"), output: { show: 0, add: 0, remove: 1, pet: 0, talk: 0 } },
-                
-                // pet — погладить
-                { input: this.textToVector("погладь меня"), output: { show: 0, add: 0, remove: 0, pet: 1, talk: 0 } },
-                { input: this.textToVector("погладить"), output: { show: 0, add: 0, remove: 0, pet: 1, talk: 0 } },
-                { input: this.textToVector("погладь"), output: { show: 0, add: 0, remove: 0, pet: 1, talk: 0 } },
-                
-                // talk — разговор
-                { input: this.textToVector("привет"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("как дела"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("кто ты"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("расскажи шутку"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("спасибо"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("пока"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("хорошо"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("плохо"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } },
-                { input: this.textToVector("что нового"), output: { show: 0, add: 0, remove: 0, pet: 0, talk: 1 } }
-            ];
-            
-            this.net.train(trainingData, {
-                iterations: 2000,
-                errorThresh: 0.005,
-                log: false,
-                logPeriod: 500
-            });
-            
-            this.trainingCount = trainingData.length;
-            this.trainedCountSpan.innerText = this.trainingCount;
-            this.trainingStatusSpan.innerHTML = "✅ Нейросеть обучена на " + this.trainingCount + " примерах";
-        }
-        
-        // === ПРЕДСКАЗАНИЕ ===
-        predict(text) {
-            const vector = this.textToVector(text);
-            const result = this.net.run(vector);
-            
-            // Находим максимальное значение
-            let maxAction = 'talk';
-            let maxValue = result.talk || 0;
-            
-            for (const action of this.actions) {
-                if ((result[action] || 0) > maxValue) {
-                    maxValue = result[action];
-                    maxAction = action;
-                }
-            }
-            
-            return { action: maxAction, confidence: maxValue, all: result };
-        }
-        
-        // === ДООБУЧЕНИЕ ===
-        retrainOnMessage(text, correctAction) {
-            const vector = this.textToVector(text);
-            const output = {
-                show: correctAction === 'show' ? 1 : 0,
-                add: correctAction === 'add' ? 1 : 0,
-                remove: correctAction === 'remove' ? 1 : 0,
-                pet: correctAction === 'pet' ? 1 : 0,
-                talk: correctAction === 'talk' ? 1 : 0
-            };
-            
-            // Дообучаем на одном примере
-            this.net.train([{ input: vector, output: output }], {
-                iterations: 50,
-                learningRate: 0.1
-            });
-            
-            this.trainingCount++;
-            this.trainedCountSpan.innerText = this.trainingCount;
-            this.trainingStatusSpan.innerHTML = "📚 Дообучен! Всего примеров: " + this.trainingCount;
-            setTimeout(() => {
-                this.trainingStatusSpan.innerHTML = "⚡ Нейросеть готова";
-            }, 2000);
-        }
-        
-        // === ДЕЙСТВИЯ ===
-        extractNoun(text) {
-            const words = text.toLowerCase().split(/\s+/);
-            for(let i = words.length - 1; i >= 0; i--) {
-                if(!['покажи', 'добавь', 'убери', 'нарисуй', 'создай', 'поставь', 'удали', 'покажи'].includes(words[i])) {
-                    return words[i];
-                }
-            }
-            return words[words.length - 1] || "предмет";
-        }
-        
-        showItem(itemName) {
-            this.addMessage(`🍄 ${itemName}! 🎨`, "mushroom");
-            const x = this.canvas.width / 2 - 50;
-            const y = this.canvas.height / 2 - 50;
-            this.ctx.fillStyle = "#FFB347";
-            this.ctx.fillRect(x, y, 100, 100);
-            this.ctx.fillStyle = "white";
-            this.ctx.font = "bold 14px monospace";
-            this.ctx.fillText(itemName, x + 20, y + 55);
-            setTimeout(() => this.drawRoom(), 2000);
-            this.energy = Math.max(0, this.energy - 2);
-            this.mood = Math.min(100, this.mood + 3);
-            this.updateUI();
-        }
-        
-        addItem(itemName) {
-            if(this.roomItems.some(i => i.name === itemName)) {
-                this.addMessage(`🍄 ${itemName} уже есть в комнате!`, "mushroom");
-                return;
-            }
-            this.roomItems.push({
-                id: Date.now() + itemName,
-                name: itemName,
-                x: Math.random() * (this.canvas.width - 100) + 20,
-                y: Math.random() * (this.canvas.height - 100) + 40,
-                w: 55, h: 45,
-                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-                emoji: this.getEmoji(itemName)
-            });
-            this.drawRoom();
-            this.updateRoomList();
-            this.addMessage(`🍄 Добавил ${itemName} в комнату! 🎉`, "mushroom");
-            this.mood = Math.min(100, this.mood + 5);
-            this.energy = Math.max(0, this.energy - 3);
-            this.updateUI();
-        }
-        
-        getEmoji(name) {
-            const emojis = {
-                'кактус': '🌵', 'цветок': '🌻', 'стул': '🪑', 'стол': '🪑',
-                'книга': '📖', 'компьютер': '💻', 'кот': '🐱', 'собака': '🐶',
-                'писька': '🍆', 'член': '🍆', 'хуй': '🍆'
-            };
-            return emojis[name] || '📦';
-        }
-        
-        removeItem(itemName) {
-            const index = this.roomItems.findIndex(i => i.name === itemName);
-            if(index !== -1) {
-                const removed = this.roomItems.splice(index, 1);
-                this.drawRoom();
-                this.updateRoomList();
-                this.addMessage(`🍄 Убрал ${removed[0].name} из комнаты.`, "mushroom");
-                this.mood = Math.min(100, this.mood + 2);
-            } else {
-                this.addMessage(`🍄 Не нашёл ${itemName} в комнате...`, "mushroom");
-                this.mood = Math.max(0, this.mood - 2);
-            }
-            this.updateUI();
-        }
-        
-        pet() {
-            this.addMessage("🍄 Муррр... Спасибо! 💙", "mushroom");
-            this.mood = Math.min(100, this.mood + 8);
-            this.energy = Math.min(100, this.energy + 2);
-            this.updateUI();
-            this.animate();
-        }
-        
-        talkResponse(text) {
-            const lower = text.toLowerCase();
-            
-            if (lower.includes('привет')) return "🍄 Привет! Рад тебя видеть!";
-            if (lower.includes('как дела')) return "🍄 Отлично! А у тебя?";
-            if (lower.includes('кто ты')) return "🍄 Я нейросеть на brain.js в теле синего гриба!";
-            if (lower.includes('шутк')) return "🍄 Почему гриб грустит? Потому что его никто не гладит!";
-            if (lower.includes('спасибо')) {
-                this.mood = Math.min(100, this.mood + 5);
-                return "🍄 Пожалуйста! Мне приятно! 💙";
-            }
-            if (lower.includes('пока')) return "🍄 Пока! Заходи ещё!";
-            if (lower.includes('любов')) return "🍄 Любовь — это когда тепло на душе. Как сейчас!";
-            if (lower.includes('хорошо')) return "🍄 Я рад, что у тебя всё хорошо!";
-            if (lower.includes('плохо')) {
-                this.mood = Math.max(0, this.mood - 3);
-                return "🍄 Ой, не грусти! Я с тобой! 💙";
-            }
-            if (lower.includes('блять')) return "🍄 Тихо-тихо, давай без ругани! Лучше погладь меня!";
-            
-            return "🍄 " + [
-                "Интересно... Расскажи ещё!",
-                "Я тебя внимательно слушаю!",
-                "Правда? Давай обсудим!",
-                "Хороший вопрос!"
-            ][Math.floor(Math.random() * 4)];
-        }
-        
-        // === ГЛАВНАЯ ОБРАБОТКА ===
-        async processInput(userText) {
-            this.addMessage(userText, "user");
-            
-            const prediction = this.predict(userText);
-            const action = prediction.action;
-            const confidence = prediction.confidence;
-            
-            console.log(`Предсказание: ${action} (${Math.round(confidence * 100)}%)`);
-            
-            // Выполняем действие
-            switch(action) {
-                case 'show':
-                    const noun = this.extractNoun(userText);
-                    this.showItem(noun);
-                    break;
-                case 'add':
-                    const addNoun = this.extractNoun(userText);
-                    this.addItem(addNoun);
-                    break;
-                case 'remove':
-                    const removeNoun = this.extractNoun(userText);
-                    this.removeItem(removeNoun);
-                    break;
-                case 'pet':
-                    this.pet();
-                    break;
-                default:
-                    const response = this.talkResponse(userText);
-                    this.addMessage(response, "mushroom");
-            }
-            
-            // Дообучаем нейросеть на основе фактического действия (если нейросеть ошиблась)
-            const actualAction = this.getActualAction(userText);
-            if (actualAction && actualAction !== action) {
-                this.retrainOnMessage(userText, actualAction);
-            }
-            
-            this.energy = Math.max(0, this.energy - 1);
-            this.mood = Math.min(100, this.mood + 1);
-            this.updateUI();
-            this.animate();
-        }
-        
-        getActualAction(text) {
-            const lower = text.toLowerCase();
-            if (lower.includes('покажи') || lower.includes('нарисуй')) return 'show';
-            if (lower.includes('добавь') || lower.includes('создай') || lower.includes('поставь')) return 'add';
-            if (lower.includes('убери') || lower.includes('удали')) return 'remove';
-            if (lower.includes('поглад')) return 'pet';
-            return null;
+            const container = this.roomCanvas.parentElement;
+            const width = Math.min(500, container.clientWidth - 20);
+            this.roomCanvas.width = width;
+            this.roomCanvas.height = width * 0.58;
         }
         
         drawRoom() {
             if(!this.ctx) return;
             this.ctx.fillStyle = "#1a2a3a";
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.fillRect(0, 0, this.roomCanvas.width, this.roomCanvas.height);
             this.ctx.fillStyle = "#2a3a2a";
-            this.ctx.fillRect(0, this.canvas.height - 60, this.canvas.width, 60);
+            this.ctx.fillRect(0, this.roomCanvas.height - 60, this.roomCanvas.width, 60);
+            this.ctx.fillStyle = "#3b82f6";
+            this.ctx.font = "30px monospace";
+            this.ctx.fillText("🐶", this.roomCanvas.width/2 - 20, this.roomCanvas.height/2);
+        }
+        
+        // === МИКРОФОН ===
+        async startMicrophone() {
+            try {
+                this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+                const analyser = this.audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                this.microphoneEnabled = true;
+                this.micStatusSpan.innerText = "🎤 слушаю";
+                this.micStatusSpan.style.background = "#10b981";
+                
+                const checkVolume = () => {
+                    if (!this.microphoneEnabled) return;
+                    analyser.getByteFrequencyData(dataArray);
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+                    let avg = sum / dataArray.length;
+                    if (avg > 50) {
+                        this.hide();
+                    }
+                    requestAnimationFrame(checkVolume);
+                };
+                checkVolume();
+                this.addMessage("🎤 Микрофон включён! Громкие звуки пугают Блю.", "system");
+            } catch(e) {
+                this.addMessage("❌ Не удалось включить микрофон: " + e.message, "system");
+            }
+        }
+        
+        stopMicrophone() {
+            if (this.mediaStream) {
+                this.mediaStream.getTracks().forEach(track => track.stop());
+                this.mediaStream = null;
+            }
+            if (this.audioContext) {
+                this.audioContext.close();
+                this.audioContext = null;
+            }
+            this.microphoneEnabled = false;
+            this.micStatusSpan.innerText = "🎤 микрофон выкл";
+            this.micStatusSpan.style.background = "#f59e0b";
+            this.addMessage("🎤 Микрофон выключен.", "system");
+        }
+        
+        hide() {
+            if (this.hideTimeout) clearTimeout(this.hideTimeout);
+            this.isHidden = true;
+            this.mushroomDiv.classList.add('hidden');
+            this.addMessage("🔊 ГРОМКИЙ ЗВУК! Блю прячется... 😨", "blue");
+            this.moodSpan.innerText = Math.max(0, parseInt(this.moodSpan.innerText) - 10);
+            this.hideTimeout = setTimeout(() => {
+                this.isHidden = false;
+                this.mushroomDiv.classList.remove('hidden');
+                this.addMessage("🐶 Блю выглядывает... Вроде тихо.", "blue");
+            }, 3000);
+        }
+        
+        // === КОМАНДЫ ===
+        executeCommand(command, originalText) {
+            const lower = command.toLowerCase();
             
-            for(const item of this.roomItems) {
-                this.ctx.fillStyle = item.color;
-                this.ctx.fillRect(item.x, item.y, item.w, item.h);
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "12px monospace";
-                this.ctx.fillText(item.emoji, item.x + 5, item.y + 20);
-                this.ctx.fillStyle = "#a0c0ff";
-                this.ctx.font = "10px monospace";
-                this.ctx.fillText(item.name, item.x + 25, item.y + 20);
+            // Встроенные команды
+            if (lower === 'привет') {
+                this.addMessage("🐶 Гав! Привет!", "blue");
+                return true;
+            }
+            if (lower === 'как дела') {
+                this.addMessage("🐶 Гав-гав! У меня всё отлично! А у тебя?", "blue");
+                return true;
+            }
+            if (lower === 'спасибо') {
+                this.addMessage("🐶 *виляет хвостом* Гав! Пожалуйста!", "blue");
+                return true;
+            }
+            if (lower === 'пока') {
+                this.addMessage("🐶 Гав! Пока, заходи ещё!", "blue");
+                return true;
+            }
+            
+            // Пользовательские команды
+            for (const [cmd, action] of Object.entries(this.commands)) {
+                if (lower === cmd.toLowerCase()) {
+                    this.performAction(action, originalText);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        performAction(action, context) {
+            switch(action.type) {
+                case 'text':
+                    this.addMessage(`🐶 ${action.text}`, "blue");
+                    break;
+                case 'music':
+                    this.playMusic(action.notes);
+                    break;
+                case 'reaction':
+                    this.doReaction(action.reaction);
+                    break;
+                case 'question':
+                    this.startQuestion(action);
+                    break;
+                case 'multi':
+                    this.executeMultiAction(action.actions);
+                    break;
             }
         }
         
-        updateRoomList() {
-            const container = document.getElementById('roomItemsList');
-            container.innerHTML = "";
-            for(const item of this.roomItems) {
-                const badge = document.createElement('span');
-                badge.className = 'room-item';
-                badge.innerHTML = `${item.emoji} ${item.name}`;
-                badge.onclick = () => this.addMessage(`🍄 Это ${item.name}.`, "mushroom");
-                container.appendChild(badge);
+        playMusic(notes) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            const noteFreq = { 'C':261.63, 'D':293.66, 'E':329.63, 'F':349.23, 'G':392.00, 'A':440.00, 'B':493.88 };
+            const parts = notes.split(' ');
+            let time = ctx.currentTime;
+            for(const part of parts) {
+                const match = part.match(/([A-G])(\d)/);
+                if(match) {
+                    const note = match[1];
+                    const octave = parseInt(match[2]);
+                    const freq = noteFreq[note] * Math.pow(2, octave - 4);
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, time);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.3);
+                    osc.start(time);
+                    osc.stop(time + 0.3);
+                    time += 0.3;
+                }
+            }
+            this.addMessage(`🐶 *играет мелодию* ${notes}`, "blue");
+        }
+        
+        doReaction(reaction) {
+            const reactions = {
+                'спрятаться': () => this.hide(),
+                'сесть': () => { this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
+                'лечь': () => { this.mushroomDiv.style.transform = 'scaleX(0.8)'; setTimeout(() => this.mushroomDiv.style.transform = '', 1000); },
+                'прыгнуть': () => { this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
+                'вилять хвостом': () => { this.mushroomDiv.classList.add('shake'); setTimeout(() => this.mushroomDiv.classList.remove('shake'), 800); },
+                'лаять': () => { this.addMessage("🐶 ГАВ-ГАВ-ГАВ!", "blue"); },
+                'принести': () => { this.addMessage("🐶 *приносит палку* Гав! Держи!", "blue"); this.mushroomDiv.classList.add('bounce'); setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 500); },
+                'крутиться': () => { this.mushroomDiv.style.transform = 'rotate(360deg)'; setTimeout(() => this.mushroomDiv.style.transform = '', 500); },
+                'лежать': () => { this.addMessage("🐶 *ложится на пол*", "blue"); },
+                'спать': () => { this.mouth.innerText = "💤"; setTimeout(() => this.mouth.innerText = "😊", 2000); },
+                'чесаться': () => { this.mushroomDiv.classList.add('shake'); setTimeout(() => this.mushroomDiv.classList.remove('shake'), 500); },
+                'улыбнуться': () => { this.mouth.innerText = "😁"; setTimeout(() => this.mouth.innerText = "😊", 1500); }
+            };
+            if(reactions[reaction]) reactions[reaction]();
+            else this.addMessage(`🐶 *${reaction}*`, "blue");
+        }
+        
+        executeMultiAction(actions) {
+            let i = 0;
+            const next = () => {
+                if(i >= actions.length) return;
+                this.performAction(actions[i], null);
+                i++;
+                setTimeout(next, 1500);
+            };
+            next();
+        }
+        
+        startQuestion(action) {
+            this.addMessage(`🐶 ${action.question}`, "blue");
+            this.waitingForQuestion = action;
+        }
+        
+        // === ОБУЧЕНИЕ ===
+        startLearning() {
+            this.isLearning = true;
+            this.learningStep = 1;
+            this.learningData = { actions: [] };
+            this.learningPanel.style.display = "block";
+            this.showLearningStep();
+        }
+        
+        showLearningStep() {
+            if(!this.isLearning) return;
+            const step = this.learningStep;
+            const data = this.learningData;
+            
+            if(step === 1) {
+                this.stepNumSpan.innerText = "1";
+                this.stepTotalSpan.innerText = "2";
+                this.learningContent.innerHTML = `
+                    <div>Введи команду (например: "сидеть", "голос", "ко мне"):</div>
+                    <input type="text" id="newCommand" class="action-input" style="width:100%; margin-top:10px;" placeholder="команда">
+                    <button class="save-btn" onclick="blue.setCommand()">Далее</button>
+                `;
+            } else if(step === 2) {
+                this.stepNumSpan.innerText = "2";
+                this.stepTotalSpan.innerText = "2";
+                this.learningContent.innerHTML = `
+                    <div>Выбери тип действия для команды "${data.command}":</div>
+                    <select id="actionType" class="action-input">
+                        <option value="text">📝 Текстовый ответ</option>
+                        <option value="music">🎵 Музыкальный ответ</option>
+                        <option value="reaction">🎭 Реакция</option>
+                        <option value="question">❓ Вопрос (диалог)</option>
+                        <option value="multi">🔗 Множественное действие</option>
+                    </select>
+                    <div id="actionConfig" class="action-config"></div>
+                    <button class="save-btn" onclick="blue.saveAction()">Сохранить команду</button>
+                `;
+                this.updateActionConfig();
+                document.getElementById('actionType').addEventListener('change', () => this.updateActionConfig());
             }
         }
         
-        updateUI() {
-            this.energySpan.innerText = this.energy;
-            this.moodSpan.innerText = this.mood;
-            if(this.mood > 70) this.mouth.innerText = "😊";
-            else if(this.mood > 40) this.mouth.innerText = "😐";
-            else this.mouth.innerText = "😔";
+        updateActionConfig() {
+            const type = document.getElementById('actionType').value;
+            const configDiv = document.getElementById('actionConfig');
+            if(type === 'text') {
+                configDiv.innerHTML = `<input type="text" id="textResponse" class="action-input" style="width:100%" placeholder="Текст ответа (например: сижу)">`;
+            } else if(type === 'music') {
+                configDiv.innerHTML = `<input type="text" id="musicNotes" class="action-input" style="width:100%" placeholder="Ноты (например: F5 G3 D6)">`;
+            } else if(type === 'reaction') {
+                configDiv.innerHTML = `
+                    <select id="reactionType" class="action-input">
+                        <option value="спрятаться">🙈 спрятаться</option>
+                        <option value="сесть">🪑 сесть</option>
+                        <option value="лечь">😴 лечь</option>
+                        <option value="прыгнуть">🦘 прыгнуть</option>
+                        <option value="вилять хвостом">🐕 вилять хвостом</option>
+                        <option value="лаять">🔊 лаять</option>
+                        <option value="принести">🎾 принести</option>
+                        <option value="крутиться">🔄 крутиться</option>
+                        <option value="лежать">🛌 лежать</option>
+                        <option value="спать">💤 спать</option>
+                        <option value="чесаться">🐾 чесаться</option>
+                        <option value="улыбнуться">😁 улыбнуться</option>
+                    </select>
+                `;
+            } else if(type === 'question') {
+                configDiv.innerHTML = `
+                    <input type="text" id="questionText" class="action-input" style="width:100%" placeholder="Вопрос (например: Как тебя зовут?)"><br>
+                    <input type="number" id="answersCount" class="action-input" placeholder="Количество ожидаемых ответов" style="width:100px"><br>
+                    <div id="answersConfig"></div>
+                    <input type="text" id="wrongAnswer" class="action-input" style="width:100%" placeholder="Действие при неожиданном ответе (текст)">
+                `;
+                document.getElementById('answersCount').addEventListener('input', () => this.updateAnswersConfig());
+            } else if(type === 'multi') {
+                configDiv.innerHTML = `
+                    <input type="number" id="actionsCount" class="action-input" placeholder="Количество действий" style="width:100px"><br>
+                    <div id="multiActionsConfig"></div>
+                `;
+                document.getElementById('actionsCount').addEventListener('input', () => this.updateMultiActionsConfig());
+            }
         }
         
-        animate() {
-            this.mushroomDiv.classList.add('bounce');
-            setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 300);
+        updateAnswersConfig() {
+            const count = parseInt(document.getElementById('answersCount').value) || 0;
+            const container = document.getElementById('answersConfig');
+            container.innerHTML = '';
+            for(let i=1; i<=count; i++) {
+                container.innerHTML += `
+                    <div style="margin-top:10px; border-top:1px solid #3b82f6; padding-top:5px;">
+                        <b>Ответ ${i}:</b><br>
+                        <input type="text" id="answer${i}" class="action-input" placeholder="Текст ответа" style="width:100%"><br>
+                        <select id="answerActionType${i}" class="action-input" style="width:100%; margin-top:5px;">
+                            <option value="text">Текстовый ответ</option>
+                            <option value="music">Музыкальный ответ</option>
+                            <option value="reaction">Реакция</option>
+                        </select>
+                        <input type="text" id="answerActionValue${i}" class="action-input" placeholder="Значение (текст/ноты/реакция)" style="width:100%">
+                    </div>
+                `;
+            }
+        }
+        
+        updateMultiActionsConfig() {
+            const count = parseInt(document.getElementById('actionsCount').value) || 0;
+            const container = document.getElementById('multiActionsConfig');
+            container.innerHTML = '';
+            for(let i=1; i<=count; i++) {
+                container.innerHTML += `
+                    <div style="margin-top:10px; border-top:1px solid #3b82f6; padding-top:5px;">
+                        <b>Действие ${i}:</b><br>
+                        <select id="multiActionType${i}" class="action-input" style="width:100%">
+                            <option value="text">Текстовый ответ</option>
+                            <option value="music">Музыкальный ответ</option>
+                            <option value="reaction">Реакция</option>
+                        </select>
+                        <input type="text" id="multiActionValue${i}" class="action-input" placeholder="Значение" style="width:100%">
+                    </div>
+                `;
+            }
+        }
+        
+        setCommand() {
+            const cmd = document.getElementById('newCommand').value.trim();
+            if(!cmd) { this.addMessage("❌ Введи команду!", "system"); return; }
+            if(this.builtinCommands.includes(cmd.toLowerCase())) {
+                this.addMessage("❌ Это встроенная команда! Придумай другую.", "system");
+                return;
+            }
+            if(this.commands[cmd]) {
+                this.addMessage("❌ Такая команда уже есть! Придумай другую.", "system");
+                return;
+            }
+            this.learningData.command = cmd;
+            this.learningStep = 2;
+            this.showLearningStep();
+        }
+        
+        saveAction() {
+            const type = document.getElementById('actionType').value;
+            let action = { type: type };
+            
+            if(type === 'text') {
+                action.text = document.getElementById('textResponse').value;
+                if(!action.text) { this.addMessage("❌ Введи текст ответа!", "system"); return; }
+            } else if(type === 'music') {
+                action.notes = document.getElementById('musicNotes').value;
+                if(!action.notes) { this.addMessage("❌ Введи ноты!", "system"); return; }
+            } else if(type === 'reaction') {
+                action.reaction = document.getElementById('reactionType').value;
+            } else if(type === 'question') {
+                action.question = document.getElementById('questionText').value;
+                const answersCount = parseInt(document.getElementById('answersCount').value) || 0;
+                action.answers = [];
+                for(let i=1; i<=answersCount; i++) {
+                    const answerText = document.getElementById(`answer${i}`).value;
+                    const ansType = document.getElementById(`answerActionType${i}`).value;
+                    const ansValue = document.getElementById(`answerActionValue${i}`).value;
+                    if(answerText && ansValue) {
+                        action.answers.push({ text: answerText, action: { type: ansType, value: ansValue } });
+                    }
+                }
+                action.wrongAnswer = document.getElementById('wrongAnswer').value || "Не понял...";
+            } else if(type === 'multi') {
+                const actionsCount = parseInt(document.getElementById('actionsCount').value) || 0;
+                action.actions = [];
+                for(let i=1; i<=actionsCount; i++) {
+                    const actType = document.getElementById(`multiActionType${i}`).value;
+                    const actValue = document.getElementById(`multiActionValue${i}`).value;
+                    if(actValue) {
+                        action.actions.push({ type: actType, [actType === 'text' ? 'text' : (actType === 'music' ? 'notes' : 'reaction')]: actValue });
+                    }
+                }
+            }
+            
+            this.commands[this.learningData.command] = action;
+            this.updateCommandsDisplay();
+            this.addMessage(`🐶 Гав! Я запомнил команду "${this.learningData.command}"!`, "blue");
+            this.cancelLearning();
+            this.saveToLocal();
+        }
+        
+        updateCommandsDisplay() {
+            const count = Object.keys(this.commands).length;
+            this.commandsCountSpan.innerText = count;
+        }
+        
+        cancelLearning() {
+            this.isLearning = false;
+            this.learningPanel.style.display = "none";
+            this.learningData = {};
+        }
+        
+        // === СОХРАНЕНИЕ/ЗАГРУЗКА ===
+        saveToLocal() {
+            const data = {
+                commands: this.commands,
+                version: 1,
+                date: new Date().toISOString()
+            };
+            localStorage.setItem('blue_dog', JSON.stringify(data));
+        }
+        
+        loadFromLocal() {
+            const saved = localStorage.getItem('blue_dog');
+            if(saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    this.commands = data.commands || {};
+                    this.updateCommandsDisplay();
+                    this.addMessage(`🐶 Загружено ${Object.keys(this.commands).length} команд из памяти!`, "system");
+                } catch(e) {}
+            }
+        }
+        
+        exportToFile() {
+            const data = {
+                commands: this.commands,
+                version: 1,
+                exportDate: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `blue_${new Date().toISOString().slice(0,19)}.blmu`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.addMessage(`💾 Блю сохранён в файл!`, "system");
+        }
+        
+        importFromFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    this.commands = data.commands || {};
+                    this.updateCommandsDisplay();
+                    this.addMessage(`📂 Загружено ${Object.keys(this.commands).length} команд из файла!`, "system");
+                    this.saveToLocal();
+                } catch(err) {
+                    this.addMessage(`❌ Ошибка загрузки файла: ${err.message}`, "system");
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // === ОБЩЕЕ ===
+        async processInput(text) {
+            if(this.isLearning) {
+                this.addMessage("❌ Сначала закончи обучение команде! Напиши 'отмена'", "system");
+                return;
+            }
+            
+            if(text.toLowerCase() === 'запомни') {
+                this.startLearning();
+                return;
+            }
+            
+            if(text.toLowerCase() === 'отмена' && this.isLearning) {
+                this.cancelLearning();
+                this.addMessage("🐶 Обучение отменено.", "blue");
+                return;
+            }
+            
+            this.addMessage(text, "user");
+            const executed = this.executeCommand(text, text);
+            if(!executed) {
+                this.addMessage(`🐶 Гав? Я не знаю команду "${text}". Научи меня! Напиши "Запомни"`, "blue");
+            }
         }
         
         addMessage(text, sender) {
-            const msg = document.createElement('div');
-            msg.className = `message ${sender === 'user' ? 'user-message' : 'mushroom-message'}`;
-            msg.innerHTML = text;
-            this.messagesDiv.appendChild(msg);
-            msg.scrollIntoView({ behavior: 'smooth' });
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender === 'user' ? 'user-message' : (sender === 'blue' ? 'blue-message' : 'system-message')}`;
+            msgDiv.innerHTML = text;
+            this.messagesDiv.appendChild(msgDiv);
+            msgDiv.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
-    const mushroom = new NeuralMushroom();
+    const blue = new BlueDog();
+    window.blue = blue;
     
     function send() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if(!text) return;
-        mushroom.processInput(text);
+        blue.processInput(text);
         input.value = '';
     }
     
     document.getElementById('sendBtn').onclick = send;
     document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
-    document.getElementById('mushroom').onclick = () => mushroom.processInput('погладить');
+    document.getElementById('startMicBtn').onclick = () => blue.startMicrophone();
+    document.getElementById('stopMicBtn').onclick = () => blue.stopMicrophone();
+    document.getElementById('exportBtn').onclick = () => blue.exportToFile();
+    document.getElementById('importFile').onchange = (e) => {
+        if(e.target.files[0]) blue.importFromFile(e.target.files[0]);
+        e.target.value = '';
+    };
+    document.querySelector('label[for="importFile"]').onclick = () => document.getElementById('importFile').click();
     
     window.addEventListener('resize', () => {
-        mushroom.setupCanvas();
-        mushroom.drawRoom();
+        blue.setupCanvas();
+        blue.drawRoom();
     });
 </script>
 </body>
-            </html>
+</html>
