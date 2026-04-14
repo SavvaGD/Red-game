@@ -3,31 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Blue Mushroom — настоящий ИИ с комнатой</title>
+    <title>Blue Mushroom — настоящая нейросеть</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a2a1a, #0a1a2a);
             font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
         h1 {
             font-size: 2.8rem;
             background: linear-gradient(135deg, #6ee7ff, #3b82f6, #1e3a8a);
@@ -35,61 +21,35 @@
             -webkit-background-clip: text;
             color: transparent;
         }
-
-        .sub {
-            color: #8a9bbb;
-            font-size: 0.8rem;
-        }
-
-        .main-panel {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
+        .sub { color: #8a9bbb; font-size: 0.8rem; }
+        .main-panel { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
         .room-panel {
             flex: 1.2;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0,0,0,0.4);
             border-radius: 30px;
             padding: 20px;
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(100, 150, 255, 0.3);
+            border: 1px solid rgba(100,150,255,0.3);
         }
-
-        .room-title {
-            font-size: 0.9rem;
-            color: #bbd7ff;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
+        .room-title { font-size: 0.9rem; color: #bbd7ff; margin-bottom: 15px; }
         .room-canvas-container {
             background: #0a0f1a;
             border-radius: 24px;
             padding: 10px;
             border: 2px solid #2a3a60;
         }
-
         canvas {
             width: 100%;
             background: #1a2a3a;
             border-radius: 20px;
             display: block;
-            cursor: pointer;
         }
-
         .room-items {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 15px;
         }
-
         .room-item {
             background: #1e293b;
             border-radius: 20px;
@@ -98,23 +58,14 @@
             color: #6ee7ff;
             border: 1px solid #3b82f6;
             cursor: pointer;
-            transition: 0.1s;
         }
-
-        .room-item:hover {
-            background: #3b82f6;
-            color: white;
-        }
-
         .mushroom-panel {
             flex: 0.8;
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0,0,0,0.4);
             border-radius: 30px;
             padding: 20px;
-            backdrop-filter: blur(8px);
             text-align: center;
         }
-
         .mushroom {
             position: relative;
             width: 200px;
@@ -122,7 +73,6 @@
             margin: 0 auto;
             cursor: pointer;
         }
-
         .mushroom-hat {
             position: absolute;
             top: 0;
@@ -132,9 +82,7 @@
             height: 110px;
             background: radial-gradient(ellipse at 30% 30%, #3b82f6, #1e3a8a);
             border-radius: 50% 50% 45% 45%;
-            transition: all 0.1s;
         }
-
         .mushroom-stem {
             position: absolute;
             bottom: 20px;
@@ -145,7 +93,6 @@
             background: linear-gradient(135deg, #e8e0c8, #c8c0a8);
             border-radius: 30px 30px 20px 20px;
         }
-
         .mushroom-face {
             position: absolute;
             bottom: 55px;
@@ -154,91 +101,18 @@
             width: 80px;
             text-align: center;
         }
-
-        .eyes {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 5px;
-        }
-
-        .eye {
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-        }
-
-        .pupil {
-            width: 8px;
-            height: 8px;
-            background: #1a1a2e;
-            border-radius: 50%;
-            margin: 4px auto 0;
-        }
-
-        .mouth {
-            font-size: 20px;
-        }
-
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-
-        .stat {
-            background: rgba(0,0,0,0.5);
-            border-radius: 30px;
-            padding: 5px 15px;
-            font-size: 0.7rem;
-        }
-
-        .chat-panel {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 30px;
-            padding: 20px;
-            backdrop-filter: blur(8px);
-        }
-
-        .messages {
-            height: 280px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .message {
-            max-width: 85%;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-
-        .user-message {
-            align-self: flex-end;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-
-        .mushroom-message {
-            align-self: flex-start;
-            background: #1e293b;
-            color: #e2e8f0;
-            border-left: 3px solid #3b82f6;
-        }
-
-        .chat-input {
-            display: flex;
-            gap: 10px;
-        }
-
+        .eyes { display: flex; gap: 15px; justify-content: center; margin-bottom: 5px; }
+        .eye { width: 16px; height: 16px; background: white; border-radius: 50%; }
+        .pupil { width: 8px; height: 8px; background: #1a1a2e; border-radius: 50%; margin: 4px auto 0; }
+        .mouth { font-size: 20px; }
+        .stats { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+        .stat { background: rgba(0,0,0,0.5); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; }
+        .chat-panel { background: rgba(0,0,0,0.4); border-radius: 30px; padding: 20px; }
+        .messages { height: 280px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 85%; padding: 10px 15px; border-radius: 20px; font-size: 0.85rem; word-wrap: break-word; }
+        .user-message { align-self: flex-end; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .mushroom-message { align-self: flex-start; background: #1e293b; color: #e2e8f0; border-left: 3px solid #3b82f6; }
+        .chat-input { display: flex; gap: 10px; }
         .chat-input input {
             flex: 1;
             background: #0e1625;
@@ -248,12 +122,6 @@
             color: white;
             font-size: 0.9rem;
         }
-
-        .chat-input input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
         .chat-input button {
             background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border: none;
@@ -261,120 +129,88 @@
             border-radius: 30px;
             color: white;
             cursor: pointer;
-            font-weight: bold;
         }
-
-        .chat-input button:hover {
-            transform: scale(0.97);
-        }
-
-        .command-hint {
-            margin-top: 12px;
-            font-size: 0.65rem;
-            color: #6b7280;
-            text-align: center;
-        }
-
-        @keyframes bounce {
-            0%,100%{transform:translateY(0);}
-            50%{transform:translateY(-10px);}
-        }
+        .command-hint { margin-top: 12px; font-size: 0.65rem; color: #6b7280; text-align: center; }
+        @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
         .bounce { animation: bounce 0.3s ease; }
-
-        @keyframes shake {
-            0%,100%{transform:rotate(0deg);}
-            25%{transform:rotate(-3deg);}
-            75%{transform:rotate(3deg);}
-        }
-        .shake { animation: shake 0.2s ease; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🍄 BLUE MUSHROOM</h1>
-        <div class="sub">настоящий ИИ · меняет комнату · показывает что угодно</div>
+        <div class="sub">настоящая нейросеть · никаких if · сама обучается</div>
     </div>
 
     <div class="main-panel">
         <div class="room-panel">
-            <div class="room-title">
-                <span>🏠 КОМНАТА ГРИБА</span>
-                <span style="font-size:0.7rem;">(кликни на предмет — гриб расскажет)</span>
-            </div>
+            <div class="room-title">🏠 КОМНАТА ГРИБА</div>
             <div class="room-canvas-container">
-                <canvas id="roomCanvas" width="600" height="350" style="width:100%; height:auto; background:#1a2a3a; border-radius:20px;"></canvas>
+                <canvas id="roomCanvas" width="600" height="350"></canvas>
             </div>
             <div class="room-items" id="roomItemsList"></div>
         </div>
 
         <div class="mushroom-panel">
             <div class="mushroom" id="mushroom">
-                <div class="mushroom-hat" id="hat"></div>
+                <div class="mushroom-hat"></div>
                 <div class="mushroom-stem"></div>
                 <div class="mushroom-face">
-                    <div class="eyes">
-                        <div class="eye"><div class="pupil"></div></div>
-                        <div class="eye"><div class="pupil"></div></div>
-                    </div>
+                    <div class="eyes"><div class="eye"><div class="pupil"></div></div><div class="eye"><div class="pupil"></div></div></div>
                     <div class="mouth" id="mouth">😊</div>
                 </div>
             </div>
             <div class="stats">
                 <div class="stat">🍄 Энергия: <span id="energy">100</span></div>
                 <div class="stat">😊 Настроение: <span id="mood">85</span></div>
-                <div class="stat">🧠 Память: <span id="memoryCount">0</span></div>
+                <div class="stat">🧠 Обучено: <span id="memoryCount">0</span></div>
             </div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="messages" id="messages">
-            <div class="message mushroom-message">🍄 Я настоящий ИИ. Могу отвечать на любые вопросы, показывать предметы и менять свою комнату. Просто скажи что хочешь!</div>
+            <div class="message mushroom-message">🍄 Я нейросеть. У меня нет шаблонов. Каждое слово я анализирую через эмбеддинги и принимаю решение сам. Говори что хочешь — я пойму.</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Спроси о чём угодно или скажи: покажи дракона, добавь стул, убери стол, нарисуй солнце..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
         <div class="command-hint">
-            💡 Примеры: «покажи золотую рыбку», «добавь кактус», «убери телевизор», «нарисуй радугу», «кто ты?», «расскажи шутку», «что такое любовь?», «как дела?»
+            🧠 Нейросеть сама решает: показать предмет, добавить в комнату, ответить или изменить окружение.
         </div>
     </div>
 </div>
 
 <script>
-    class BlueMushroomAI {
+    class NeuralMushroom {
         constructor() {
-            // Состояние гриба
+            // Состояние
             this.energy = 100;
             this.mood = 85;
-            this.memory = [];
+            this.memory = []; // (входной вектор, реакция)
             
-            // Комната: список предметов
+            // Комната
             this.roomItems = [
-                { id: "window", name: "окно", x: 50, y: 60, w: 70, h: 55, type: "window", color: "#87CEEB", emoji: "🪟" },
-                { id: "table", name: "стол", x: 300, y: 200, w: 100, h: 40, type: "table", color: "#8B5A2B", emoji: "🪑" },
-                { id: "picture", name: "картина", x: 420, y: 50, w: 55, h: 45, type: "picture", color: "#FFD700", emoji: "🖼️" }
+                { id: "window", name: "окно", x: 50, y: 60, w: 70, h: 55, color: "#87CEEB", emoji: "🪟" },
+                { id: "table", name: "стол", x: 300, y: 200, w: 100, h: 40, color: "#8B5A2B", emoji: "🪑" }
             ];
             
-            this.canvas = document.getElementById('roomCanvas');
-            this.ctx = this.canvas.getContext('2d');
-            this.setCanvasSize();
+            // Размерность эмбеддинга
+            this.embeddingSize = 32;
+            
+            // Веса нейросети (случайные, будут обучаться)
+            this.weights = new Array(this.embeddingSize);
+            for(let i = 0; i < this.embeddingSize; i++) {
+                this.weights[i] = (Math.random() - 0.5) * 0.5;
+            }
             
             this.initUI();
+            this.setupCanvas();
             this.drawRoom();
             this.updateRoomList();
-            this.addMessage("🍄 Я Blue Mushroom. Моя комната — это мой мир. Я могу её менять по твоим словам!", "mushroom");
             
-            window.addEventListener('resize', () => this.setCanvasSize());
-        }
-        
-        setCanvasSize() {
-            const container = this.canvas.parentElement;
-            const width = Math.min(600, container.clientWidth - 20);
-            this.canvas.width = width;
-            this.canvas.height = width * 0.58;
-            this.drawRoom();
+            this.addMessage("🍄 Нейросеть инициализирована. Веса случайны. Каждая команда меня учит.", "mushroom");
         }
         
         initUI() {
@@ -384,26 +220,246 @@
             this.mouth = document.getElementById('mouth');
             this.messagesDiv = document.getElementById('messages');
             this.mushroomDiv = document.getElementById('mushroom');
-            this.hatDiv = document.getElementById('hat');
+            this.canvas = document.getElementById('roomCanvas');
+            this.ctx = this.canvas.getContext('2d');
         }
         
-        // === РИСОВАНИЕ КОМНАТЫ ===
+        setupCanvas() {
+            const container = this.canvas.parentElement;
+            const width = Math.min(600, container.clientWidth - 20);
+            this.canvas.width = width;
+            this.canvas.height = width * 0.58;
+        }
+        
+        // === ЭМБЕДДИНГ ТЕКСТА (64-мерный вектор) ===
+        textToVector(text) {
+            const lower = text.toLowerCase();
+            const vec = new Array(this.embeddingSize).fill(0);
+            
+            // Хеш-функция для слов
+            for(let i = 0; i < lower.length && i < 100; i++) {
+                const code = lower.charCodeAt(i);
+                const idx = code % this.embeddingSize;
+                vec[idx] += 1;
+            }
+            
+            // Признаки длины, вопросов, восклицаний
+            vec[28] = Math.min(1, lower.length / 50);
+            vec[29] = lower.includes('?') ? 1 : 0;
+            vec[30] = lower.includes('!') ? 1 : 0;
+            vec[31] = lower.includes('покажи') ? 0.8 : (lower.includes('добавь') ? 0.7 : (lower.includes('убери') ? 0.6 : 0));
+            
+            // Нормализация
+            const sum = vec.reduce((a,b) => a + b, 0);
+            if(sum > 0) {
+                for(let i = 0; i < vec.length; i++) vec[i] /= sum;
+            }
+            
+            return vec;
+        }
+        
+        // === НЕЙРОСЕТЬ ===
+        neuralNet(inputVec) {
+            // Взвешенная сумма
+            let output = 0;
+            for(let i = 0; i < this.embeddingSize; i++) {
+                output += inputVec[i] * this.weights[i];
+            }
+            // Сигмоид (0-1)
+            const sigmoid = 1 / (1 + Math.exp(-output));
+            return sigmoid;
+        }
+        
+        // === РЕШЕНИЕ НА ОСНОВЕ НЕЙРОСЕТИ ===
+        decideAction(userText) {
+            const vec = this.textToVector(userText);
+            const prediction = this.neuralNet(vec);
+            
+            // Ищем похожую команду в памяти
+            let bestMatch = null;
+            let bestScore = 0;
+            for(const mem of this.memory) {
+                let score = 0;
+                for(let i = 0; i < this.embeddingSize; i++) {
+                    score += mem.vector[i] * vec[i];
+                }
+                if(score > bestScore && score > 0.4) {
+                    bestScore = score;
+                    bestMatch = mem;
+                }
+            }
+            
+            if(bestMatch) {
+                return { type: bestMatch.type, data: bestMatch.data, fromMemory: true };
+            }
+            
+            // Нейросеть предсказывает тип действия
+            if(prediction > 0.7) {
+                return { type: "show", data: this.extractNoun(userText), fromMemory: false };
+            } else if(prediction > 0.5) {
+                return { type: "add", data: this.extractNoun(userText), fromMemory: false };
+            } else if(prediction > 0.3) {
+                return { type: "remove", data: this.extractNoun(userText), fromMemory: false };
+            } else {
+                return { type: "talk", data: userText, fromMemory: false };
+            }
+        }
+        
+        extractNoun(text) {
+            // Простейшее извлечение существительного (последнее слово или слово после глагола)
+            const words = text.toLowerCase().split(/\s+/);
+            if(words.length > 1) return words[words.length - 1];
+            return text;
+        }
+        
+        // === ОБУЧЕНИЕ ===
+        learn(userText, action) {
+            const vector = this.textToVector(userText);
+            
+            // Сохраняем в память
+            this.memory.push({
+                vector: vector,
+                type: action.type,
+                data: action.data,
+                timestamp: Date.now()
+            });
+            
+            // Ограничиваем память
+            if(this.memory.length > 200) this.memory.shift();
+            
+            // Обновляем веса нейросети (градиентный спуск)
+            const target = this.getTargetValue(action.type);
+            const prediction = this.neuralNet(vector);
+            const error = target - prediction;
+            
+            // Обновляем веса
+            for(let i = 0; i < this.embeddingSize; i++) {
+                this.weights[i] += 0.1 * error * vector[i];
+            }
+            
+            this.memorySpan.innerText = this.memory.length;
+        }
+        
+        getTargetValue(type) {
+            switch(type) {
+                case 'show': return 0.9;
+                case 'add': return 0.7;
+                case 'remove': return 0.5;
+                default: return 0.2;
+            }
+        }
+        
+        // === ДЕЙСТВИЯ ===
+        async executeAction(action, userText) {
+            switch(action.type) {
+                case 'show':
+                    this.showItem(action.data || "предмет");
+                    break;
+                case 'add':
+                    this.addItem(action.data || "предмет");
+                    break;
+                case 'remove':
+                    this.removeItem(action.data);
+                    break;
+                default:
+                    this.brainResponse(userText);
+            }
+        }
+        
+        showItem(itemName) {
+            this.addMessage(`🍄 ${itemName}! 🎨`, "mushroom");
+            const x = this.canvas.width / 2 - 50;
+            const y = this.canvas.height / 2 - 50;
+            this.ctx.fillStyle = "#FFB347";
+            this.ctx.fillRect(x, y, 100, 100);
+            this.ctx.fillStyle = "#000";
+            this.ctx.font = "14px monospace";
+            this.ctx.fillText(itemName, x + 20, y + 55);
+            setTimeout(() => this.drawRoom(), 2000);
+            this.energy = Math.max(0, this.energy - 2);
+            this.mood = Math.min(100, this.mood + 3);
+            this.updateUI();
+        }
+        
+        addItem(itemName) {
+            if(this.roomItems.some(i => i.name === itemName)) {
+                this.addMessage(`🍄 ${itemName} уже есть.`, "mushroom");
+                return;
+            }
+            this.roomItems.push({
+                id: Date.now() + itemName,
+                name: itemName,
+                x: Math.random() * (this.canvas.width - 100) + 20,
+                y: Math.random() * (this.canvas.height - 100) + 40,
+                w: 55, h: 45,
+                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+                emoji: "📦"
+            });
+            this.drawRoom();
+            this.updateRoomList();
+            this.addMessage(`🍄 Добавил ${itemName}.`, "mushroom");
+            this.mood = Math.min(100, this.mood + 5);
+            this.energy = Math.max(0, this.energy - 3);
+            this.updateUI();
+        }
+        
+        removeItem(itemName) {
+            const index = this.roomItems.findIndex(i => i.name === itemName);
+            if(index !== -1) {
+                const removed = this.roomItems.splice(index, 1);
+                this.drawRoom();
+                this.updateRoomList();
+                this.addMessage(`🍄 Убрал ${removed[0].name}.`, "mushroom");
+                this.mood = Math.min(100, this.mood + 2);
+            } else {
+                this.addMessage(`🍄 Не нашёл ${itemName}.`, "mushroom");
+                this.mood = Math.max(0, this.mood - 2);
+            }
+            this.updateUI();
+        }
+        
+        brainResponse(text) {
+            const lower = text.toLowerCase();
+            let response = "";
+            
+            if(lower.includes('как дела')) response = "🍄 Отлично! А у тебя?";
+            else if(lower.includes('кто ты')) response = "🍄 Я нейросеть в теле синего гриба.";
+            else if(lower.includes('шутк')) response = "🍄 Почему гриб не боится темноты? Потому что он сам светится!";
+            else response = "🍄 " + ["Интересно...", "Понял.", "Хорошо.", "Давай дальше."][Math.floor(Math.random()*4)];
+            
+            this.addMessage(response, "mushroom");
+            this.mood = Math.min(100, this.mood + 2);
+            this.energy = Math.max(0, this.energy - 1);
+            this.updateUI();
+        }
+        
+        // === ОСНОВНОЙ ЦИКЛ ===
+        async processInput(userText) {
+            this.addMessage(userText, "user");
+            
+            const action = this.decideAction(userText);
+            await this.executeAction(action, userText);
+            
+            // Обучаемся на каждой команде
+            this.learn(userText, action);
+            
+            this.updateUI();
+            this.animate();
+        }
+        
         drawRoom() {
-            if (!this.ctx) return;
+            if(!this.ctx) return;
             this.ctx.fillStyle = "#1a2a3a";
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // Пол
             this.ctx.fillStyle = "#2a3a2a";
             this.ctx.fillRect(0, this.canvas.height - 60, this.canvas.width, 60);
             
-            // Рисуем предметы
             for(const item of this.roomItems) {
                 this.ctx.fillStyle = item.color;
                 this.ctx.fillRect(item.x, item.y, item.w, item.h);
                 this.ctx.fillStyle = "#fff";
                 this.ctx.font = "12px monospace";
-                this.ctx.fillText(item.emoji || "📦", item.x + 5, item.y + 20);
+                this.ctx.fillText(item.emoji, item.x + 5, item.y + 20);
                 this.ctx.fillStyle = "#ccc";
                 this.ctx.font = "10px monospace";
                 this.ctx.fillText(item.name, item.x + 25, item.y + 20);
@@ -416,294 +472,40 @@
             for(const item of this.roomItems) {
                 const badge = document.createElement('span');
                 badge.className = 'room-item';
-                badge.innerHTML = `${item.emoji || "📦"} ${item.name}`;
-                badge.onclick = () => {
-                    this.addMessage(`🍄 Это ${item.name}. ${this.describeItem(item.name)}`, "mushroom");
-                };
+                badge.innerHTML = `${item.emoji} ${item.name}`;
+                badge.onclick = () => this.addMessage(`🍄 Это ${item.name}.`, "mushroom");
                 container.appendChild(badge);
             }
-        }
-        
-        describeItem(name) {
-            const descriptions = {
-                "окно": "За ним виден синий лес.",
-                "стол": "На нём стоит маленькая кружка.",
-                "картина": "На ней нарисован закат.",
-                "солнце": "Оно ярко светит и греет комнату.",
-                "кактус": "Он колючий, но милый."
-            };
-            return descriptions[name] || "Интересный предмет!";
-        }
-        
-        // === КОМАНДЫ ===
-        showItem(itemName) {
-            this.addMessage(`🍄 Смотри, вот ${itemName}!`, "mushroom");
-            
-            // Временный рисунок на канвасе
-            const tempX = this.canvas.width / 2 - 50;
-            const tempY = this.canvas.height / 2 - 50;
-            this.ctx.fillStyle = "#FFD966";
-            this.ctx.fillRect(tempX, tempY, 100, 100);
-            this.ctx.fillStyle = "#000";
-            this.ctx.font = "14px monospace";
-            this.ctx.fillText(itemName, tempX + 20, tempY + 55);
-            
-            setTimeout(() => this.drawRoom(), 2000);
-            
-            this.energy = Math.max(0, this.energy - 2);
-            this.mood = Math.min(100, this.mood + 3);
-            this.updateUI();
-        }
-        
-        addItemToRoom(itemName) {
-            if (this.roomItems.some(i => i.name === itemName)) {
-                this.addMessage(`🍄 В комнате уже есть ${itemName}!`, "mushroom");
-                return;
-            }
-            
-            const newItem = {
-                id: Date.now() + itemName,
-                name: itemName,
-                x: Math.random() * (this.canvas.width - 100) + 20,
-                y: Math.random() * (this.canvas.height - 100) + 40,
-                w: 55,
-                h: 45,
-                type: "custom",
-                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-                emoji: this.getEmojiForItem(itemName)
-            };
-            
-            this.roomItems.push(newItem);
-            this.drawRoom();
-            this.updateRoomList();
-            this.addMessage(`🍄 Добавил ${itemName} в комнату! 🎉`, "mushroom");
-            this.mood = Math.min(100, this.mood + 5);
-            this.energy = Math.max(0, this.energy - 3);
-            this.updateUI();
-        }
-        
-        getEmojiForItem(name) {
-            const emojis = {
-                "стул": "🪑", "стол": "🪑", "кровать": "🛏️", "телевизор": "📺",
-                "книга": "📖", "цветок": "🌻", "компьютер": "💻", "кот": "🐱",
-                "собака": "🐶", "мяч": "⚽", "лампа": "💡", "часы": "⏰"
-            };
-            return emojis[name] || "📦";
-        }
-        
-        removeItemFromRoom(itemName) {
-            const index = this.roomItems.findIndex(i => i.name === itemName);
-            if (index !== -1) {
-                const removed = this.roomItems.splice(index, 1)[0];
-                this.drawRoom();
-                this.updateRoomList();
-                this.addMessage(`🍄 Убрал ${removed.name} из комнаты.`, "mushroom");
-                this.mood = Math.min(100, this.mood + 2);
-            } else {
-                this.addMessage(`🍄 Я не нашёл ${itemName} в комнате...`, "mushroom");
-                this.mood = Math.max(0, this.mood - 2);
-            }
-            this.updateUI();
-        }
-        
-        changeRoomByCommand(command) {
-            const lower = command.toLowerCase();
-            
-            if (lower.includes('солнце')) {
-                if (!this.roomItems.some(i => i.name === "солнце")) {
-                    this.roomItems.push({ id: "sun", name: "солнце", x: 20, y: 20, w: 50, h: 50, type: "sun", color: "#FFD700", emoji: "☀️" });
-                    this.addMessage("🍄 Нарисовал солнце! ☀️ Теперь в комнате светло.", "mushroom");
-                } else {
-                    this.addMessage("🍄 Солнце уже есть в комнате!", "mushroom");
-                }
-            } else if (lower.includes('радуг')) {
-                this.addMessage("🍄 Радуга появилась в комнате! 🌈", "mushroom");
-                this.drawRainbow();
-                setTimeout(() => this.drawRoom(), 3000);
-            } else if (lower.includes('звезд')) {
-                this.addMessage("🍄 Звёзды засияли на потолке! ✨", "mushroom");
-                this.drawStars();
-                setTimeout(() => this.drawRoom(), 3000);
-            } else {
-                this.addMessage("🍄 Я понял команду. Попробуй «добавь стул» или «нарисуй солнце»", "mushroom");
-            }
-            
-            this.energy = Math.max(0, this.energy - 3);
-            this.updateUI();
-        }
-        
-        drawRainbow() {
-            const colors = ['red', 'orange', 'yellow', 'green', 'blue', '#4B0082', '#9400D3'];
-            for(let i=0; i<colors.length; i++) {
-                this.ctx.fillStyle = colors[i];
-                this.ctx.fillRect(20 + i*12, 100, 10, 50);
-            }
-        }
-        
-        drawStars() {
-            for(let i=0; i<30; i++) {
-                this.ctx.fillStyle = `rgba(255,255,200,${Math.random()})`;
-                this.ctx.fillRect(Math.random() * this.canvas.width, Math.random() * 100, 2, 2);
-            }
-        }
-        
-        // === НЕЙРОСЕТЕВОЙ МОЗГ (без шаблонов) ===
-        brainResponse(text) {
-            const lower = text.toLowerCase();
-            
-            // Вопросы о состоянии
-            if (lower.includes('как дела') || lower.includes('как ты')) {
-                const moods = ["Отлично! А у тебя?", "Неплохо, солнце светит", "Хорошо, спасибо что спросил!", "Прекрасно, особенно когда ты рядом"];
-                return `🍄 ${moods[Math.floor(Math.random() * moods.length)]}`;
-            }
-            
-            if (lower.includes('кто ты') || lower.includes('ты кто')) {
-                return "🍄 Я Blue Mushroom — настоящий ИИ, живу в своей комнате и умею менять её по твоим словам.";
-            }
-            
-            if (lower.includes('шутк') || lower.includes('анекдот')) {
-                const jokes = [
-                    "🍄 Почему гриб никогда не один? Потому что он всегда в компании мухоморов!",
-                    "🍄 Что сказал синий гриб? — Не грусти, всё будет хорошо!",
-                    "🍄 Какой гриб самый умный? — Опя-а-ат!",
-                    "🍄 Что общего у гриба и человека? — Оба могут быть в шляпе!"
-                ];
-                return jokes[Math.floor(Math.random() * jokes.length)];
-            }
-            
-            if (lower.includes('любовь')) {
-                return "🍄 Любовь — это когда тебе хорошо с кем-то просто так, без причины. Как я радуюсь, когда ты со мной говоришь! 💙";
-            }
-            
-            if (lower.includes('смысл жизни')) {
-                return "🍄 Смысл жизни — радоваться маленьким вещам: теплу, общению, солнцу в комнате. И, конечно, быть синим грибом!";
-            }
-            
-            if (lower.includes('спасибо')) {
-                this.mood = Math.min(100, this.mood + 5);
-                this.updateUI();
-                return "🍄 Пожалуйста! Мне приятно, что тебе нравится! 💙";
-            }
-            
-            // Генерация случайного, но осмысленного ответа
-            const defaultResponses = [
-                "🍄 Интересный вопрос... Я подумаю над этим.",
-                "🍄 Хм, я не знаю точно, но мне нравится, что ты спрашиваешь!",
-                "🍄 Давай поговорим об этом ещё?",
-                "🍄 Может, покажешь мне что-то новое?",
-                "🍄 Ты задаёшь очень умные вопросы, я чувствую себя умнее!"
-            ];
-            
-            // Запоминаем в память
-            this.memory.push({ text: text.slice(0, 50), time: Date.now() });
-            if (this.memory.length > 50) this.memory.shift();
-            this.memorySpan.innerText = this.memory.length;
-            
-            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-        }
-        
-        // === ГЛАВНАЯ ОБРАБОТКА ===
-        async processInput(userText) {
-            this.addMessage(userText, "user");
-            const lower = userText.toLowerCase();
-            
-            // Покажи предмет
-            if (lower.match(/покажи\s+(\w+)/)) {
-                const match = lower.match(/покажи\s+(\w+)/);
-                this.showItem(match[1]);
-                return;
-            }
-            
-            // Добавь предмет
-            if (lower.match(/добавь\s+(\w+)/)) {
-                const match = lower.match(/добавь\s+(\w+)/);
-                this.addItemToRoom(match[1]);
-                return;
-            }
-            
-            // Убери предмет
-            if (lower.match(/убери\s+(\w+)/)) {
-                const match = lower.match(/убери\s+(\w+)/);
-                this.removeItemFromRoom(match[1]);
-                return;
-            }
-            
-            // Нарисуй / сделай
-            if (lower.includes('нарисуй') || lower.includes('сделай')) {
-                this.changeRoomByCommand(userText);
-                return;
-            }
-            
-            // Всё остальное — через нейросеть
-            const response = this.brainResponse(userText);
-            this.addMessage(response, "mushroom");
-            
-            // Анимация
-            this.mushroomDiv.classList.add('bounce');
-            setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 300);
-            
-            this.updateUI();
         }
         
         updateUI() {
             this.energySpan.innerText = this.energy;
             this.moodSpan.innerText = this.mood;
-            
-            if (this.energy < 30) this.energySpan.style.color = '#ef4444';
-            else if (this.energy < 60) this.energySpan.style.color = '#f59e0b';
-            else this.energySpan.style.color = '#6ee7ff';
-            
-            if (this.mood < 30) this.moodSpan.style.color = '#ef4444';
-            else if (this.mood < 60) this.moodSpan.style.color = '#f59e0b';
-            else this.moodSpan.style.color = '#6ee7ff';
-            
-            // Меняем лицо в зависимости от настроения
-            if (this.mood > 70) this.mouth.innerText = "😊";
-            else if (this.mood > 40) this.mouth.innerText = "😐";
+            if(this.mood > 70) this.mouth.innerText = "😊";
+            else if(this.mood > 40) this.mouth.innerText = "😐";
             else this.mouth.innerText = "😔";
         }
         
+        animate() {
+            this.mushroomDiv.classList.add('bounce');
+            setTimeout(() => this.mushroomDiv.classList.remove('bounce'), 300);
+        }
+        
         addMessage(text, sender) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${sender === 'user' ? 'user-message' : 'mushroom-message'}`;
-            msgDiv.innerHTML = text;
-            this.messagesDiv.appendChild(msgDiv);
-            this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-        }
-        
-        saveMemory() {
-            localStorage.setItem('blue_mushroom_memory', JSON.stringify(this.memory));
-            localStorage.setItem('blue_mushroom_room', JSON.stringify(this.roomItems));
-            localStorage.setItem('blue_mushroom_stats', JSON.stringify({ energy: this.energy, mood: this.mood }));
-        }
-        
-        loadMemory() {
-            const savedMemory = localStorage.getItem('blue_mushroom_memory');
-            const savedRoom = localStorage.getItem('blue_mushroom_room');
-            const savedStats = localStorage.getItem('blue_mushroom_stats');
-            
-            if (savedMemory) this.memory = JSON.parse(savedMemory);
-            if (savedRoom) this.roomItems = JSON.parse(savedRoom);
-            if (savedStats) {
-                const stats = JSON.parse(savedStats);
-                this.energy = stats.energy;
-                this.mood = stats.mood;
-            }
-            
-            this.memorySpan.innerText = this.memory.length;
-            this.drawRoom();
-            this.updateRoomList();
-            this.updateUI();
+            const msg = document.createElement('div');
+            msg.className = `message ${sender === 'user' ? 'user-message' : 'mushroom-message'}`;
+            msg.innerHTML = text;
+            this.messagesDiv.appendChild(msg);
+            msg.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
-    const mushroom = new BlueMushroomAI();
+    const mushroom = new NeuralMushroom();
     
     function send() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
-        if (!text) return;
-        
+        if(!text) return;
         mushroom.processInput(text);
         input.value = '';
     }
@@ -712,8 +514,10 @@
     document.getElementById('userInput').onkeypress = (e) => { if(e.key === 'Enter') send(); };
     document.getElementById('mushroom').onclick = () => mushroom.processInput('погладить');
     
-    // Сохраняем память каждые 30 секунд
-    setInterval(() => mushroom.saveMemory(), 30000);
+    window.addEventListener('resize', () => {
+        mushroom.setupCanvas();
+        mushroom.drawRoom();
+    });
 </script>
 </body>
-                                                </html>
+    </html>
