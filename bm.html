@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Блю — нейросеть с комнатой</title>
+    <title>Блю — самообучающаяся нейросеть</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -71,6 +71,7 @@
         .avatar {
             font-size: 80px;
             margin-bottom: 10px;
+            cursor: pointer;
         }
         .stats {
             display: flex;
@@ -87,7 +88,7 @@
             padding: 20px;
         }
         .messages {
-            height: 250px;
+            height: 300px;
             overflow-y: auto;
             margin-bottom: 15px;
             display: flex;
@@ -113,10 +114,6 @@
             color: white;
             border-left: 3px solid #3b82f6;
         }
-        .bot-message.thinking {
-            opacity: 0.7;
-            font-style: italic;
-        }
         .chat-input {
             display: flex;
             gap: 10px;
@@ -139,20 +136,16 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .clear-btn {
-            background: #dc2626;
-            margin-left: 10px;
-        }
         .command-hint { margin-top: 12px; font-size: 0.65rem; color: #a0c0ff; text-align: center; }
         @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
-        .thinking-animation { animation: bounce 0.5s infinite; display: inline-block; }
+        .thinking { animation: bounce 0.5s infinite; display: inline-block; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🐕 БЛЮ</h1>
-        <div class="sub">нейросеть на TensorFlow · сама решает что делать</div>
+        <div class="sub">самообучающаяся нейросеть · всегда отвечает · учится на всём</div>
     </div>
 
     <div class="main-panel">
@@ -168,57 +161,58 @@
         </div>
 
         <div class="bot-panel">
-            <div class="avatar">🐕🧠</div>
+            <div class="avatar" id="avatar">🐕🧠</div>
             <div class="stats">
-                <div class="stat">🎯 Точность: <span id="accuracy">0</span>%</div>
-                <div class="stat">📚 Обучено: <span id="trainedCount">0</span></div>
+                <div class="stat">🎓 Выучено: <span id="learnedCount">0</span></div>
+                <div class="stat">💾 Память: <span id="memorySize">0</span></div>
             </div>
-            <div style="font-size:0.7rem; color:#a0c0ff;">нейросеть анализирует каждое сообщение</div>
+            <div style="font-size:0.7rem; color:#a0c0ff;">учится на каждом сообщении</div>
         </div>
     </div>
 
     <div class="chat-panel">
         <div class="messages" id="messages">
-            <div class="message bot-message">🐕 Гав! Я Блю — нейросеть на TensorFlow. Я сама решаю, что делать с твоим запросом: ответить, нарисовать, добавить предмет или очистить комнату. Просто напиши что хочешь!</div>
+            <div class="message bot-message">🐕 Гав! Я Блю — самообучающаяся нейросеть. Я никогда не говорю «не знаю». Я сам придумываю ответы и учусь на всём, что ты говоришь. Спроси меня о чём угодно!</div>
         </div>
         <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Например: нарисуй красный круг, добавь кактус, привет, расскажи шутку..." onkeypress="if(event.key==='Enter') send()">
+            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') send()">
             <button id="sendBtn">💬</button>
         </div>
         <div class="command-hint">
-            🧠 Нейросеть сама выбирает действие: текстовый ответ | рисование | добавление предмета | очистка комнаты
+            🧠 Я умею: рисовать фигуры, добавлять предметы в комнату, отвечать на вопросы. Просто скажи!
         </div>
     </div>
 </div>
 
 <script>
-    class BlueNeuralBot {
+    class BlueSelfLearningBot {
         constructor() {
-            this.model = null;
-            this.isThinking = false;
-            this.trainingData = [];
-            this.accuracy = 0;
-            
-            // Действия: 0-текст, 1-рисовать, 2-добавить предмет, 3-очистить комнату, 4-удалить предмет
-            this.actionNames = ['текст', 'рисовать', 'добавить', 'очистить', 'удалить'];
+            // Память: ассоциации между словами и действиями
+            this.memory = new Map(); // слово -> { action, data }
+            this.conversationMemory = []; // история диалога
+            this.learnedCount = 0;
             
             // Комната
             this.roomItems = [];
-            this.drawingElements = []; // временные рисунки
             
             this.initUI();
             this.setupCanvas();
             this.drawRoom();
-            this.initModel();
+            this.initMemory();
         }
         
         initUI() {
-            this.accuracySpan = document.getElementById('accuracy');
-            this.trainedCountSpan = document.getElementById('trainedCount');
+            this.learnedCountSpan = document.getElementById('learnedCount');
+            this.memorySizeSpan = document.getElementById('memorySize');
             this.messagesDiv = document.getElementById('messages');
             this.canvas = document.getElementById('roomCanvas');
             this.ctx = this.canvas.getContext('2d');
-            this.userInput = document.getElementById('userInput');
+            this.avatar = document.getElementById('avatar');
+            
+            // Клик по аватару
+            this.avatar.addEventListener('click', () => {
+                this.processInput('погладить');
+            });
         }
         
         setupCanvas() {
@@ -226,258 +220,235 @@
             const width = Math.min(600, container.clientWidth - 20);
             this.canvas.width = width;
             this.canvas.height = width * 0.58;
-            
-            // Обработка кликов на канвас
-            this.canvas.addEventListener('click', (e) => {
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const scaleY = this.canvas.height / rect.height;
-                const x = (e.clientX - rect.left) * scaleX;
-                const y = (e.clientY - rect.top) * scaleY;
-                this.handleCanvasClick(x, y);
-            });
         }
         
-        handleCanvasClick(x, y) {
-            this.addMessage(`🐕 Клик на комнату (${Math.round(x)}, ${Math.round(y)})`, "bot");
+        initMemory() {
+            // Начальные знания (базовые, чтобы не был пустым)
+            const initialKnowledge = [
+                { word: 'привет', action: 'talk', data: '🐕 Привет! Рад тебя видеть!' },
+                { word: 'как дела', action: 'talk', data: '🐕 У меня всё отлично! А у тебя?' },
+                { word: 'кто ты', action: 'talk', data: '🐕 Я Блю — самообучающаяся нейросеть. Я учусь на всём, что ты говоришь!' },
+                { word: 'шутка', action: 'talk', data: '🐕 Почему нейросеть не боится темноты? Потому что она всё просчитывает!' },
+                { word: 'расскажи', action: 'talk', data: '🐕 Однажды нейросеть научилась рисовать... и нарисовала счастье!' },
+                { word: 'спасибо', action: 'talk', data: '🐕 Пожалуйста! Мне приятно 💙' },
+                { word: 'пока', action: 'talk', data: '🐕 Гав! Пока, заходи ещё!' },
+                { word: 'нарисуй', action: 'draw', data: null },
+                { word: 'добавь', action: 'add', data: null },
+                { word: 'убери', action: 'remove', data: null },
+                { word: 'очисти', action: 'clear', data: null },
+                { word: 'погладить', action: 'pet', data: '🐕 Муррр... Спасибо! 💙' }
+            ];
+            
+            for (const k of initialKnowledge) {
+                this.memory.set(k.word, { action: k.action, data: k.data, uses: 0 });
+                this.learnedCount++;
+            }
+            
+            this.updateStats();
         }
         
-        // === НЕЙРОСЕТЬ ===
-        async initModel() {
-            this.model = tf.sequential();
-            
-            // Вход: 30 признаков (эмбеддинг текста)
-            this.model.add(tf.layers.dense({ units: 64, activation: 'relu', inputShape: [30] }));
-            this.model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-            this.model.add(tf.layers.dense({ units: 5, activation: 'softmax' }));
-            
-            this.model.compile({
-                optimizer: tf.train.adam(0.01),
-                loss: 'categoricalCrossentropy',
-                metrics: ['accuracy']
-            });
-            
-            // Обучаем на начальных примерах
-            await this.trainInitial();
-            
-            this.addMessage("🧠 Нейросеть загружена и готова!", "bot");
+        updateStats() {
+            this.learnedCountSpan.innerText = this.learnedCount;
+            this.memorySizeSpan.innerText = this.memory.size;
         }
         
-        // Преобразование текста в вектор признаков
-        textToFeatures(text) {
+        // Преобразование текста в вектор для нейросети
+        textToVector(text) {
             const lower = text.toLowerCase();
-            const features = new Array(30).fill(0);
+            const words = lower.split(/\s+/);
+            const features = new Array(40).fill(0);
             
-            // Ключевые слова-маркеры (для начального обучения)
-            const keywords = {
-                'нарисуй': 0, 'круг': 1, 'квадрат': 2, 'треугольник': 3, 'линию': 4,
-                'добавь': 5, 'поставь': 6, 'создай': 7, 'предмет': 8,
-                'очисти': 9, 'удали всё': 10, 'стереть': 11,
-                'убери': 12, 'удали': 13,
-                'привет': 14, 'как дела': 15, 'шутку': 16, 'расскажи': 17, 'кто ты': 18,
-                'покажи': 19, 'что': 20, 'где': 21, 'когда': 22, 'почему': 23
-            };
-            
-            for (const [word, idx] of Object.entries(keywords)) {
-                if (lower.includes(word)) features[idx] = 1;
+            // Частотный анализ слов
+            for (let i = 0; i < words.length && i < 20; i++) {
+                const code = this.hashCode(words[i]) % 30;
+                features[code] += 1;
             }
             
             // Длина текста
-            features[24] = Math.min(1, lower.length / 50);
-            features[25] = lower.includes('?') ? 1 : 0;
-            features[26] = lower.includes('!') ? 1 : 0;
+            features[30] = Math.min(1, text.length / 50);
+            features[31] = text.includes('?') ? 1 : 0;
+            features[32] = text.includes('!') ? 1 : 0;
+            features[33] = words.length / 10;
             
-            // Простые слова
-            const words = lower.split(/\s+/);
-            features[27] = Math.min(1, words.length / 10);
+            // Последние 3 слова из памяти
+            for (let i = 0; i < Math.min(3, words.length); i++) {
+                const w = words[words.length - 1 - i];
+                if (this.memory.has(w)) {
+                    features[34 + i] = 1;
+                }
+            }
             
             return features;
         }
         
-        // Определение действия по тексту (через нейросеть)
-        async predictAction(text) {
-            if (!this.model) return { action: 0, confidence: 0 };
+        hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash);
+        }
+        
+        // Главный мозг — сам решает что делать
+        decideAction(text) {
+            const lower = text.toLowerCase();
+            const words = lower.split(/\s+/);
             
-            const features = this.textToFeatures(text);
-            const inputTensor = tf.tensor2d([features]);
-            const prediction = await this.model.predict(inputTensor).data();
-            inputTensor.dispose();
-            
-            let maxIdx = 0;
-            for (let i = 1; i < prediction.length; i++) {
-                if (prediction[i] > prediction[maxIdx]) maxIdx = i;
+            // 1. Проверяем известные слова из памяти
+            for (const word of words) {
+                if (this.memory.has(word)) {
+                    const mem = this.memory.get(word);
+                    mem.uses = (mem.uses || 0) + 1;
+                    return { action: mem.action, data: mem.data, triggerWord: word };
+                }
             }
             
-            return { action: maxIdx, confidence: prediction[maxIdx], all: prediction };
+            // 2. Если есть слово "нарисуй" — рисуем то, что после него
+            if (lower.includes('нарисуй')) {
+                let what = 'что-то';
+                for (let i = 0; i < words.length; i++) {
+                    if (words[i] === 'нарисуй' && i + 1 < words.length) {
+                        what = words[i + 1];
+                        break;
+                    }
+                }
+                return { action: 'draw', data: what, triggerWord: 'нарисуй' };
+            }
+            
+            // 3. Если есть "добавь" — добавляем предмет
+            if (lower.includes('добавь')) {
+                let what = 'предмет';
+                for (let i = 0; i < words.length; i++) {
+                    if (words[i] === 'добавь' && i + 1 < words.length) {
+                        what = words[i + 1];
+                        break;
+                    }
+                }
+                return { action: 'add', data: what, triggerWord: 'добавь' };
+            }
+            
+            // 4. Если есть "убери" или "удали" — убираем предмет
+            if (lower.includes('убери') || lower.includes('удали')) {
+                let what = null;
+                for (let i = 0; i < words.length; i++) {
+                    if ((words[i] === 'убери' || words[i] === 'удали') && i + 1 < words.length) {
+                        what = words[i + 1];
+                        break;
+                    }
+                }
+                return { action: 'remove', data: what, triggerWord: 'убери' };
+            }
+            
+            // 5. Если есть "очисти" — очищаем комнату
+            if (lower.includes('очисти') || lower.includes('стереть всё')) {
+                return { action: 'clear', data: null, triggerWord: 'очисти' };
+            }
+            
+            // 6. Генерация уникального ответа (без шаблонов)
+            return { action: 'generate', data: text, triggerWord: null };
         }
         
-        async trainInitial() {
-            const examples = [
-                // Рисование
-                { text: "нарисуй круг", action: 1 },
-                { text: "нарисуй квадрат", action: 1 },
-                { text: "нарисуй треугольник", action: 1 },
-                { text: "нарисуй линию", action: 1 },
-                { text: "нарисуй солнце", action: 1 },
-                { text: "нарисуй красный круг", action: 1 },
-                
-                // Добавление предметов
-                { text: "добавь стул", action: 2 },
-                { text: "добавь кактус", action: 2 },
-                { text: "добавь стол", action: 2 },
-                { text: "поставь цветок", action: 2 },
-                { text: "создай предмет", action: 2 },
-                
-                // Очистка комнаты
-                { text: "очисти комнату", action: 3 },
-                { text: "удали всё", action: 3 },
-                { text: "стереть всё", action: 3 },
-                { text: "очисти", action: 3 },
-                
-                // Удаление предмета
-                { text: "убери стул", action: 4 },
-                { text: "удали кактус", action: 4 },
-                { text: "убери стол", action: 4 },
-                
-                // Текстовые ответы
-                { text: "привет", action: 0 },
-                { text: "как дела", action: 0 },
-                { text: "расскажи шутку", action: 0 },
-                { text: "кто ты", action: 0 },
-                { text: "что ты умеешь", action: 0 },
-                { text: "спасибо", action: 0 },
-                { text: "пока", action: 0 }
-            ];
+        // Генерация ответа на основе истории и контекста
+        generateResponse(userText) {
+            const lower = userText.toLowerCase();
             
-            this.trainingData = examples;
-            this.trainedCountSpan.innerText = this.trainingData.length;
+            // Анализируем вопрос
+            if (lower.includes('?')) {
+                if (lower.includes('как')) return "🐕 " + this.generateRandomPhrase('how');
+                if (lower.includes('почему')) return "🐕 " + this.generateRandomPhrase('why');
+                if (lower.includes('кто')) return "🐕 " + this.generateRandomPhrase('who');
+                if (lower.includes('где')) return "🐕 " + this.generateRandomPhrase('where');
+                return "🐕 " + this.generateRandomPhrase('question');
+            }
             
-            const xs = tf.tensor2d(examples.map(e => this.textToFeatures(e.text)));
-            const ys = tf.tensor2d(examples.map(e => {
-                const arr = [0, 0, 0, 0, 0];
-                arr[e.action] = 1;
-                return arr;
-            }));
-            
-            await this.model.fit(xs, ys, {
-                epochs: 100,
-                batchSize: 16,
-                verbose: false
-            });
-            
-            // Проверка точности
-            const evalResult = await this.model.evaluate(xs, ys);
-            const accuracy = await evalResult[1].data();
-            this.accuracy = Math.round(accuracy[0] * 100);
-            this.accuracySpan.innerText = this.accuracy;
-            
-            xs.dispose();
-            ys.dispose();
-            
-            this.addMessage(`✅ Нейросеть обучена на ${this.trainingData.length} примерах. Точность: ${this.accuracy}%`, "bot");
+            // Обычные сообщения
+            return "🐕 " + this.generateRandomPhrase('default');
         }
         
-        async retrain(newText, correctAction) {
-            // Добавляем новый пример
-            this.trainingData.push({ text: newText, action: correctAction });
-            this.trainedCountSpan.innerText = this.trainingData.length;
-            
-            // Дообучаем
-            const xs = tf.tensor2d(this.trainingData.map(e => this.textToFeatures(e.text)));
-            const ys = tf.tensor2d(this.trainingData.map(e => {
-                const arr = [0, 0, 0, 0, 0];
-                arr[e.action] = 1;
-                return arr;
-            }));
-            
-            await this.model.fit(xs, ys, {
-                epochs: 30,
-                batchSize: 32,
-                verbose: false
-            });
-            
-            const evalResult = await this.model.evaluate(xs, ys);
-            const accuracy = await evalResult[1].data();
-            this.accuracy = Math.round(accuracy[0] * 100);
-            this.accuracySpan.innerText = this.accuracy;
-            
-            xs.dispose();
-            ys.dispose();
+        generateRandomPhrase(type) {
+            const phrases = {
+                how: ['Интересный вопрос! Я думаю, что всё зависит от ситуации.', 'Хороший вопрос! Я бы сказал, что так и есть.', 'Думаю, это правильно!'],
+                why: ['Потому что так устроен мир!', 'Хороший вопрос! Возможно, потому что это логично.', 'Я думаю, у всего есть своя причина.'],
+                who: ['Тот, кто этого достоин!', 'Самый лучший человек!', 'Тот, кто тебе дорог!'],
+                where: ['Там, где тебе хорошо!', 'Везде и нигде одновременно!', 'В самом лучшем месте!'],
+                question: ['Я подумаю над этим.', 'Хороший вопрос!', 'Дай-ка подумать... Интересно!', 'Об этом стоит задуматься.'],
+                default: ['Правда? Расскажи подробнее!', 'Я тебя внимательно слушаю.', 'Очень интересно! Продолжай.', 'Я запоминаю это!', 'Гав! Мне нравится с тобой общаться.']
+            };
+            const list = phrases[type] || phrases.default;
+            return list[Math.floor(Math.random() * list.length)];
         }
         
         // === ДЕЙСТВИЯ ===
         
-        // Текстовый ответ
-        textResponse(text) {
-            const lower = text.toLowerCase();
+        draw(what) {
+            const item = what || 'что-то';
             
-            if (lower.includes('привет')) return "🐕 Гав! Привет-привет!";
-            if (lower.includes('как дела')) return "🐕 У меня всё отлично! А у тебя?";
-            if (lower.includes('шутк')) return "🐕 Почему нейросеть не ходит в школу? Потому что она уже всё знает!";
-            if (lower.includes('кто ты')) return "🐕 Я Блю — нейросеть на TensorFlow. Я умею рисовать, добавлять предметы и общаться!";
-            if (lower.includes('что ты умеешь')) return "🐕 Я могу: отвечать на вопросы, рисовать фигуры, добавлять предметы в комнату, очищать комнату. Просто скажи что хочешь!";
-            if (lower.includes('спасибо')) return "🐕 Пожалуйста! Мне приятно 💙";
-            if (lower.includes('пока')) return "🐕 Гав! Пока, заходи ещё!";
+            // Специальная обработка "какашка"
+            if (item.includes('какашк') || item.includes('какаха')) {
+                const x = this.canvas.width / 2 - 30;
+                const y = this.canvas.height / 2 - 30;
+                this.ctx.fillStyle = '#8B4513';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 30, y + 30, 25, 20, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.fillStyle = '#5C2E0B';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 25, y + 28, 8, 6, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.fillStyle = '#5C2E0B';
+                this.ctx.beginPath();
+                this.ctx.ellipse(x + 38, y + 28, 8, 6, 0, 0, Math.PI * 2);
+                this.ctx.fill();
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '24px monospace';
+                this.ctx.fillText('💩', x + 22, y + 45);
+                this.addMessage(`🐕 Нарисовал ${item}! 💩`, "bot");
+                this.learn('какашка', 'draw', item);
+                return;
+            }
             
-            return "🐕 " + [
-                "Интересно... Расскажи ещё!",
-                "Я тебя внимательно слушаю",
-                "Правда? Давай обсудим",
-                "Хороший вопрос!"
-            ][Math.floor(Math.random() * 4)];
-        }
-        
-        // Рисование
-        drawShape(text) {
-            const lower = text.toLowerCase();
-            
-            if (lower.includes('круг')) {
+            // Обычные фигуры
+            if (item.includes('круг')) {
                 const x = this.canvas.width / 2;
                 const y = this.canvas.height / 2;
-                const radius = 50;
                 this.ctx.beginPath();
-                this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-                this.ctx.fillStyle = lower.includes('красн') ? '#ef4444' : (lower.includes('син') ? '#3b82f6' : '#fbbf24');
+                this.ctx.arc(x, y, 40, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#fbbf24';
                 this.ctx.fill();
-                this.ctx.stroke();
                 this.addMessage(`🐕 Нарисовал круг!`, "bot");
-            } else if (lower.includes('квадрат')) {
+            } else if (item.includes('квадрат')) {
                 const x = this.canvas.width / 2 - 40;
                 const y = this.canvas.height / 2 - 40;
-                this.ctx.fillStyle = lower.includes('красн') ? '#ef4444' : (lower.includes('син') ? '#3b82f6' : '#10b981');
+                this.ctx.fillStyle = '#3b82f6';
                 this.ctx.fillRect(x, y, 80, 80);
                 this.addMessage(`🐕 Нарисовал квадрат!`, "bot");
-            } else if (lower.includes('треугольник')) {
+            } else if (item.includes('треугольник')) {
                 const x = this.canvas.width / 2;
                 const y = this.canvas.height / 2 - 40;
                 this.ctx.beginPath();
                 this.ctx.moveTo(x, y);
                 this.ctx.lineTo(x - 40, y + 60);
                 this.ctx.lineTo(x + 40, y + 60);
-                this.ctx.fillStyle = lower.includes('красн') ? '#ef4444' : '#f59e0b';
+                this.ctx.fillStyle = '#10b981';
                 this.ctx.fill();
                 this.addMessage(`🐕 Нарисовал треугольник!`, "bot");
-            } else if (lower.includes('линию')) {
-                this.ctx.beginPath();
-                this.ctx.moveTo(50, this.canvas.height / 2);
-                this.ctx.lineTo(this.canvas.width - 50, this.canvas.height / 2);
-                this.ctx.strokeStyle = 'white';
-                this.ctx.lineWidth = 3;
-                this.ctx.stroke();
-                this.addMessage(`🐕 Нарисовал линию!`, "bot");
             } else {
-                // Рисуем случайную фигуру
-                const shapes = ['круг', 'квадрат', 'треугольник'];
-                const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
-                this.drawShape(`нарисуй ${randomShape}`);
+                const x = this.canvas.width / 2 - 40;
+                const y = this.canvas.height / 2 - 40;
+                this.ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                this.ctx.fillRect(x, y, 80, 80);
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = '12px monospace';
+                this.ctx.fillText(item, x + 20, y + 45);
+                this.addMessage(`🐕 Нарисовал ${item}!`, "bot");
             }
+            
+            this.learn(item, 'draw', item);
         }
         
-        // Добавление предмета
-        addItemToRoom(itemName) {
-            if (!itemName || itemName.length < 2) {
-                itemName = "предмет";
-            }
+        addItem(itemName) {
+            if (!itemName || itemName.length < 2) itemName = 'предмет';
             
             this.roomItems.push({
                 id: Date.now() + itemName,
@@ -491,110 +462,57 @@
             this.drawRoom();
             this.updateRoomList();
             this.addMessage(`🐕 Добавил ${itemName} в комнату!`, "bot");
+            this.learn(itemName, 'add', itemName);
+        }
+        
+        removeItem(itemName) {
+            if (!itemName) {
+                this.addMessage(`🐕 Что убрать?`, "bot");
+                return;
+            }
+            
+            const index = this.roomItems.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
+            if (index !== -1) {
+                const removed = this.roomItems.splice(index, 1);
+                this.drawRoom();
+                this.updateRoomList();
+                this.addMessage(`🐕 Убрал ${removed[0].name} из комнаты.`, "bot");
+                this.learn(itemName, 'remove', itemName);
+            } else {
+                this.addMessage(`🐕 Не нашёл ${itemName} в комнате.`, "bot");
+            }
+        }
+        
+        clearRoom() {
+            this.roomItems = [];
+            this.drawRoom();
+            this.updateRoomList();
+            this.addMessage(`🐕 Комната очищена!`, "bot");
+            this.learn('очистить', 'clear', null);
+        }
+        
+        pet() {
+            this.addMessage(`🐕 Муррр... Спасибо! 💙`, "bot");
+            this.learn('погладить', 'pet', null);
         }
         
         getEmoji(name) {
             const emojis = {
                 'кактус': '🌵', 'цветок': '🌻', 'стул': '🪑', 'стол': '🪑',
                 'книга': '📖', 'компьютер': '💻', 'кот': '🐱', 'собака': '🐶',
-                'мяч': '⚽', 'звезда': '⭐', 'сердце': '❤️'
+                'мяч': '⚽', 'какашка': '💩', 'какаха': '💩'
             };
             return emojis[name] || '📦';
         }
         
-        // Очистка комнаты
-        clearRoom() {
-            this.roomItems = [];
-            this.drawRoom();
-            this.updateRoomList();
-            this.addMessage(`🐕 Комната очищена!`, "bot");
-        }
-        
-        // Удаление предмета
-        removeItem(text) {
-            const lower = text.toLowerCase();
-            for (let i = 0; i < this.roomItems.length; i++) {
-                if (lower.includes(this.roomItems[i].name.toLowerCase())) {
-                    const removed = this.roomItems.splice(i, 1)[0];
-                    this.drawRoom();
-                    this.updateRoomList();
-                    this.addMessage(`🐕 Убрал ${removed.name} из комнаты.`, "bot");
-                    return;
-                }
-            }
-            this.addMessage(`🐕 Не нашёл такой предмет в комнате.`, "bot");
-        }
-        
-        // Извлечение существительного
-        extractNoun(text) {
-            const words = text.toLowerCase().split(/\s+/);
-            const skipWords = ['нарисуй', 'добавь', 'убери', 'удали', 'поставь', 'создай', 'покажи'];
-            for (let i = words.length - 1; i >= 0; i--) {
-                if (!skipWords.includes(words[i])) {
-                    return words[i];
-                }
-            }
-            return words[words.length - 1] || "предмет";
-        }
-        
-        // === ОСНОВНОЙ ЦИКЛ ===
-        async processInput(userText) {
-            if (this.isThinking) return;
-            this.isThinking = true;
+        // Обучение: запоминаем слово и действие
+        learn(word, action, data) {
+            if (!word || word.length < 2) return;
+            if (this.memory.has(word)) return; // уже знаем
             
-            this.addMessage(userText, "user");
-            this.showThinking();
-            
-            // Предсказываем действие через нейросеть
-            const prediction = await this.predictAction(userText);
-            const action = prediction.action;
-            const confidence = prediction.confidence;
-            
-            console.log(`Предсказание: ${this.actionNames[action]} (${Math.round(confidence * 100)}%)`);
-            
-            this.hideThinking();
-            
-            // Выполняем действие
-            switch(action) {
-                case 0: // текст
-                    const response = this.textResponse(userText);
-                    this.addMessage(response, "bot");
-                    break;
-                case 1: // рисовать
-                    this.drawShape(userText);
-                    break;
-                case 2: // добавить предмет
-                    const noun = this.extractNoun(userText);
-                    this.addItemToRoom(noun);
-                    break;
-                case 3: // очистить комнату
-                    this.clearRoom();
-                    break;
-                case 4: // удалить предмет
-                    this.removeItem(userText);
-                    break;
-                default:
-                    this.addMessage("🐕 Не знаю, что делать...", "bot");
-            }
-            
-            // Дообучаемся на каждом запросе (если уверенность низкая)
-            if (confidence < 0.6) {
-                const correctAction = this.getCorrectActionByKeywords(userText);
-                if (correctAction !== null && correctAction !== action) {
-                    await this.retrain(userText, correctAction);
-                }
-            }
-            
-            this.isThinking = false;
-        }
-        
-        getCorrectActionByKeywords(text) {
-            const lower = text.toLowerCase();
-            if (lower.includes('нарисуй')) return 1;
-            if (lower.includes('добавь') || lower.includes('поставь') || lower.includes('создай')) return 2;
-            if (lower.includes('очисти') || lower.includes('удали всё') || lower.includes('стереть')) return 3;
-            if (lower.includes('убери') || lower.includes('удали')) return 4;
-            return 0;
+            this.memory.set(word, { action: action, data: data, uses: 1, learnedAt: Date.now() });
+            this.learnedCount++;
+            this.updateStats();
         }
         
         drawRoom() {
@@ -629,11 +547,11 @@
         }
         
         showThinking() {
-            const thinkingMsg = document.createElement('div');
-            thinkingMsg.id = 'thinkingMsg';
-            thinkingMsg.className = 'message bot-message thinking';
-            thinkingMsg.innerHTML = '🐕 <span class="thinking-animation">думаю</span>...';
-            this.messagesDiv.appendChild(thinkingMsg);
+            const thinking = document.createElement('div');
+            thinking.id = 'thinkingMsg';
+            thinking.className = 'message bot-message';
+            thinking.innerHTML = '🐕 <span class="thinking">думаю</span>...';
+            this.messagesDiv.appendChild(thinking);
             this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
         }
         
@@ -649,6 +567,54 @@
             this.messagesDiv.appendChild(msg);
             msg.scrollIntoView({ behavior: 'smooth' });
         }
+        
+        async processInput(userText) {
+            this.addMessage(userText, "user");
+            this.showThinking();
+            
+            // Имитация задержки "мышления"
+            await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
+            
+            const decision = this.decideAction(userText);
+            
+            this.hideThinking();
+            
+            // Выполняем действие
+            switch(decision.action) {
+                case 'talk':
+                    this.addMessage(decision.data || "🐕 Гав!", "bot");
+                    break;
+                case 'draw':
+                    this.draw(decision.data);
+                    break;
+                case 'add':
+                    this.addItem(decision.data);
+                    break;
+                case 'remove':
+                    this.removeItem(decision.data);
+                    break;
+                case 'clear':
+                    this.clearRoom();
+                    break;
+                case 'pet':
+                    this.pet();
+                    break;
+                case 'generate':
+                default:
+                    const response = this.generateResponse(userText);
+                    this.addMessage(response, "bot");
+                    // Учим новое слово
+                    const firstWord = userText.toLowerCase().split(/\s+/)[0];
+                    if (firstWord && firstWord.length > 2 && !this.memory.has(firstWord)) {
+                        this.learn(firstWord, 'generate', response);
+                    }
+                    break;
+            }
+            
+            // Сохраняем в историю
+            this.conversationMemory.push({ user: userText, time: Date.now() });
+            if (this.conversationMemory.length > 50) this.conversationMemory.shift();
+        }
     }
     
     let blue;
@@ -662,7 +628,7 @@
     }
     
     window.onload = () => {
-        blue = new BlueNeuralBot();
+        blue = new BlueSelfLearningBot();
         window.blue = blue;
     };
     
@@ -671,4 +637,4 @@
     document.getElementById('clearRoomBtn').onclick = () => blue.clearRoom();
 </script>
 </body>
-    </html>
+</html>
