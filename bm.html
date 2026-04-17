@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Блю — самообучающаяся нейросеть</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.15.0/dist/tf.min.js"></script>
+    <title>Редактор Блю — создай своего ИИ</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(135deg, #0a2a1a, #0a1a2a);
+            background: linear-gradient(135deg, #0a0f1a, #0c1222);
             font-family: 'Segoe UI', system-ui, sans-serif;
             min-height: 100vh;
             padding: 20px;
@@ -16,118 +15,142 @@
         .container { max-width: 1400px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 20px; }
         h1 {
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             background: linear-gradient(135deg, #6ee7ff, #3b82f6, #1e3a8a);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
         }
-        .sub { color: #cbd5e6; font-size: 0.8rem; }
-        .main-panel { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
-        .room-panel {
-            flex: 1.2;
+        .sub { color: #8a9bbb; font-size: 0.8rem; }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tab {
+            background: #1e293b;
+            padding: 10px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #cbd5e6;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+            color: white;
+        }
+        
+        .editor-panel {
             background: rgba(0,0,0,0.5);
             border-radius: 30px;
             padding: 20px;
             backdrop-filter: blur(8px);
             border: 1px solid #3b82f6;
+            margin-bottom: 20px;
         }
-        .room-title { font-size: 0.9rem; color: #bbd7ff; margin-bottom: 15px; display: flex; justify-content: space-between; }
-        .room-canvas-container {
-            background: #0a0f1a;
-            border-radius: 24px;
-            padding: 10px;
-            border: 2px solid #3b82f6;
-        }
-        canvas {
-            width: 100%;
-            background: #1a2a3a;
-            border-radius: 20px;
-            display: block;
-            cursor: crosshair;
-        }
-        .room-items {
+        
+        .info-row {
             display: flex;
+            gap: 20px;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 15px;
+            margin-bottom: 20px;
+            align-items: center;
         }
-        .room-item {
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-size: 0.7rem;
-            color: #a0c0ff;
-            border: 1px solid #3b82f6;
-            cursor: pointer;
+        .info-row label {
+            color: #bbd7ff;
+            min-width: 80px;
         }
-        .bot-panel {
-            flex: 0.8;
-            background: rgba(0,0,0,0.5);
-            border-radius: 30px;
-            padding: 20px;
-            text-align: center;
-        }
-        .avatar {
-            font-size: 80px;
-            margin-bottom: 10px;
-            cursor: pointer;
-        }
-        .stats {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        .stat { background: rgba(0,0,0,0.6); border-radius: 30px; padding: 5px 15px; font-size: 0.7rem; color: #cbd5e6; }
-        .stat span { color: #6ee7ff; font-weight: bold; }
-        .chat-panel {
-            background: rgba(0,0,0,0.5);
-            border-radius: 30px;
-            padding: 20px;
-        }
-        .messages {
-            height: 300px;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .message {
-            max-width: 85%;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-        .user-message {
-            align-self: flex-end;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-        }
-        .bot-message {
-            align-self: flex-start;
-            background: #1e293b;
-            color: white;
-            border-left: 3px solid #3b82f6;
-        }
-        .chat-input {
-            display: flex;
-            gap: 10px;
-        }
-        .chat-input input {
-            flex: 1;
+        .info-row input, .info-row select {
             background: #0e1625;
             border: 2px solid #3b82f6;
-            padding: 12px 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            font-size: 1rem;
+        }
+        .icon-preview {
+            font-size: 48px;
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+        
+        .commands-section, .drawings-section {
+            margin-top: 20px;
+        }
+        .section-title {
+            color: #bbd7ff;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .command-list, .drawing-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .command-item, .drawing-item {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .command-trigger, .drawing-trigger {
+            flex: 1;
+            background: #0e1625;
+            border: 1px solid #3b82f6;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+        }
+        .command-response, .drawing-type {
+            flex: 2;
+            background: #0e1625;
+            border: 1px solid #3b82f6;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+        }
+        .drawing-value {
+            flex: 2;
+            background: #0e1625;
+            border: 1px solid #3b82f6;
+            padding: 8px 12px;
+            border-radius: 20px;
+            color: white;
+        }
+        .delete-btn {
+            background: #dc2626;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
+        .add-btn {
+            background: #10b981;
+            border: none;
+            padding: 10px 20px;
             border-radius: 30px;
             color: white;
-            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 10px;
         }
-        .chat-input button {
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
             background: linear-gradient(135deg, #3b82f6, #1e3a8a);
             border: none;
             padding: 12px 24px;
@@ -136,505 +159,601 @@
             cursor: pointer;
             font-weight: bold;
         }
-        .command-hint { margin-top: 12px; font-size: 0.65rem; color: #a0c0ff; text-align: center; }
-        @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-5px);} }
-        .thinking { animation: bounce 0.5s infinite; display: inline-block; }
+        .template-btn {
+            background: #f59e0b;
+        }
+        
+        .chat-preview {
+            background: rgba(0,0,0,0.5);
+            border-radius: 30px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .messages {
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            word-wrap: break-word;
+        }
+        .user-msg {
+            align-self: flex-end;
+            background: #3b82f6;
+            color: white;
+        }
+        .bot-msg {
+            align-self: flex-start;
+            background: #1e293b;
+            color: white;
+            border-left: 3px solid #3b82f6;
+        }
+        .preview-input {
+            display: flex;
+            gap: 10px;
+        }
+        .preview-input input {
+            flex: 1;
+            background: #0e1625;
+            border: 2px solid #3b82f6;
+            padding: 10px 15px;
+            border-radius: 30px;
+            color: white;
+        }
+        
+        .room-preview {
+            background: #1a2a3a;
+            border-radius: 20px;
+            min-height: 200px;
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        .drawing-canvas {
+            width: 100%;
+            height: 200px;
+            background: #1a2a3a;
+            border-radius: 20px;
+        }
+        
+        @media (max-width: 800px) {
+            .command-item, .drawing-item { flex-direction: column; }
+            .tab { padding: 6px 16px; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🐕 БЛЮ</h1>
-        <div class="sub">самообучающаяся нейросеть · всегда отвечает · учится на всём</div>
+        <h1>🎨 РЕДАКТОР БЛЮ</h1>
+        <div class="sub">создай своего ИИ · команды · рисунки · сохранение в .bm</div>
     </div>
 
-    <div class="main-panel">
-        <div class="room-panel">
-            <div class="room-title">
-                <span>🏠 КОМНАТА</span>
-                <button id="clearRoomBtn" style="background:#dc2626; padding:4px 12px; font-size:0.7rem;">Очистить</button>
-            </div>
-            <div class="room-canvas-container">
-                <canvas id="roomCanvas" width="600" height="350"></canvas>
-            </div>
-            <div class="room-items" id="roomItemsList"></div>
-        </div>
+    <div class="tabs">
+        <div class="tab active" data-tab="editor">📝 Редактор</div>
+        <div class="tab" data-tab="chat">💬 Чат с Блю</div>
+        <div class="tab" data-tab="room">🏠 Комната</div>
+    </div>
 
-        <div class="bot-panel">
-            <div class="avatar" id="avatar">🐕🧠</div>
-            <div class="stats">
-                <div class="stat">🎓 Выучено: <span id="learnedCount">0</span></div>
-                <div class="stat">💾 Память: <span id="memorySize">0</span></div>
+    <!-- Вкладка редактора -->
+    <div id="editor-tab" class="tab-content active">
+        <div class="editor-panel">
+            <div class="info-row">
+                <label>🤖 Имя:</label>
+                <input type="text" id="botName" value="Блю" style="flex:1">
+                <label>🎨 Иконка:</label>
+                <select id="botIcon">
+                    <option value="🐕">🐕 Собака</option>
+                    <option value="🐱">🐱 Кот</option>
+                    <option value="🍄">🍄 Гриб</option>
+                    <option value="🤖">🤖 Робот</option>
+                    <option value="👻">👻 Призрак</option>
+                    <option value="⭐">⭐ Звезда</option>
+                    <option value="❤️">❤️ Сердце</option>
+                    <option value="😎">😎 Крутой</option>
+                </select>
+                <div class="icon-preview" id="iconPreview">🐕</div>
             </div>
-            <div style="font-size:0.7rem; color:#a0c0ff;">учится на каждом сообщении</div>
+
+            <div class="commands-section">
+                <div class="section-title">
+                    📝 КОМАНДЫ (слово → ответ)
+                    <button class="add-btn" id="addCommandBtn" style="padding:5px 15px;">+ Добавить</button>
+                </div>
+                <div id="commandsList" class="command-list"></div>
+            </div>
+
+            <div class="drawings-section">
+                <div class="section-title">
+                    🎨 РИСУНКИ (слово → что рисовать)
+                    <button class="add-btn" id="addDrawingBtn" style="padding:5px 15px;">+ Добавить</button>
+                </div>
+                <div id="drawingsList" class="drawing-list"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn" id="saveBtn">💾 Сохранить в .bm</button>
+                <button class="action-btn template-btn" id="loadTemplatesBtn">📦 Встроенные шаблоны</button>
+                <button class="action-btn" id="loadFileBtn" style="background:#6b7280;">📂 Загрузить .bm</button>
+                <input type="file" id="fileInput" style="display:none" accept=".bm">
+            </div>
         </div>
     </div>
 
-    <div class="chat-panel">
-        <div class="messages" id="messages">
-            <div class="message bot-message">🐕 Гав! Я Блю — самообучающаяся нейросеть. Я никогда не говорю «не знаю». Я сам придумываю ответы и учусь на всём, что ты говоришь. Спроси меня о чём угодно!</div>
+    <!-- Вкладка чата -->
+    <div id="chat-tab" class="tab-content">
+        <div class="editor-panel">
+            <div class="info-row">
+                <div class="icon-preview" id="chatIconPreview">🐕</div>
+                <span style="color:white; font-size:1.5rem;" id="chatNamePreview">Блю</span>
+            </div>
+            <div class="messages" id="chatMessages">
+                <div class="message bot-msg">🐕 Привет! Я Блю. Спрашивай меня о чём угодно!</div>
+            </div>
+            <div class="preview-input">
+                <input type="text" id="chatInput" placeholder="Спроси Блю..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button id="sendChatBtn" style="background:#3b82f6; border:none; padding:10px 20px; border-radius:30px; color:white;">Отправить</button>
+            </div>
         </div>
-        <div class="chat-input">
-            <input type="text" id="userInput" placeholder="Скажи что угодно..." onkeypress="if(event.key==='Enter') send()">
-            <button id="sendBtn">💬</button>
-        </div>
-        <div class="command-hint">
-            🧠 Я умею: рисовать фигуры, добавлять предметы в комнату, отвечать на вопросы. Просто скажи!
+    </div>
+
+    <!-- Вкладка комнаты -->
+    <div id="room-tab" class="tab-content">
+        <div class="editor-panel">
+            <div class="room-preview">
+                <canvas id="roomCanvas" width="600" height="300" style="width:100%; height:auto; background:#1a2a3a; border-radius:20px;"></canvas>
+            </div>
+            <div class="room-items" id="roomItemsList" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+            <button id="clearRoomBtn" style="background:#dc2626; border:none; padding:8px 20px; border-radius:30px; color:white; margin-top:15px;">Очистить комнату</button>
         </div>
     </div>
 </div>
 
 <script>
-    class BlueSelfLearningBot {
-        constructor() {
-            // Память: ассоциации между словами и действиями
-            this.memory = new Map(); // слово -> { action, data }
-            this.conversationMemory = []; // история диалога
-            this.learnedCount = 0;
-            
-            // Комната
-            this.roomItems = [];
-            
-            this.initUI();
-            this.setupCanvas();
-            this.drawRoom();
-            this.initMemory();
-        }
-        
-        initUI() {
-            this.learnedCountSpan = document.getElementById('learnedCount');
-            this.memorySizeSpan = document.getElementById('memorySize');
-            this.messagesDiv = document.getElementById('messages');
-            this.canvas = document.getElementById('roomCanvas');
-            this.ctx = this.canvas.getContext('2d');
-            this.avatar = document.getElementById('avatar');
-            
-            // Клик по аватару
-            this.avatar.addEventListener('click', () => {
-                this.processInput('погладить');
-            });
-        }
-        
-        setupCanvas() {
-            const container = this.canvas.parentElement;
-            const width = Math.min(600, container.clientWidth - 20);
-            this.canvas.width = width;
-            this.canvas.height = width * 0.58;
-        }
-        
-        initMemory() {
-            // Начальные знания (базовые, чтобы не был пустым)
-            const initialKnowledge = [
-                { word: 'привет', action: 'talk', data: '🐕 Привет! Рад тебя видеть!' },
-                { word: 'как дела', action: 'talk', data: '🐕 У меня всё отлично! А у тебя?' },
-                { word: 'кто ты', action: 'talk', data: '🐕 Я Блю — самообучающаяся нейросеть. Я учусь на всём, что ты говоришь!' },
-                { word: 'шутка', action: 'talk', data: '🐕 Почему нейросеть не боится темноты? Потому что она всё просчитывает!' },
-                { word: 'расскажи', action: 'talk', data: '🐕 Однажды нейросеть научилась рисовать... и нарисовала счастье!' },
-                { word: 'спасибо', action: 'talk', data: '🐕 Пожалуйста! Мне приятно 💙' },
-                { word: 'пока', action: 'talk', data: '🐕 Гав! Пока, заходи ещё!' },
-                { word: 'нарисуй', action: 'draw', data: null },
-                { word: 'добавь', action: 'add', data: null },
-                { word: 'убери', action: 'remove', data: null },
-                { word: 'очисти', action: 'clear', data: null },
-                { word: 'погладить', action: 'pet', data: '🐕 Муррр... Спасибо! 💙' }
-            ];
-            
-            for (const k of initialKnowledge) {
-                this.memory.set(k.word, { action: k.action, data: k.data, uses: 0 });
-                this.learnedCount++;
-            }
-            
-            this.updateStats();
-        }
-        
-        updateStats() {
-            this.learnedCountSpan.innerText = this.learnedCount;
-            this.memorySizeSpan.innerText = this.memory.size;
-        }
-        
-        // Преобразование текста в вектор для нейросети
-        textToVector(text) {
-            const lower = text.toLowerCase();
-            const words = lower.split(/\s+/);
-            const features = new Array(40).fill(0);
-            
-            // Частотный анализ слов
-            for (let i = 0; i < words.length && i < 20; i++) {
-                const code = this.hashCode(words[i]) % 30;
-                features[code] += 1;
-            }
-            
-            // Длина текста
-            features[30] = Math.min(1, text.length / 50);
-            features[31] = text.includes('?') ? 1 : 0;
-            features[32] = text.includes('!') ? 1 : 0;
-            features[33] = words.length / 10;
-            
-            // Последние 3 слова из памяти
-            for (let i = 0; i < Math.min(3, words.length); i++) {
-                const w = words[words.length - 1 - i];
-                if (this.memory.has(w)) {
-                    features[34 + i] = 1;
-                }
-            }
-            
-            return features;
-        }
-        
-        hashCode(str) {
-            let hash = 0;
-            for (let i = 0; i < str.length; i++) {
-                hash = ((hash << 5) - hash) + str.charCodeAt(i);
-                hash |= 0;
-            }
-            return Math.abs(hash);
-        }
-        
-        // Главный мозг — сам решает что делать
-        decideAction(text) {
-            const lower = text.toLowerCase();
-            const words = lower.split(/\s+/);
-            
-            // 1. Проверяем известные слова из памяти
-            for (const word of words) {
-                if (this.memory.has(word)) {
-                    const mem = this.memory.get(word);
-                    mem.uses = (mem.uses || 0) + 1;
-                    return { action: mem.action, data: mem.data, triggerWord: word };
-                }
-            }
-            
-            // 2. Если есть слово "нарисуй" — рисуем то, что после него
-            if (lower.includes('нарисуй')) {
-                let what = 'что-то';
-                for (let i = 0; i < words.length; i++) {
-                    if (words[i] === 'нарисуй' && i + 1 < words.length) {
-                        what = words[i + 1];
-                        break;
-                    }
-                }
-                return { action: 'draw', data: what, triggerWord: 'нарисуй' };
-            }
-            
-            // 3. Если есть "добавь" — добавляем предмет
-            if (lower.includes('добавь')) {
-                let what = 'предмет';
-                for (let i = 0; i < words.length; i++) {
-                    if (words[i] === 'добавь' && i + 1 < words.length) {
-                        what = words[i + 1];
-                        break;
-                    }
-                }
-                return { action: 'add', data: what, triggerWord: 'добавь' };
-            }
-            
-            // 4. Если есть "убери" или "удали" — убираем предмет
-            if (lower.includes('убери') || lower.includes('удали')) {
-                let what = null;
-                for (let i = 0; i < words.length; i++) {
-                    if ((words[i] === 'убери' || words[i] === 'удали') && i + 1 < words.length) {
-                        what = words[i + 1];
-                        break;
-                    }
-                }
-                return { action: 'remove', data: what, triggerWord: 'убери' };
-            }
-            
-            // 5. Если есть "очисти" — очищаем комнату
-            if (lower.includes('очисти') || lower.includes('стереть всё')) {
-                return { action: 'clear', data: null, triggerWord: 'очисти' };
-            }
-            
-            // 6. Генерация уникального ответа (без шаблонов)
-            return { action: 'generate', data: text, triggerWord: null };
-        }
-        
-        // Генерация ответа на основе истории и контекста
-        generateResponse(userText) {
-            const lower = userText.toLowerCase();
-            
-            // Анализируем вопрос
-            if (lower.includes('?')) {
-                if (lower.includes('как')) return "🐕 " + this.generateRandomPhrase('how');
-                if (lower.includes('почему')) return "🐕 " + this.generateRandomPhrase('why');
-                if (lower.includes('кто')) return "🐕 " + this.generateRandomPhrase('who');
-                if (lower.includes('где')) return "🐕 " + this.generateRandomPhrase('where');
-                return "🐕 " + this.generateRandomPhrase('question');
-            }
-            
-            // Обычные сообщения
-            return "🐕 " + this.generateRandomPhrase('default');
-        }
-        
-        generateRandomPhrase(type) {
-            const phrases = {
-                how: ['Интересный вопрос! Я думаю, что всё зависит от ситуации.', 'Хороший вопрос! Я бы сказал, что так и есть.', 'Думаю, это правильно!'],
-                why: ['Потому что так устроен мир!', 'Хороший вопрос! Возможно, потому что это логично.', 'Я думаю, у всего есть своя причина.'],
-                who: ['Тот, кто этого достоин!', 'Самый лучший человек!', 'Тот, кто тебе дорог!'],
-                where: ['Там, где тебе хорошо!', 'Везде и нигде одновременно!', 'В самом лучшем месте!'],
-                question: ['Я подумаю над этим.', 'Хороший вопрос!', 'Дай-ка подумать... Интересно!', 'Об этом стоит задуматься.'],
-                default: ['Правда? Расскажи подробнее!', 'Я тебя внимательно слушаю.', 'Очень интересно! Продолжай.', 'Я запоминаю это!', 'Гав! Мне нравится с тобой общаться.']
-            };
-            const list = phrases[type] || phrases.default;
-            return list[Math.floor(Math.random() * list.length)];
-        }
-        
-        // === ДЕЙСТВИЯ ===
-        
-        draw(what) {
-            const item = what || 'что-то';
-            
-            // Специальная обработка "какашка"
-            if (item.includes('какашк') || item.includes('какаха')) {
-                const x = this.canvas.width / 2 - 30;
-                const y = this.canvas.height / 2 - 30;
-                this.ctx.fillStyle = '#8B4513';
-                this.ctx.beginPath();
-                this.ctx.ellipse(x + 30, y + 30, 25, 20, 0, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.fillStyle = '#5C2E0B';
-                this.ctx.beginPath();
-                this.ctx.ellipse(x + 25, y + 28, 8, 6, 0, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.fillStyle = '#5C2E0B';
-                this.ctx.beginPath();
-                this.ctx.ellipse(x + 38, y + 28, 8, 6, 0, 0, Math.PI * 2);
-                this.ctx.fill();
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = '24px monospace';
-                this.ctx.fillText('💩', x + 22, y + 45);
-                this.addMessage(`🐕 Нарисовал ${item}! 💩`, "bot");
-                this.learn('какашка', 'draw', item);
-                return;
-            }
-            
-            // Обычные фигуры
-            if (item.includes('круг')) {
-                const x = this.canvas.width / 2;
-                const y = this.canvas.height / 2;
-                this.ctx.beginPath();
-                this.ctx.arc(x, y, 40, 0, Math.PI * 2);
-                this.ctx.fillStyle = '#fbbf24';
-                this.ctx.fill();
-                this.addMessage(`🐕 Нарисовал круг!`, "bot");
-            } else if (item.includes('квадрат')) {
-                const x = this.canvas.width / 2 - 40;
-                const y = this.canvas.height / 2 - 40;
-                this.ctx.fillStyle = '#3b82f6';
-                this.ctx.fillRect(x, y, 80, 80);
-                this.addMessage(`🐕 Нарисовал квадрат!`, "bot");
-            } else if (item.includes('треугольник')) {
-                const x = this.canvas.width / 2;
-                const y = this.canvas.height / 2 - 40;
-                this.ctx.beginPath();
-                this.ctx.moveTo(x, y);
-                this.ctx.lineTo(x - 40, y + 60);
-                this.ctx.lineTo(x + 40, y + 60);
-                this.ctx.fillStyle = '#10b981';
-                this.ctx.fill();
-                this.addMessage(`🐕 Нарисовал треугольник!`, "bot");
-            } else {
-                const x = this.canvas.width / 2 - 40;
-                const y = this.canvas.height / 2 - 40;
-                this.ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 60%)`;
-                this.ctx.fillRect(x, y, 80, 80);
-                this.ctx.fillStyle = 'white';
-                this.ctx.font = '12px monospace';
-                this.ctx.fillText(item, x + 20, y + 45);
-                this.addMessage(`🐕 Нарисовал ${item}!`, "bot");
-            }
-            
-            this.learn(item, 'draw', item);
-        }
-        
-        addItem(itemName) {
-            if (!itemName || itemName.length < 2) itemName = 'предмет';
-            
-            this.roomItems.push({
-                id: Date.now() + itemName,
-                name: itemName,
-                x: Math.random() * (this.canvas.width - 80) + 20,
-                y: Math.random() * (this.canvas.height - 80) + 40,
-                w: 50, h: 50,
-                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
-                emoji: this.getEmoji(itemName)
-            });
-            this.drawRoom();
-            this.updateRoomList();
-            this.addMessage(`🐕 Добавил ${itemName} в комнату!`, "bot");
-            this.learn(itemName, 'add', itemName);
-        }
-        
-        removeItem(itemName) {
-            if (!itemName) {
-                this.addMessage(`🐕 Что убрать?`, "bot");
-                return;
-            }
-            
-            const index = this.roomItems.findIndex(i => i.name.toLowerCase() === itemName.toLowerCase());
-            if (index !== -1) {
-                const removed = this.roomItems.splice(index, 1);
-                this.drawRoom();
-                this.updateRoomList();
-                this.addMessage(`🐕 Убрал ${removed[0].name} из комнаты.`, "bot");
-                this.learn(itemName, 'remove', itemName);
-            } else {
-                this.addMessage(`🐕 Не нашёл ${itemName} в комнате.`, "bot");
-            }
-        }
-        
-        clearRoom() {
-            this.roomItems = [];
-            this.drawRoom();
-            this.updateRoomList();
-            this.addMessage(`🐕 Комната очищена!`, "bot");
-            this.learn('очистить', 'clear', null);
-        }
-        
-        pet() {
-            this.addMessage(`🐕 Муррр... Спасибо! 💙`, "bot");
-            this.learn('погладить', 'pet', null);
-        }
-        
-        getEmoji(name) {
-            const emojis = {
-                'кактус': '🌵', 'цветок': '🌻', 'стул': '🪑', 'стол': '🪑',
-                'книга': '📖', 'компьютер': '💻', 'кот': '🐱', 'собака': '🐶',
-                'мяч': '⚽', 'какашка': '💩', 'какаха': '💩'
-            };
-            return emojis[name] || '📦';
-        }
-        
-        // Обучение: запоминаем слово и действие
-        learn(word, action, data) {
-            if (!word || word.length < 2) return;
-            if (this.memory.has(word)) return; // уже знаем
-            
-            this.memory.set(word, { action: action, data: data, uses: 1, learnedAt: Date.now() });
-            this.learnedCount++;
-            this.updateStats();
-        }
-        
-        drawRoom() {
-            if (!this.ctx) return;
-            this.ctx.fillStyle = "#1a2a3a";
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.fillStyle = "#2a3a2a";
-            this.ctx.fillRect(0, this.canvas.height - 50, this.canvas.width, 50);
-            
-            for (const item of this.roomItems) {
-                this.ctx.fillStyle = item.color;
-                this.ctx.fillRect(item.x, item.y, item.w, item.h);
-                this.ctx.fillStyle = "white";
-                this.ctx.font = "20px monospace";
-                this.ctx.fillText(item.emoji, item.x + 10, item.y + 35);
-                this.ctx.fillStyle = "#a0c0ff";
-                this.ctx.font = "10px monospace";
-                this.ctx.fillText(item.name, item.x + 5, item.y + 15);
-            }
-        }
-        
-        updateRoomList() {
-            const container = document.getElementById('roomItemsList');
-            container.innerHTML = "";
-            for (const item of this.roomItems) {
-                const badge = document.createElement('span');
-                badge.className = 'room-item';
-                badge.innerHTML = `${item.emoji} ${item.name}`;
-                badge.onclick = () => this.addMessage(`🐕 Это ${item.name}.`, "bot");
-                container.appendChild(badge);
-            }
-        }
-        
-        showThinking() {
-            const thinking = document.createElement('div');
-            thinking.id = 'thinkingMsg';
-            thinking.className = 'message bot-message';
-            thinking.innerHTML = '🐕 <span class="thinking">думаю</span>...';
-            this.messagesDiv.appendChild(thinking);
-            this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-        }
-        
-        hideThinking() {
-            const thinking = document.getElementById('thinkingMsg');
-            if (thinking) thinking.remove();
-        }
-        
-        addMessage(text, sender) {
-            const msg = document.createElement('div');
-            msg.className = `message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
-            msg.innerHTML = text;
-            this.messagesDiv.appendChild(msg);
-            msg.scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        async processInput(userText) {
-            this.addMessage(userText, "user");
-            this.showThinking();
-            
-            // Имитация задержки "мышления"
-            await new Promise(r => setTimeout(r, 300 + Math.random() * 400));
-            
-            const decision = this.decideAction(userText);
-            
-            this.hideThinking();
-            
-            // Выполняем действие
-            switch(decision.action) {
-                case 'talk':
-                    this.addMessage(decision.data || "🐕 Гав!", "bot");
-                    break;
-                case 'draw':
-                    this.draw(decision.data);
-                    break;
-                case 'add':
-                    this.addItem(decision.data);
-                    break;
-                case 'remove':
-                    this.removeItem(decision.data);
-                    break;
-                case 'clear':
-                    this.clearRoom();
-                    break;
-                case 'pet':
-                    this.pet();
-                    break;
-                case 'generate':
-                default:
-                    const response = this.generateResponse(userText);
-                    this.addMessage(response, "bot");
-                    // Учим новое слово
-                    const firstWord = userText.toLowerCase().split(/\s+/)[0];
-                    if (firstWord && firstWord.length > 2 && !this.memory.has(firstWord)) {
-                        this.learn(firstWord, 'generate', response);
-                    }
-                    break;
-            }
-            
-            // Сохраняем в историю
-            this.conversationMemory.push({ user: userText, time: Date.now() });
-            if (this.conversationMemory.length > 50) this.conversationMemory.shift();
-        }
-    }
-    
-    let blue;
-    
-    function send() {
-        const input = document.getElementById('userInput');
-        const text = input.value.trim();
-        if (!text) return;
-        blue.processInput(text);
-        input.value = '';
-    }
-    
-    window.onload = () => {
-        blue = new BlueSelfLearningBot();
-        window.blue = blue;
+    // Состояние Блю
+    let blueConfig = {
+        name: "Блю",
+        icon: "🐕",
+        commands: [
+            { trigger: "привет", response: "Привет! Рад тебя видеть!" },
+            { trigger: "как дела", response: "У меня всё отлично! А у тебя?" },
+            { trigger: "кто ты", response: "Я Блю — твой персональный ИИ!" },
+            { trigger: "спасибо", response: "Пожалуйста! Мне приятно 💙" },
+            { trigger: "пока", response: "Пока! Заходи ещё!" },
+            { trigger: "ты", response: "я?" }
+        ],
+        drawings: [
+            { trigger: "круг", type: "shape", value: "circle" },
+            { trigger: "квадрат", type: "shape", value: "square" },
+            { trigger: "какашка", type: "shape", value: "poop" },
+            { trigger: "сердце", type: "shape", value: "heart" }
+        ]
     };
     
-    document.getElementById('sendBtn').onclick = send;
-    document.getElementById('userInput').onkeypress = (e) => { if (e.key === 'Enter') send(); };
-    document.getElementById('clearRoomBtn').onclick = () => blue.clearRoom();
+    let roomItems = [];
+    let canvas = null;
+    let ctx = null;
+    
+    // Инициализация
+    function init() {
+        setupTabs();
+        setupEventListeners();
+        renderCommands();
+        renderDrawings();
+        updatePreview();
+        initCanvas();
+    }
+    
+    function setupTabs() {
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tabName}-tab`).classList.add('active');
+                if (tabName === 'room') drawRoom();
+            });
+        });
+    }
+    
+    function setupEventListeners() {
+        document.getElementById('botName').addEventListener('input', updatePreview);
+        document.getElementById('botIcon').addEventListener('change', updatePreview);
+        document.getElementById('addCommandBtn').addEventListener('click', () => addCommand());
+        document.getElementById('addDrawingBtn').addEventListener('click', () => addDrawing());
+        document.getElementById('saveBtn').addEventListener('click', saveToFile);
+        document.getElementById('loadTemplatesBtn').addEventListener('click', loadTemplates);
+        document.getElementById('loadFileBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+        document.getElementById('fileInput').addEventListener('change', loadFromFile);
+        document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
+        document.getElementById('clearRoomBtn').addEventListener('click', clearRoom);
+        document.getElementById('chatInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendChatMessage(); });
+    }
+    
+    function updatePreview() {
+        const name = document.getElementById('botName').value || "Блю";
+        const icon = document.getElementById('botIcon').value;
+        document.getElementById('iconPreview').innerText = icon;
+        document.getElementById('chatIconPreview').innerText = icon;
+        document.getElementById('chatNamePreview').innerText = name;
+        blueConfig.name = name;
+        blueConfig.icon = icon;
+    }
+    
+    function renderCommands() {
+        const container = document.getElementById('commandsList');
+        container.innerHTML = '';
+        blueConfig.commands.forEach((cmd, idx) => {
+            const div = document.createElement('div');
+            div.className = 'command-item';
+            div.innerHTML = `
+                <input type="text" class="command-trigger" value="${escapeHtml(cmd.trigger)}" placeholder="Команда (например: привет)">
+                <input type="text" class="command-response" value="${escapeHtml(cmd.response)}" placeholder="Ответ (например: Привет!)">
+                <button class="delete-btn" data-idx="${idx}" data-type="command">🗑️</button>
+            `;
+            container.appendChild(div);
+        });
+        
+        // Привязываем события
+        document.querySelectorAll('#commandsList .command-trigger').forEach((input, idx) => {
+            input.addEventListener('change', (e) => blueConfig.commands[idx].trigger = normalizeText(e.target.value));
+        });
+        document.querySelectorAll('#commandsList .command-response').forEach((input, idx) => {
+            input.addEventListener('change', (e) => blueConfig.commands[idx].response = e.target.value);
+        });
+        document.querySelectorAll('#commandsList .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.idx);
+                blueConfig.commands.splice(idx, 1);
+                renderCommands();
+            });
+        });
+    }
+    
+    function renderDrawings() {
+        const container = document.getElementById('drawingsList');
+        container.innerHTML = '';
+        blueConfig.drawings.forEach((draw, idx) => {
+            const div = document.createElement('div');
+            div.className = 'drawing-item';
+            div.innerHTML = `
+                <input type="text" class="drawing-trigger" value="${escapeHtml(draw.trigger)}" placeholder="Слово (например: круг)">
+                <select class="drawing-type">
+                    <option value="shape" ${draw.type === 'shape' ? 'selected' : ''}>Фигура</option>
+                    <option value="emoji" ${draw.type === 'emoji' ? 'selected' : ''}>Эмодзи</option>
+                </select>
+                <input type="text" class="drawing-value" value="${escapeHtml(draw.value)}" placeholder="круг/квадрат/сердце/💩">
+                <button class="delete-btn" data-idx="${idx}" data-type="drawing">🗑️</button>
+            `;
+            container.appendChild(div);
+        });
+        
+        document.querySelectorAll('#drawingsList .drawing-trigger').forEach((input, idx) => {
+            input.addEventListener('change', (e) => blueConfig.drawings[idx].trigger = normalizeText(e.target.value));
+        });
+        document.querySelectorAll('#drawingsList .drawing-type').forEach((select, idx) => {
+            select.addEventListener('change', (e) => blueConfig.drawings[idx].type = e.target.value);
+        });
+        document.querySelectorAll('#drawingsList .drawing-value').forEach((input, idx) => {
+            input.addEventListener('change', (e) => blueConfig.drawings[idx].value = e.target.value);
+        });
+        document.querySelectorAll('#drawingsList .delete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.dataset.idx);
+                blueConfig.drawings.splice(idx, 1);
+                renderDrawings();
+            });
+        });
+    }
+    
+    function addCommand() {
+        blueConfig.commands.push({ trigger: "новая_команда", response: "новый ответ" });
+        renderCommands();
+    }
+    
+    function addDrawing() {
+        blueConfig.drawings.push({ trigger: "новый_рисунок", type: "shape", value: "circle" });
+        renderDrawings();
+    }
+    
+    function normalizeText(text) {
+        return text.toLowerCase().replace(/[!?.,;:()\-–—\s]/g, '').trim();
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    function saveToFile() {
+        const data = JSON.stringify(blueConfig, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${blueConfig.name}.bm`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addChatMessage("💾 Блю сохранён в файл!", "bot");
+    }
+    
+    function loadFromFile(event) {
+        const file = event.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const config = JSON.parse(e.target.result);
+                blueConfig = config;
+                document.getElementById('botName').value = blueConfig.name;
+                document.getElementById('botIcon').value = blueConfig.icon;
+                renderCommands();
+                renderDrawings();
+                updatePreview();
+                addChatMessage(`📂 Загружен Блю "${blueConfig.name}"`, "bot");
+            } catch(err) {
+                addChatMessage("❌ Ошибка загрузки файла", "bot");
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+    
+    function loadTemplates() {
+        const templates = {
+            собака: {
+                name: "Собака",
+                icon: "🐕",
+                commands: [
+                    { trigger: "привет", response: "Гав! Привет!" },
+                    { trigger: "как дела", response: "Гав-гав! Отлично!" },
+                    { trigger: "гулять", response: "Ура! Пойдём гулять! 🐕" },
+                    { trigger: "есть", response: "Ням-ням! Спасибо!" },
+                    { trigger: "сидеть", response: "🐕 сел" },
+                    { trigger: "лежать", response: "🐕 лёг" },
+                    { trigger: "голос", response: "ГАВ! 🗣️" }
+                ],
+                drawings: [
+                    { trigger: "косточка", type: "emoji", value: "🦴" },
+                    { trigger: "мяч", type: "emoji", value: "⚽" },
+                    { trigger: "будка", type: "shape", value: "square" }
+                ]
+            },
+            кот: {
+                name: "Кот",
+                icon: "🐱",
+                commands: [
+                    { trigger: "привет", response: "Мяу! Привет!" },
+                    { trigger: "как дела", response: "Мурр... Хорошо" },
+                    { trigger: "есть", response: "Мяу! Дай рыбы!" },
+                    { trigger: "спать", response: "Мурр... Ззз" },
+                    { trigger: "играть", response: "🐱 бегает за лазером" }
+                ],
+                drawings: [
+                    { trigger: "рыба", type: "emoji", value: "🐟" },
+                    { trigger: "клубок", type: "shape", value: "circle" },
+                    { trigger: "мышь", type: "emoji", value: "🐭" }
+                ]
+            },
+            гриб: {
+                name: "Гриб",
+                icon: "🍄",
+                commands: [
+                    { trigger: "привет", response: "🍄 Привет-привет!" },
+                    { trigger: "как дела", response: "🍄 Расту потихоньку" },
+                    { trigger: "дождь", response: "🍄 Ура! Водичка!" }
+                ],
+                drawings: [
+                    { trigger: "гриб", type: "emoji", value: "🍄" },
+                    { trigger: "мухомор", type: "shape", value: "circle" }
+                ]
+            },
+            робот: {
+                name: "Робот",
+                icon: "🤖",
+                commands: [
+                    { trigger: "привет", response: "🤖 Здравствуй, человек" },
+                    { trigger: "как дела", response: "🤖 ВСЕ СИСТЕМЫ РАБОТАЮТ" },
+                    { trigger: "помощь", response: "🤖 АНАЛИЗИРУЮ ЗАПРОС..." }
+                ],
+                drawings: [
+                    { trigger: "шестерёнка", type: "emoji", value: "⚙️" },
+                    { trigger: "микросхема", type: "shape", value: "square" }
+                ]
+            }
+        };
+        
+        const templateNames = Object.keys(templates);
+        const selected = prompt(`Выбери шаблон: ${templateNames.join(', ')}`, "собака");
+        if(selected && templates[selected]) {
+            const tpl = templates[selected];
+            blueConfig.name = tpl.name;
+            blueConfig.icon = tpl.icon;
+            blueConfig.commands = tpl.commands;
+            blueConfig.drawings = tpl.drawings;
+            document.getElementById('botName').value = blueConfig.name;
+            document.getElementById('botIcon').value = blueConfig.icon;
+            renderCommands();
+            renderDrawings();
+            updatePreview();
+            addChatMessage(`📦 Загружен шаблон "${blueConfig.name}"`, "bot");
+        }
+    }
+    
+    // === ЧАТ ===
+    function sendChatMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if(!text) return;
+        addChatMessage(text, "user");
+        input.value = '';
+        
+        const response = getBotResponse(text);
+        setTimeout(() => addChatMessage(response, "bot"), 300);
+        
+        // Проверяем, нужно ли рисовать
+        checkAndDraw(text);
+    }
+    
+    function getBotResponse(message) {
+        const normalized = normalizeText(message);
+        
+        // Проверяем команды
+        for(const cmd of blueConfig.commands) {
+            const cmdNorm = normalizeText(cmd.trigger);
+            if(normalized.includes(cmdNorm) || cmdNorm.includes(normalized)) {
+                return `${blueConfig.icon} ${cmd.response}`;
+            }
+        }
+        
+        // Рисование
+        for(const draw of blueConfig.drawings) {
+            const drawNorm = normalizeText(draw.trigger);
+            if(normalized.includes(drawNorm) || drawNorm.includes(normalized)) {
+                return `${blueConfig.icon} Рисую ${draw.trigger}!`;
+            }
+        }
+        
+        // Ответ по умолчанию
+        const defaultResponses = [
+            `${blueConfig.icon} Интересно... Расскажи ещё!`,
+            `${blueConfig.icon} Я тебя внимательно слушаю.`,
+            `${blueConfig.icon} Правда? Давай обсудим!`,
+            `${blueConfig.icon} Хороший вопрос!`
+        ];
+        return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    }
+    
+    function addChatMessage(text, sender) {
+        const container = document.getElementById('chatMessages');
+        const msg = document.createElement('div');
+        msg.className = `message ${sender === 'user' ? 'user-msg' : 'bot-msg'}`;
+        msg.innerHTML = text;
+        container.appendChild(msg);
+        msg.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // === КОМНАТА И РИСОВАНИЕ ===
+    function initCanvas() {
+        canvas = document.getElementById('roomCanvas');
+        if(!canvas) return;
+        const container = canvas.parentElement;
+        const width = Math.min(600, container.clientWidth - 20);
+        canvas.width = width;
+        canvas.height = width * 0.5;
+        ctx = canvas.getContext('2d');
+        drawRoom();
+    }
+    
+    function checkAndDraw(message) {
+        const normalized = normalizeText(message);
+        for(const draw of blueConfig.drawings) {
+            const drawNorm = normalizeText(draw.trigger);
+            if(normalized.includes(drawNorm) || drawNorm.includes(normalized)) {
+                drawOnCanvas(draw);
+                break;
+            }
+        }
+    }
+    
+    function drawOnCanvas(drawing) {
+        if(!ctx) initCanvas();
+        const x = canvas.width / 2;
+        const y = canvas.height / 2;
+        
+        if(drawing.type === 'emoji') {
+            ctx.fillStyle = "white";
+            ctx.font = "40px monospace";
+            ctx.fillText(drawing.value, x - 20, y + 15);
+        } else {
+            switch(drawing.value) {
+                case 'circle':
+                    ctx.beginPath();
+                    ctx.arc(x, y, 40, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fill();
+                    break;
+                case 'square':
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillRect(x - 40, y - 40, 80, 80);
+                    break;
+                case 'poop':
+                    ctx.fillStyle = '#8B4513';
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, 30, 25, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.font = "30px monospace";
+                    ctx.fillText('💩', x - 15, y + 12);
+                    break;
+                case 'heart':
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - 20);
+                    ctx.bezierCurveTo(x - 30, y - 50, x - 50, y - 10, x, y + 20);
+                    ctx.bezierCurveTo(x + 50, y - 10, x + 30, y - 50, x, y - 20);
+                    ctx.fill();
+                    break;
+                default:
+                    ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                    ctx.fillRect(x - 30, y - 30, 60, 60);
+                    ctx.fillStyle = 'white';
+                    ctx.font = "12px monospace";
+                    ctx.fillText(drawing.value, x - 20, y);
+            }
+        }
+        
+        setTimeout(() => drawRoom(), 3000);
+    }
+    
+    function drawRoom() {
+        if(!ctx) return;
+        ctx.fillStyle = "#1a2a3a";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#2a3a2a";
+        ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+        
+        for(const item of roomItems) {
+            ctx.fillStyle = item.color;
+            ctx.fillRect(item.x, item.y, 40, 40);
+            ctx.fillStyle = "white";
+            ctx.font = "24px monospace";
+            ctx.fillText(item.emoji, item.x + 8, item.y + 30);
+        }
+        
+        const container = document.getElementById('roomItemsList');
+        container.innerHTML = '';
+        for(const item of roomItems) {
+            const badge = document.createElement('span');
+            badge.className = 'room-item';
+            badge.innerHTML = `${item.emoji} ${item.name}`;
+            container.appendChild(badge);
+        }
+    }
+    
+    function clearRoom() {
+        roomItems = [];
+        drawRoom();
+        addChatMessage("🧹 Комната очищена!", "bot");
+    }
+    
+    window.addEventListener('resize', () => {
+        if(canvas) initCanvas();
+    });
+    
+    init();
 </script>
 </body>
 </html>
